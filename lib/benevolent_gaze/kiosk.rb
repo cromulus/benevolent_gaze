@@ -118,9 +118,21 @@ module BenevolentGaze
       get_ip()
     end
 
+
     get "/dns" do
       dns = Resolv.new
       dns.getname(get_ip())
+    end
+
+    post "search" do
+      if params[:slack]
+        devices = r.keys("slack:*").select{|k| r.get(k)==params[:slack]}
+        # if device exists, return true, else false
+        return !devices.detect {|d| r.hexists("current_devices",d) }.nil?
+      elsif params[:name]
+        names= r.keys("name:*").select{|k| r.get(k)==params[:name]}
+        return !devices.detect {|d| r.hexists("current_devices",d) }.nil?
+      end
     end
 
     post "/register" do
@@ -132,7 +144,9 @@ module BenevolentGaze
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
         compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
+        slack_name = params[:slack_name]
         r.set("name:#{device_name}", compound_name)
+        r.set("slack:#{device_name}", slack_name)
       end
       if params[:fileToUpload]
         image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)

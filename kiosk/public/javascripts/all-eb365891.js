@@ -12100,7 +12100,7 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 $(function() {
 	var es = new EventSource('/feed');
 	var new_people = [];
-
+	$("input").attr("required", true);
 	es.onmessage = function(e) {
 	  //console.log( "Got message", e )
 	}
@@ -12109,7 +12109,7 @@ $(function() {
 	  new_people = JSON.parse(e.data)
 	  add_remove_workers(new_people);
 	  check_last_seen();
-	  force_register();
+	  Worker.redraw();
 	}, false);
 
 	es.addEventListener('open', function(e) {
@@ -12122,7 +12122,7 @@ $(function() {
 	  }
 	}, false);
 
-
+	force_register();
 	var w;
 
 	var Worker = {
@@ -12236,6 +12236,7 @@ $(function() {
 			}
 		});
 	}
+
 	var check_last_seen = function() {
 	  $('.worker').each(function(num, wk){
 	    // console.log("not inside if yet");
