@@ -111,7 +111,7 @@ module BenevolentGaze
       dns = Resolv.new
       device_name = dns.getname(get_ip())
       r=Redis.new
-      r.hexists('current_devices',device_name).to_s
+      r.exists(device_name).to_s
     end
 
     get "/ip" do
