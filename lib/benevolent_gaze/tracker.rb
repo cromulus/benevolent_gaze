@@ -16,7 +16,7 @@ module BenevolentGaze
 
   class << self
     private
-    
+
     def check_time
       #if ((@@old_time + (30*60)) <= Time.now.to_i)
       if (@@old_time <= Time.now.to_i)
@@ -30,7 +30,7 @@ module BenevolentGaze
         @old_time = Time.now.to_i
       end
     end
-    
+
     def scan
 =begin
       # Look for the network broadcast address
@@ -53,7 +53,7 @@ module BenevolentGaze
 
       dns = Resolv.new
       device_names_and_ip_addresses = {}
-      
+
       ips.each do |ip|
         name = dns.getname ip
         device_names_and_ip_addresses[name] = nil
@@ -63,13 +63,13 @@ module BenevolentGaze
 
       #reintroduction of arp usage for mac addresses - will reintegrate soon.
       device_name_and_mac_address_hash = {}
-      `arp -a | grep -v "?" | awk '{print $1 "\t" $4}'`.split("\n").each do |a| 
+      `arp -a | grep -v "?" | awk '{print $1 "\t" $4}'`.split("\n").each do |a|
         a = a.split("\t")
-        device_name_and_mac_address_hash[a[0]] = a[1] 
+        device_name_and_mac_address_hash[a[0]] = a[1]
       end
 
       device_names_hash = {}
-      device_names_arr = `for i in {1..254}; do echo ping -t 4 192.168.1.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | sed 's/\.$//'`.split(/\n/)
+      device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
       device_names_arr.each do |d|
         unless d.match(/Wireless|EPSON/)
           device_names_hash[d] = nil

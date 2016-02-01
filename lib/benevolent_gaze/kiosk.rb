@@ -6,7 +6,7 @@ require 'redis'
 require 'resolv'
 require 'sinatra/cross_origin'
 require 'aws/s3'
-require 'SecureRandom'
+require 'securerandom'
 require 'mini_magick'
 
 Encoding.default_external = 'utf-8'  if defined?(::Encoding)
@@ -22,7 +22,7 @@ module BenevolentGaze
     @@local_file_system = ENV['PUBLIC_FOLDER']
 
     register Sinatra::CrossOrigin
-   
+
     configure do
       unless ENV['AWS_ACCESS_KEY_ID'].nil? || ENV['AWS_ACCESS_KEY_ID'].empty? || ENV['AWS_SECRET_ACCESS_KEY'].empty? || ENV['AWS_CDN_BUCKET'].empty?
         USE_AWS = true
@@ -87,8 +87,8 @@ module BenevolentGaze
               image_url = "images/uploads/" + new_file_name
             end
 
-            return image_url 
-            
+            return image_url
+
           else
             return nil
           end
@@ -98,12 +98,12 @@ module BenevolentGaze
     get "/" do
       redirect "index.html"
     end
-    
+
     post "/register" do
       dns = Resolv.new
       device_name = dns.getname(request.ip)
       r = Redis.new
-      
+
       compound_name = nil
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
@@ -125,18 +125,18 @@ module BenevolentGaze
     get "/feed", provides: 'text/event-stream' do
       cross_origin
       r = Redis.new
-  
+
       stream :keep_open do |out|
-        loop do 
+        loop do
           if out.closed?
             break
           end
           data = []
           r.hgetall("current_devices").each do |k,v|
             name_or_device_name = r.get("name:#{k}") || k
-            data << { device_name: k, name: v, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") } 
+            data << { device_name: k, name: v, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
           end
-  
+
           out << "data: #{data.to_json}\n\n"
           sleep 1
         end
@@ -145,9 +145,9 @@ module BenevolentGaze
 
     post "/information" do
       #grab current devices on network.  Save them to the devices on network key after we make sure that we grab the names that have been added already to the whole list and then save them to the updated hash for redis.
-      devices_on_network = JSON.parse(params[:devices]) 
+      devices_on_network = JSON.parse(params[:devices])
       r = Redis.new
-      old_set = r.hkeys("current_devices")      
+      old_set = r.hkeys("current_devices")
       new_set = devices_on_network.keys
       diff_set = old_set - new_set
 
