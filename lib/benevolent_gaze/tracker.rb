@@ -22,7 +22,7 @@ module BenevolentGaze
       if (@@old_time <= Time.now.to_i)
         begin
           #TODO make sure to change the url to read from an environment variable for the correct company url.
-        HTTParty.post( (ENV['BG_COMPANY_URL'] || 'http://localhost:3000/register'), query: { ip: `ifconfig | awk '/inet/ {print $2}' | grep -E '[[:digit:]]{1,3}\\.' | tail -1`.strip + ":#{ENV['IPORT']}/register"})
+        HTTParty.post( (ENV['BG_COMPANY_URL'] || 'http://localhost:3000/register'), query: { ip: `ifconfig | awk '/inet/ {print $2}' | grep -oE "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | grep -v 127.0.0.1 | tail -1`.strip + ":#{ENV['IPORT']}/register"})
         puts "Just sent localhost address to server."
         rescue
           puts "Looks like there is something wrong with the endpoint to identify the localhost."
@@ -62,19 +62,21 @@ module BenevolentGaze
 =end
 
       #reintroduction of arp usage for mac addresses - will reintegrate soon.
+      device_names_hash = {}
       device_name_and_mac_address_hash = {}
       `arp -a | grep -v "?" | awk '{print $1 "\t" $4}'`.split("\n").each do |a|
         a = a.split("\t")
         device_name_and_mac_address_hash[a[0]] = a[1]
+        device_names_hash[a[0]]=a[1]
       end
 
-      device_names_hash = {}
-      device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
-      device_names_arr.each do |d|
-        unless d.match(/Wireless|EPSON/)
-          device_names_hash[d] = nil
-        end
-      end
+
+      # device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
+      # device_names_arr.each do |d|
+      #   unless d.match(/Wireless|EPSON/)
+      #     device_names_hash[d] = nil
+      #   end
+      # end
       puts device_names_hash
       begin
         HTTParty.post("http://localhost:#{ENV['IPORT']}/information", query: {devices: device_names_hash.to_json } )
