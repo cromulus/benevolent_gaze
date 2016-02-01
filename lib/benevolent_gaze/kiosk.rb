@@ -107,7 +107,9 @@ module BenevolentGaze
     get "/ip" do
       return request.ip
     end
-
+    get '/env' do
+      return request.to_json
+    end
     post "/register" do
       dns = Resolv.new
       device_name = dns.getname(request.ip)
