@@ -32,6 +32,14 @@ module BenevolentGaze
     end
 
     helpers do
+      def get_ip
+        if request.ip == '127.0.0.1'
+           env['HTTP_X_FORWARDED_FOR'].split(',').last
+        else
+          request.ip
+        end
+      end
+
       def upload(filename, file, device_name)
           doomsday = Time.mktime(2038, 1, 18).to_i
           if (filename)
@@ -101,25 +109,23 @@ module BenevolentGaze
 
     get "/is_registered" do
       dns = Resolv.new
-      device_name = dns.getname(request.remote_ip)
+      device_name = dns.getname(get_ip())
       r=Redis.new
-      return r.hexists 'current_devices',device_name
+      r.hexists 'current_devices',device_name
     end
 
     get "/ip" do
-      return request.remote_ip
+      get_ip()
     end
+
     get "/dns" do
       dns = Resolv.new
-      device_name = dns.getname(request.remote_ip)
-      return device_name
+      dns.getname(get_ip())
     end
-    get '/env' do
-      return request.to_json
-    end
+
     post "/register" do
       dns = Resolv.new
-      device_name = dns.getname(request.remote_ip)
+      device_name = dns.getname(get_ip())
       r = Redis.new
 
       compound_name = nil
