@@ -34,7 +34,7 @@ module BenevolentGaze
     helpers do
       def get_ip
         if request.ip == '127.0.0.1'
-           env['HTTP_X_FORWARDED_FOR'].split(',').last
+           env['HTTP_X_REAL_IP'] || env['HTTP_X_FORWARDED_FOR']
         else
           request.ip
         end
@@ -111,7 +111,7 @@ module BenevolentGaze
       dns = Resolv.new
       device_name = dns.getname(get_ip())
       r=Redis.new
-      r.hexists 'current_devices',device_name
+      r.hexists('current_devices',device_name).to_s
     end
 
     get "/ip" do
