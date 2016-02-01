@@ -99,6 +99,15 @@ module BenevolentGaze
       redirect "index.html"
     end
 
+    get "/is_registered" do
+      device_name = dns.getname(request.ip)
+      return device_name || false
+    end
+
+    get "/ip" do
+      return request.ip
+    end
+
     post "/register" do
       dns = Resolv.new
       device_name = dns.getname(request.ip)
