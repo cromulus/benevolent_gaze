@@ -12110,7 +12110,20 @@ $(function() {
 	  add_remove_workers(new_people);
 	  check_last_seen();
 	  Worker.redraw();
+
 	}, false);
+
+	$.ajax({url:'/is_registered'}).done(function(data){
+		if (data==='true') {
+			$('.left_column').hide();
+			$('.right_column').show();
+			console.log('registered!');
+		}else{
+			$('.left_column').show();
+			$('.right_column').hide();
+			console.log('not registered');
+		}
+	});
 
 	es.addEventListener('open', function(e) {
 	  console.log('Connection was opened.');
@@ -12122,7 +12135,7 @@ $(function() {
 	  }
 	}, false);
 
-	force_register();
+
 	var w;
 
 	var Worker = {
@@ -12223,19 +12236,6 @@ $(function() {
 	      return name_change
 	};
 
-	var force_register = function(){
-		$.ajax({url:'/is_registered'}).done(function(data){
-			if (data==='true') {
-				$('.left_column').hide();
-				$('.right_column').show();
-				console.log('registered!');
-			}else{
-				$('.left_column').show();
-				$('.right_column').hide();
-				console.log('not registered');
-			}
-		});
-	}
 
 	var check_last_seen = function() {
 	  $('.worker').each(function(num, wk){
