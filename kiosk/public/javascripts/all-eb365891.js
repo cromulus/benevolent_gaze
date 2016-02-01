@@ -12195,13 +12195,13 @@ $(function() {
 	      change_avatar(worker_data, data_attribute);
 	      data_attribute_worker = "[data-devicename='" + worker_data.device_name + "']";
 	      if ( $(data_attribute_worker).find(".tape").text() !== ( worker_data.name || sanitize_name(worker_data.device_name) ) ) {
-	        console.log("this is the problem");
+	        //console.log("this is the problem");
 	        Worker.remove_worker(data_attribute_worker);
 	      }
 	    } else {
 	      Worker.setup_and_add(worker_data);
 	      if (worker_data.name) {
-	        console.log("No this is the problem");
+	        //console.log("No this is the problem");
 	        Worker.remove_worker(data_attribute_device);
 	      }
 	    }
@@ -12228,20 +12228,22 @@ $(function() {
 			if (data==='true') {
 				$('.left_column').hide();
 				$('.right_column').show();
+				console.log('registered!');
 			}else{
 				$('.left_column').show();
 				$('.right_column').hide();
+				console.log('not registered');
 			}
 		});
 	}
 	var check_last_seen = function() {
 	  $('.worker').each(function(num, wk){
-	    console.log("not inside if yet");
-	    console.log(wk);
-	    console.log($(wk).attr('data-lastseen'));
-	    console.log($.now() - 5000);
+	    // console.log("not inside if yet");
+	    // console.log(wk);
+	    // console.log($(wk).attr('data-lastseen'));
+	    // console.log($.now() - 5000);
 	    if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 900000) && $(wk).find('.tape').text() !== "Ted" ) {
-	      console.log("inside if");
+	      // console.log("inside if");
 	      Worker.remove_worker(wk);
 	    }
 	  })
