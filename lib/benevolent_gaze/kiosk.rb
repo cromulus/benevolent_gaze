@@ -100,19 +100,26 @@ module BenevolentGaze
     end
 
     get "/is_registered" do
-      device_name = dns.getname(request.ip)
-      return device_name || false
+      dns = Resolv.new
+      device_name = dns.getname(request.remote_ip)
+      r=Redis.new
+      return r.hexists 'current_devices',device_name
     end
 
     get "/ip" do
-      return request.ip
+      return request.remote_ip
+    end
+    get "/dns" do
+      dns = Resolv.new
+      device_name = dns.getname(request.remote_ip)
+      return device_name
     end
     get '/env' do
       return request.to_json
     end
     post "/register" do
       dns = Resolv.new
-      device_name = dns.getname(request.ip)
+      device_name = dns.getname(request.remote_ip)
       r = Redis.new
 
       compound_name = nil
