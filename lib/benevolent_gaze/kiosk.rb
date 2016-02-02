@@ -199,7 +199,7 @@ module BenevolentGaze
       end
     end
 
-    post '/ping' do
+    post '/ping/' do
       to = params[:to]
       to.prepend("@") if to[0] != "@"
       begin
