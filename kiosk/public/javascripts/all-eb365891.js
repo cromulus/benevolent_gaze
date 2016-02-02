@@ -12271,8 +12271,6 @@ $(function() {
 
   };
 
-});
-
 var filter = function(){
   var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
   var options={keys:['name','slackname']};
@@ -12293,7 +12291,7 @@ $("input").keyup(function(){
     if (t) {
         clearTimeout(t);
     }
-    t = setTimeout("filter()", 200);
+    t = setTimeout(filter(), 200);
 });
 
 var worker_redraw = function(){
@@ -12308,3 +12306,6 @@ var worker_redraw = function(){
     $('.board').removeClass('large med small').addClass('xsmall');
   }
 }
+
+});
+
