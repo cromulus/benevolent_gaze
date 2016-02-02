@@ -12204,8 +12204,7 @@ $(function() {
 			    }
 			  });
 			})
-  }
-    }
+    },
     remove_worker: function(k) {
                      $( k ).addClass("animated bounceOutDown");
                      $('.bounceOutDown').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
