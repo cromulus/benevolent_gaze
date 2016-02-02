@@ -12146,6 +12146,7 @@ $(function() {
             Worker.set_name(worker_object);
             Worker.add_class("."+klass);
             Worker.add_to_board(worker_object);
+            Worker.add_slack();
           },
     grab_worker: function(){
                    w = $('.worker').first().clone().removeClass('hidden');
@@ -12159,6 +12160,33 @@ $(function() {
                 $(w).attr("data-devicename", worker_data.device_name);
                 $(w).attr("data-slackname", worker_data.slack_name);
               },
+    add_slack: function(){
+    	$('.worker').click(function(){
+				//if me, go to register
+				//if slackname, send slack ping
+				var to='';
+				var worker=$(this);
+				if ($(this).data('slackname')==='false') {
+					to = $(this).data('name');
+				}else{
+					to = $(this).data('slackname');
+				}
+				$.ajax({
+			    type: 'POST',
+			    // make sure you respect the same origin policy with this url:
+			    // http://en.wikipedia.org/wiki/Same_origin_policy
+			    url: '/ping/',
+			    data: {
+			        'to': to,
+			        'from':'pingbot'
+			  	},
+			    success: function(msg){
+			    	worker.addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
+						worker.removeClass('animated');
+			    }
+			  });
+			})
+    },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
                 },
@@ -12294,31 +12322,6 @@ $("input").keyup(function(){
     t = setTimeout(filter(), 200);
 });
 
-$('.worker').click(function(){
-	//if me, go to register
-	//if slackname, send slack ping
-	var to='';
-	var worker=$(this);
-	if ($(this).data('slackname')==='false') {
-		to = $(this).data('name');
-	}else{
-		to = $(this).data('slackname');
-	}
-	$.ajax({
-    type: 'POST',
-    // make sure you respect the same origin policy with this url:
-    // http://en.wikipedia.org/wiki/Same_origin_policy
-    url: '/ping/',
-    data: {
-        'to': to,
-        'from':'pingbot'
-  	},
-    success: function(msg){
-    	worker.addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
-			worker.removeClass('animated');
-    }
-  });
-})
 
 var worker_redraw = function(){
   var w = $('.worker').length;
