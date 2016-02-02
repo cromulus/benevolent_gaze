@@ -12166,7 +12166,6 @@ $(function() {
                  w.addClass(device_name.replace(/\./g, ""));
                },
     add_to_board: function(worker_data){
-    								console.log('adding slack');
     								Worker.add_slack();
                     Welcome.move_logo_and_welcomes();
                     $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
@@ -12181,12 +12180,11 @@ $(function() {
                     })
                   },
     add_slack: function(){
-    	console.log(w);
   		$(w).click(function(){
 				//if me, go to register
 				//if slackname, send slack ping
 				var to='';
-				var worker=$(this);
+				var worker = $(this);
 				if ($(this).data('slackname') === false) {
 					to = $(this).data('name');
 				}else{
@@ -12199,12 +12197,10 @@ $(function() {
 			    url: '/ping/',
 			    data: {
 			        'to': to
-			  	},
-			    success: function(msg){
-			    	worker.addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
-						worker.removeClass('animated');
-			    }
+			  	}
 			  });
+			  $(this).addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
+				$(this).removeClass('animated');
 			})
     },
     remove_worker: function(k) {
