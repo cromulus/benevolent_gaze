@@ -30,7 +30,7 @@ module BenevolentGaze
         USE_AWS = false
       end
 
-      unless ENV['IGNORE_HOSTS'].nil?
+      if ENV['IGNORE_HOSTS'].nil?
         IGNORE_HOSTS = false
       else
         IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
