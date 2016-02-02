@@ -87,6 +87,7 @@ module BenevolentGaze
       end
 
       device_array.map{|a|
+        next if a.nil?
         a = a.split("\t")
         device_name_and_mac_address_hash[a[0]] = a[1]
         device_names_hash[a[0]]=a[1]
