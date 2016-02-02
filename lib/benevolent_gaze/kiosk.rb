@@ -189,7 +189,7 @@ module BenevolentGaze
           data = []
           r.hgetall("current_devices").each do |k,v|
             name_or_device_name = r.get("name:#{k}") || k
-            slack = r.get("slack:k") || false
+            slack = r.get("slack:#{k}") || false
             data << { device_name: k, name: v, slack_name: slack, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
           end
 
@@ -207,7 +207,7 @@ module BenevolentGaze
         device_name = dns.getname(get_ip())
         r = Redis.new
         result = r.get("slack:#{device_name}")
-        if !result
+        if result.nil?
           result = r.get("name:#{device_name}")
         end
       rescue Exception
