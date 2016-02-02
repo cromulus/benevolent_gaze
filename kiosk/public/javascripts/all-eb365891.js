@@ -12270,7 +12270,7 @@ $(function() {
 
   };
 
-  function filter(){
+  var filter = function(){
     var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
     var options={keys:['name','slackname']};
     var f = new Fuse(workers,options);
@@ -12292,7 +12292,7 @@ $(function() {
       }
       t = setTimeout("filter()", 200);
   });
-  function worker_redraw(){
+  var worker_redraw = function(){
     var w = $('.worker').length;
     if ( w <= 6 ) {
       $('.board').removeClass('med small xsmall').addClass('large');
