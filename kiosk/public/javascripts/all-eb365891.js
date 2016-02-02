@@ -12244,6 +12244,7 @@ $(function() {
       // console.log(wk);
       // console.log($(wk).attr('data-lastseen'));
       // console.log($.now() - 5000);
+      worker_redraw();
       if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 900000) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
@@ -12270,39 +12271,40 @@ $(function() {
 
   };
 
-  var filter = function(){
-    var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
-    var options={keys:['name','slackname']};
-    var f = new Fuse(workers,options);
-    var q = $("input").val();
-    var found = [];
-    if (q.length>0) {
-      found = f.search($("input").val());
-      $(found).each(function(i,v){$(v.obj).show();});
-    }else{
-      $('.worker[data-name]').each(function(i,v){$(v).show();});
-    }
-    worker_redraw();
-  }
+});
 
-  var t = null;
-  $("input").keyup(function(){
-      if (t) {
-          clearTimeout(t);
-      }
-      t = setTimeout("filter()", 200);
-  });
-  var worker_redraw = function(){
-    var w = $('.worker').length;
-    if ( w <= 6 ) {
-      $('.board').removeClass('med small xsmall').addClass('large');
-    } else if ( w <= 12 ) {
-      $('.board').removeClass('small xsmall large').addClass('med');
-    } else if ( w <= 24 ) {
-      $('.board').removeClass('xsmall large med').addClass('small');
-    } else {
-      $('.board').removeClass('large med small').addClass('xsmall');
-    }
+var filter = function(){
+  var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
+  var options={keys:['name','slackname']};
+  var f = new Fuse(workers,options);
+  var q = $("input").val();
+  var found = [];
+  if (q.length>0) {
+    found = f.search($("input").val());
+    $(found).each(function(i,v){$(v.obj).show();});
+  }else{
+    $('.worker[data-name]').each(function(i,v){$(v).show();});
   }
   worker_redraw();
+}
+
+var t = null;
+$("input").keyup(function(){
+    if (t) {
+        clearTimeout(t);
+    }
+    t = setTimeout("filter()", 200);
 });
+
+var worker_redraw = function(){
+  var w = $('.worker').length;
+  if ( w <= 6 ) {
+    $('.board').removeClass('med small xsmall').addClass('large');
+  } else if ( w <= 12 ) {
+    $('.board').removeClass('small xsmall large').addClass('med');
+  } else if ( w <= 24 ) {
+    $('.board').removeClass('xsmall large med').addClass('small');
+  } else {
+    $('.board').removeClass('large med small').addClass('xsmall');
+  }
+}
