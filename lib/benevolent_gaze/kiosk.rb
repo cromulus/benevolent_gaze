@@ -226,13 +226,13 @@ module BenevolentGaze
                     body: {username:"marco-polo-bot",
                             channel:"#{to}",
                             text:"Ping from #{from}",
-                            "icon_emoji": ":ghost:" }.to_json )
+                            icon_emoji: ":ghost:" }.to_json )
       unless res.response.code = '200'
         HTTParty.post(ENV['SLACK_HOOK_URL'],
                     body: {username:"marco-polo-bot",
                             channel:"#general",
                             text:"#{from} pings #{to} #{msg}",
-                            "icon_emoji": ":ghost:" }.to_json )
+                            icon_emoji: ":ghost:" }.to_json )
       end
     end
 
