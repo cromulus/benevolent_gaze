@@ -227,7 +227,7 @@ module BenevolentGaze
                             channel:"#{to}",
                             text:"Ping from #{from}",
                             icon_emoji: ":ghost:" }.to_json )
-      unless res.code = 200
+      unless res.response.code == '200'
         HTTParty.post(ENV['SLACK_HOOK_URL'],
                     body: {username:"marco-polo-bot",
                             channel:"#general",
