@@ -12270,18 +12270,9 @@ $(function() {
 
   };
 
-  var t = null;
-  $("input").keyup(function(){
-      if (t) {
-          clearTimeout(t);
-      }
-      t = setTimeout("filter()", 200);
-  });
-
-
   function filter(){
     var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
-    var options={keys:['name','devicename','slackname']};
+    var options={keys:['name','slackname']};
     var f = new Fuse(workers,options);
     var q = $("input").val();
     var found = [];
@@ -12291,6 +12282,27 @@ $(function() {
     }else{
       $('.worker[data-name]').each(function(i,v){$(v).show();});
     }
+    worker_redraw();
   }
 
+  var t = null;
+  $("input").keyup(function(){
+      if (t) {
+          clearTimeout(t);
+      }
+      t = setTimeout("filter()", 200);
+  });
+  function worker_redraw(){
+    var w = $('.worker').length;
+    if ( w <= 6 ) {
+      $('.board').removeClass('med small xsmall').addClass('large');
+    } else if ( w <= 12 ) {
+      $('.board').removeClass('small xsmall large').addClass('med');
+    } else if ( w <= 24 ) {
+      $('.board').removeClass('xsmall large med').addClass('small');
+    } else {
+      $('.board').removeClass('large med small').addClass('xsmall');
+    }
+  }
+  worker_redraw();
 });
