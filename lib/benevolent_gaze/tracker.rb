@@ -1,5 +1,6 @@
 require 'resolv'
 require 'httparty'
+require 'parallel'
 
 module BenevolentGaze
   class Tracker
@@ -74,16 +75,22 @@ module BenevolentGaze
       dns = Resolv.new
       device_names_hash = {}
       device_name_and_mac_address_hash = {}
-      `arp -a | grep -v "?" | awk '{print $1 "\t" $4}'`.split("\n").each do |a|
-        a = a.split("\t")
-        ip_address = dns.getaddress(a[0])
-
-        if ping(ip_address)
-          device_name_and_mac_address_hash[a[0]] = a[1]
-          device_names_hash[a[0]]=a[1]
+      devices = `arp -a | grep -v "?" | awk '{print $1 "\t" $4}' | grep -v incomplete`.split("\n")
+      device_array = Parallel.map(devices) do |a|
+        d = a.split("\t")
+        begin
+          ip_address = dns.getaddress(d[0])
+        rescue Exception => e
+          next
         end
+        a if ping(ip_address)
       end
 
+      device_array.map{|a|
+        a = a.split("\t")
+        device_name_and_mac_address_hash[a[0]] = a[1]
+        device_names_hash[a[0]]=a[1]
+      }
 
       # device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
       # device_names_arr.each do |d|
