@@ -12203,8 +12203,8 @@ $(function() {
 			  $(this).addClass("animated").addClass("swing2");
 			  $(this).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
 					$(this).removeClass('animated').removeClass('swing2');
-				}
-			})
+				});
+			});
     },
     remove_worker: function(k) {
                      $( k ).addClass("animated bounceOutDown");
