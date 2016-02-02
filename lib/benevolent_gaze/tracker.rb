@@ -71,26 +71,27 @@ module BenevolentGaze
       puts "****************************"
 =end
 
-      #reintroduction of arp usage for mac addresses - will reintegrate soon.
+      #nmap, for the win.
       dns = Resolv.new
       device_names_hash = {}
       device_name_and_mac_address_hash = {}
-      devices = `arp -a | grep -v "?" | awk '{print $1 "\t" $4}' | grep -v incomplete`.split("\n")
+      devices = `nmap -A -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n")
 
+      #nmap
       #ping is low memory and largely io bound.
-      device_array = Parallel.map(devices,:in_threads => devices.length) do |a|
-        d = a.split("\t")
+      device_array = Parallel.map(devices,:in_threads => devices.length) do |ip|
         begin
-          ip_address = dns.getaddress(d[0])
-        rescue Exception => e
+
+          dns_name = dns.getname(ip)
+        rescue Exception
+          # can't look it up, router doesn't know it. Static IP.
           next
         end
-        a if ping(ip_address)
+        [dns_name,ip]
       end
 
       device_array.map{|a|
         next if a.nil?
-        a = a.split("\t")
         device_name_and_mac_address_hash[a[0]] = a[1]
         device_names_hash[a[0]]=a[1]
       }
