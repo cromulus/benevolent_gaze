@@ -217,8 +217,8 @@ module BenevolentGaze
 
       HTTParty.post(ENV['SLACK_HOOK_URL'],
                     body: {username:"marco-polo-bot",
-                            channel:"#{to}",
-                            text:"Ping from #{from}",
+                            channel:"#general",
+                            text:"#{from} pings #{to}",
                             "icon_emoji": ":ghost:" }.to_json )
     end
 

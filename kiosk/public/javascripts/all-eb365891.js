@@ -12146,7 +12146,6 @@ $(function() {
             Worker.set_name(worker_object);
             Worker.add_class("."+klass);
             Worker.add_to_board(worker_object);
-            Worker.add_slack();
           },
     grab_worker: function(){
                    w = $('.worker').first().clone().removeClass('hidden');
@@ -12176,8 +12175,37 @@ $(function() {
                     $('.newcomer_avatar, .newcomer').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
                       Worker.redraw();
+                      Worker.add_slack();
                     })
                   },
+    add_slack: function(){
+  		w.click(function(){
+				//if me, go to register
+				//if slackname, send slack ping
+				var to='';
+				var worker=$(this);
+				if ($(this).data('slackname')==='false') {
+					to = $(this).data('name');
+				}else{
+					to = $(this).data('slackname');
+				}
+				$.ajax({
+			    type: 'POST',
+			    // make sure you respect the same origin policy with this url:
+			    // http://en.wikipedia.org/wiki/Same_origin_policy
+			    url: '/ping/',
+			    data: {
+			        'to': to,
+			        'from':'pingbot'
+			  	},
+			    success: function(msg){
+			    	worker.addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
+						worker.removeClass('animated');
+			    }
+			  });
+			})
+  }
+    }
     remove_worker: function(k) {
                      $( k ).addClass("animated bounceOutDown");
                      $('.bounceOutDown').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
@@ -12222,36 +12250,9 @@ $(function() {
       }
 
     });
-    add_slack();
   };
 
-  var add_slack = function(){
-  		$('.worker').click(function(){
-				//if me, go to register
-				//if slackname, send slack ping
-				var to='';
-				var worker=$(this);
-				if ($(this).data('slackname')==='false') {
-					to = $(this).data('name');
-				}else{
-					to = $(this).data('slackname');
-				}
-				$.ajax({
-			    type: 'POST',
-			    // make sure you respect the same origin policy with this url:
-			    // http://en.wikipedia.org/wiki/Same_origin_policy
-			    url: '/ping/',
-			    data: {
-			        'to': to,
-			        'from':'pingbot'
-			  	},
-			    success: function(msg){
-			    	worker.addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
-						worker.removeClass('animated');
-			    }
-			  });
-			})
-  }
+
   var sanitize_name = function(name){
     var name_change = name.replace(/(s\-).*/, "");
         name_change = name_change.replace(/\-.*/, "");
