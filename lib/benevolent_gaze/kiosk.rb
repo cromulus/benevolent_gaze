@@ -29,6 +29,12 @@ module BenevolentGaze
       else
         USE_AWS = false
       end
+
+      unless ENV['IGNORE_HOSTS'].nil?
+        IGNORE_HOSTS = false
+      else
+        IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
+      end
     end
 
     helpers do
@@ -185,6 +191,9 @@ module BenevolentGaze
     post "/information" do
       #grab current devices on network.  Save them to the devices on network key after we make sure that we grab the names that have been added already to the whole list and then save them to the updated hash for redis.
       devices_on_network = JSON.parse(params[:devices])
+      if IGNORE_HOSTS != false
+        devices_on_network.delete_if{|k,v| IGNORE_HOSTS.include?(k)}
+      end
       r = Redis.new
       old_set = r.hkeys("current_devices")
       new_set = devices_on_network.keys
