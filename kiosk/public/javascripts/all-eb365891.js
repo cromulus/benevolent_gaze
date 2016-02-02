@@ -12199,8 +12199,12 @@ $(function() {
 			        'to': to
 			  	}
 			  });
-			  $(this).addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
-				$(this).removeClass('animated');
+
+			  $('.metislabsrobinhoodorg').removeClass('animated').removeClass('swing2');
+			  $('.metislabsrobinhoodorg').addClass("animated").addClass("swing2");
+			  $('.metislabsrobinhoodorg').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+					$('.metislabsrobinhoodorg').removeClass('animated').removeClass('swing2');
+				});
 			})
     },
     remove_worker: function(k) {
