@@ -214,16 +214,26 @@ module BenevolentGaze
         result = 'unknown'
       end
       from = result.to_s
+
+      from.prepend('@') if from[0] !="@"
+
       msg = ''
       if from.include?('labs.robinhood.org') || to.include?('labs.robinhood.org')
-        msg = "Register your computer & phone here: http://intheoffice.labs.robinhood.org/register"
+        msg = "<http://intheoffice.labs.robinhood.org/register|Register> your computer & phone!"
       end
 
-      HTTParty.post(ENV['SLACK_HOOK_URL'],
+      res = HTTParty.post(ENV['SLACK_HOOK_URL'],
+                    body: {username:"marco-polo-bot",
+                            channel:"#{to}",
+                            text:"Ping from #{from}",
+                            "icon_emoji": ":ghost:" }.to_json )
+      unless res.response.code = '200'
+        HTTParty.post(ENV['SLACK_HOOK_URL'],
                     body: {username:"marco-polo-bot",
                             channel:"#general",
                             text:"#{from} pings #{to} #{msg}",
                             "icon_emoji": ":ghost:" }.to_json )
+      end
     end
 
     post "/information" do
