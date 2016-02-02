@@ -214,11 +214,15 @@ module BenevolentGaze
         result = 'unknown'
       end
       from = result.to_s
+      msg = ''
+      if from.include?('labs.robinhood.org') || to.include?('labs.robinhood.org')
+        msg = "Register your computer & phone here: http://intheoffice.labs.robinhood.org/register"
+      end
 
       HTTParty.post(ENV['SLACK_HOOK_URL'],
                     body: {username:"marco-polo-bot",
                             channel:"#general",
-                            text:"#{from} pings #{to}",
+                            text:"#{from} pings #{to} #{msg}",
                             "icon_emoji": ":ghost:" }.to_json )
     end
 
