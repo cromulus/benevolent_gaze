@@ -8,6 +8,7 @@ require 'sinatra/cross_origin'
 require 'aws/s3'
 require 'securerandom'
 require 'mini_magick'
+require 'httparty'
 
 Encoding.default_external = 'utf-8'  if defined?(::Encoding)
 
