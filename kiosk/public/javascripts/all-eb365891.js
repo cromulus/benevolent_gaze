@@ -12100,7 +12100,7 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 $(function() {
   var es = new EventSource('/feed');
   var new_people = [];
-  $("input").attr("required", true);
+  $("input[type!='file']").attr("required", true);
   es.onmessage = function(e) {
     //console.log( "Got message", e )
   }
