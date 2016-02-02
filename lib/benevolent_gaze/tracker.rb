@@ -19,7 +19,7 @@ module BenevolentGaze
 
     def ping(host)
       result = `ping -q -i 0.2 -c 2 #{host}`
-      if ($?.exitstatus == 0) do
+      if ($?.exitstatus == 0)
         return true
       else
         return false
