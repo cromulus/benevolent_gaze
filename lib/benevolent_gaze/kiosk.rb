@@ -130,8 +130,8 @@ module BenevolentGaze
         # if device exists, return true, else false
         return !devices.detect {|d| r.hexists("current_devices",d) }.nil?
       elsif params[:name]
-        names= r.keys("name:*").select{|k| r.get(k)==params[:name]}
-        return !devices.detect {|d| r.hexists("current_devices",d) }.nil?
+        names = r.keys("name:*").select{|k| r.get(k)==params[:name]}
+        return !names.detect {|d| r.hexists("current_devices",d) }.nil?
       end
     end
 
@@ -172,7 +172,8 @@ module BenevolentGaze
           data = []
           r.hgetall("current_devices").each do |k,v|
             name_or_device_name = r.get("name:#{k}") || k
-            data << { device_name: k, name: v, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
+            slack = r.get("slack:k") || v
+            data << { device_name: k, name: v, slack_name: slack,last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
           end
 
           out << "data: #{data.to_json}\n\n"

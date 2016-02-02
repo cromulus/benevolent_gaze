@@ -77,7 +77,7 @@ module BenevolentGaze
       #     device_names_hash[d] = nil
       #   end
       # end
-      puts device_names_hash
+
       begin
         HTTParty.post("http://localhost:#{ENV['IPORT']}/information", query: {devices: device_names_hash.to_json } )
       rescue
