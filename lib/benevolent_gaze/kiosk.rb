@@ -46,6 +46,7 @@ module BenevolentGaze
         end
       end
 
+
       def upload(filename, file, device_name)
           doomsday = Time.mktime(2038, 1, 18).to_i
           if (filename)
@@ -114,14 +115,23 @@ module BenevolentGaze
     end
 
     get "/is_registered" do
-      dns = Resolv.new
-      device_name = dns.getname(get_ip())
-      r=Redis.new
-      r.exists("name:#{device_name}").to_s
+      begin
+        dns = Resolv.new
+        device_name = dns.getname(get_ip())
+        r = Redis.new
+        result = r.exists("name:#{device_name}").to_s
+      rescue Exception
+        result = false
+      end
+      return result
     end
 
     get "/ip" do
       get_ip()
+    end
+
+    get "/me" do
+      # return my data: image, name, slack name device name, etc.
     end
 
 
@@ -150,7 +160,7 @@ module BenevolentGaze
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
         compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
-        slack_name = params[:slack_name]
+        slack_name = params[:slack_name].to_s.strip
         r.set("name:#{device_name}", compound_name)
         r.set("slack:#{device_name}", slack_name)
       end
@@ -178,14 +188,37 @@ module BenevolentGaze
           data = []
           r.hgetall("current_devices").each do |k,v|
             name_or_device_name = r.get("name:#{k}") || k
-            slack = r.get("slack:k") || v
-            data << { device_name: k, name: v, slack_name: slack,last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
+            slack = r.get("slack:k") || false
+            data << { device_name: k, name: v, slack_name: slack, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
           end
 
           out << "data: #{data.to_json}\n\n"
           sleep 1
         end
       end
+    end
+
+    post '/ping' do
+      to = params[:to]
+      to.prepend("@") if to[0] != "@"
+      begin
+        dns = Resolv.new
+        device_name = dns.getname(get_ip())
+        r = Redis.new
+        result = r.get("slack:#{device_name}")
+        if !result
+          result = r.get("name:#{device_name}")
+        end
+      rescue Exception
+        result = 'unknown'
+      end
+      from = result.to_s
+
+      HTTParty.post(ENV['SLACK_HOOK_URL'],
+                    body: {username:"marco-polo-bot",
+                            channel:"#{to}",
+                            text:"Ping from #{from}",
+                            "icon_emoji": ":ghost:" }.to_json )
     end
 
     post "/information" do

@@ -76,7 +76,9 @@ module BenevolentGaze
       device_names_hash = {}
       device_name_and_mac_address_hash = {}
       devices = `arp -a | grep -v "?" | awk '{print $1 "\t" $4}' | grep -v incomplete`.split("\n")
-      device_array = Parallel.map(devices) do |a|
+
+      #ping is low memory and largely io bound.
+      device_array = Parallel.map(devices,:in_threads => devices.length) do |a|
         d = a.split("\t")
         begin
           ip_address = dns.getaddress(d[0])
