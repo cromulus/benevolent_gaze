@@ -17,6 +17,15 @@ module BenevolentGaze
   class << self
     private
 
+    def ping(host)
+      result = `ping -q -i 0.2 -c 2 #{host}`
+      if ($?.exitstatus == 0) do
+        return true
+      else
+        return false
+      end
+    end
+
     def check_time
       #if ((@@old_time + (30*60)) <= Time.now.to_i)
       if (@@old_time <= Time.now.to_i)
@@ -62,12 +71,17 @@ module BenevolentGaze
 =end
 
       #reintroduction of arp usage for mac addresses - will reintegrate soon.
+      dns = Resolv.new
       device_names_hash = {}
       device_name_and_mac_address_hash = {}
       `arp -a | grep -v "?" | awk '{print $1 "\t" $4}'`.split("\n").each do |a|
         a = a.split("\t")
-        device_name_and_mac_address_hash[a[0]] = a[1]
-        device_names_hash[a[0]]=a[1]
+        ip_address = dns.getaddress(a[0])
+
+        if ping(ip_address)
+          device_name_and_mac_address_hash[a[0]] = a[1]
+          device_names_hash[a[0]]=a[1]
+        end
       end
 
 
