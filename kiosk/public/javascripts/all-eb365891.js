@@ -12166,6 +12166,8 @@ $(function() {
                  w.addClass(device_name.replace(/\./g, ""));
                },
     add_to_board: function(worker_data){
+    								console.log('adding slack');
+    								Worker.add_slack();
                     Welcome.move_logo_and_welcomes();
                     $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
                     $('.right_column .row').append( w );
@@ -12175,11 +12177,12 @@ $(function() {
                     $('.newcomer_avatar, .newcomer').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
                       Worker.redraw();
-                      Worker.add_slack();
+
                     })
                   },
     add_slack: function(){
-  		w.click(function(){
+    	console.log(w);
+  		$(w).click(function(){
 				//if me, go to register
 				//if slackname, send slack ping
 				var to='';
