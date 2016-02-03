@@ -10,7 +10,7 @@ module BenevolentGaze
   class Cli < Thor
     include Thor::Actions
     source_root File.expand_path("../../../kiosk", __FILE__)
-   
+
     desc "kiosk", "Start up the sinatra app that displays the users"
     def kiosk
       BenevolentGaze::Kiosk.run!
@@ -21,18 +21,19 @@ module BenevolentGaze
       BenevolentGaze::Tracker.run!
     end
 
-    desc "add_user device name image", "Add single user's device name, name and image"
+    desc "add_user device name image", "Add single user's device name, name, slack username and image"
     long_desc <<-LONGDESC
-      This command takes a user's device name, real name and image url and maps them
+      This command takes a user's device name, real name, image url, and slack username and maps them
       so that Benevolent Gaze can use the information when they log onto your network.
     LONGDESC
-    
-    def add_user(device_name, name, image_url)
+
+    def add_user(device_name, name, image_url, slack=nil)
       `redis-cli set "name:#{device_name}" "#{name}"`
       `redis-cli set "image:#{name}" "#{image_url}"`
+      `redis-cli set "slack:#{device_name}" "#{slack}"` if slack
     end
-    
-    desc "assign_users", "This will prompt you for each current user without an associated name so that you can assign one."    
+
+    desc "assign_users", "This will prompt you for each current user without an associated name so that you can assign one."
     def assign_users
       # users = `redis-cli hgetall "current_devices"`.split("\n")
       require 'redis'
@@ -41,7 +42,7 @@ module BenevolentGaze
 
       puts "Right now, these are the devices on your network"
       users.each { |u,v| puts "  #{u}" }
-      
+
       users.each do |u, val|
         val = redis.get "name:#{u}"
         if val.nil? || val.empty?
@@ -59,7 +60,12 @@ module BenevolentGaze
               puts "Please enter the image url."
               image_url_response = $stdin.gets.chomp.strip
               redis.set "image:#{name_response}", image_url_response
-            end 
+            end
+
+            puts "Please enter their slack username, with @ prepended."
+            slack_response = $stdin.gets.chomp.strip
+            redis.set "slack:#{u}", "#{slack_response}"
+
           end
         else
           puts "#{Thor::Shell::Color::MAGENTA}#{u} looks like it has a name already associated with them.#{Thor::Shell::Color::CLEAR}"
@@ -77,7 +83,8 @@ module BenevolentGaze
         users.each do |device, name|
           name = redis.get "name:#{device}"
           image = redis.get "image:#{name}"
-          out << [device,name,image]
+          slack = redis.get "slack:#{device}"
+          out << [device,name,slack,image]
         end
       end
       self.bg_flair
@@ -91,14 +98,19 @@ module BenevolentGaze
         device_name = row[0]
         real_name = row[1]
         image_url = row[2]
-
+        slack_name = row[3]
         unless real_name.nil? || real_name.empty?
           `redis-cli set "name:#{device_name}" "#{real_name}"`
         end
 
-        unless image_url.nil? || image_url.empty? 
+        unless slack_name.nil? || slack_name.empty?
+          `redis-cli set "slack:#{device_name}" "#{slack_name}"`
+        end
+
+        unless image_url.nil? || image_url.empty?
           `redis-cli set "image:#{real_name}" "#{image_url}"`
         end
+
       end
       # puts `redis-cli keys "*"`
       puts "#{Thor::Shell::Color::MAGENTA}The CSV has now been added.#{Thor::Shell::Color::CLEAR}"
@@ -110,14 +122,14 @@ module BenevolentGaze
       directory ".", "bg_public"
       env_file = "bg_public/.env"
       new_path = File.expand_path("./bg_public")
-      gsub_file(env_file, /.*PUBLIC_FOLDER.*/, "PUBLIC_FOLDER=\"#{new_path}/public\"") 
+      gsub_file(env_file, /.*PUBLIC_FOLDER.*/, "PUBLIC_FOLDER=\"#{new_path}/public\"")
       gsub_file("bg_public/public/index.html", "happyfuncorp3", uname)
-      gsub_file("bg_public/public/index.html", "happiness4u", pass) 
+      gsub_file("bg_public/public/index.html", "happiness4u", pass)
       puts <<-CUSTOMIZE
 
       #{Thor::Shell::Color::MAGENTA}**************************************************#{Thor::Shell::Color::CLEAR}
 
-      Generated the bg_public folder where you should go to customize images and to run 
+      Generated the bg_public folder where you should go to customize images and to run
 
       ```foreman start```
 
@@ -138,9 +150,9 @@ module BenevolentGaze
     def bg_flair
       @bg = <<-BG
         #{Thor::Shell::Color::CYAN}
-    ____                             _            _      _____               
-   |  _ \\                           | |          | |    / ____|               
-   | |_) | ___ _ __   _____   _____ | | ___ _ __ | |_  | |  __  __ _ _______ 
+    ____                             _            _      _____
+   |  _ \\                           | |          | |    / ____|
+   | |_) | ___ _ __   _____   _____ | | ___ _ __ | |_  | |  __  __ _ _______
    |  _ < / _ \\ '_ \\ / _ \\ \\ / / _ \\| |/ _ \\ '_ \\| __| | | |_ |/ _` |_  / _ \\
    | |_) |  __/ | | |  __/\\ V / (_) | |  __/ | | | |_  | |__| | (_| |/ /  __/
    |____/ \\___|_| |_|\\___| \\_/ \\___/|_|\\___|_| |_|\\__|  \\_____|\\__,_/___\\___|
