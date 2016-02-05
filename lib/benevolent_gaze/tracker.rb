@@ -1,6 +1,7 @@
 require 'resolv'
 require 'httparty'
 require 'parallel'
+require 'set'
 
 module BenevolentGaze
   class Tracker
@@ -42,56 +43,52 @@ module BenevolentGaze
     end
 
     def scan
-=begin
-      # Look for the network broadcast address
-      broadcast = `ifconfig -a | grep broadcast`.split[-1]
 
-      # puts "Broadcast Address #{broadcast}"
-      unless broadcast =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/
-        puts "#{broadcast} doesn't look correct"
-        exit 1
-      end
-
-      # Ping the broadcast address 4 times and wait for responses
-      ips = `ping -t 4 #{broadcast}`.split(/\n/).collect do |x|
-        if x =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):/
-          $1
-        else
-          nil
-        end
-      end.select { |x| x && x != broadcast}.sort.uniq
-
-      dns = Resolv.new
-      device_names_and_ip_addresses = {}
-
-      ips.each do |ip|
-        name = dns.getname ip
-        device_names_and_ip_addresses[name] = nil
-      end
-      puts "****************************"
-=end
-
-      #nmap, for the win.
       dns = Resolv.new
       device_names_hash = {}
       device_name_and_mac_address_hash = {}
-      devices = `nmap -A -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n")
+      devices = Set.new # because dupes suck
 
-      #nmap
-      #ping is low memory and largely io bound.
-      device_array = Parallel.map(devices,:in_threads => devices.length) do |ip|
-        begin
-
-          dns_name = dns.getname(ip)
-        rescue Exception
-          # can't look it up, router doesn't know it. Static IP.
-          next
-        end
-        [dns_name,ip]
+      #nmap for the win. slow, but awesome.
+      if `which nmap`
+        `nmap -A -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").each{|d|
+          begin
+            name = dns.getname(d)
+            devices.add(name)
+          rescue Exception
+            # can't look it up, router doesn't know it. Static IP.
+            # moving on.
+            next
+          end
+        }
       end
 
+      # arp, for where nmap mysteriously fails or isn't installed (why not?)
+      # speedy, but occasionally deeply innacurrate.
+      `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each{|d| devices.add(d)}
+
+      #ping is low memory and largely io bound.
+      device_array = Parallel.map(devices,:in_threads => devices.length) do |name|
+        begin
+
+          ip = dns.getaddress(name)
+          #pinging IP.
+          result = `ping -q -i 0.2 -c 3 #{ip}`
+          result = nil
+          # next if ping fails, meaning exitstatus !=0
+          next if ($?.exitstatus != 0)
+
+        rescue Exception
+          # means we either can't ping, or getAddress failed
+          # and router doesn't no about the machine.
+          next
+        end
+        [name,ip]
+      end
+
+      device_array.compact! # remove nils.
+
       device_array.map{|a|
-        next if a.nil?
         device_name_and_mac_address_hash[a[0]] = a[1]
         device_names_hash[a[0]]=a[1]
       }
