@@ -16,3 +16,4 @@
 kiosk/.env
 mkmf.log
 .DS_Store
+/bg_public/
