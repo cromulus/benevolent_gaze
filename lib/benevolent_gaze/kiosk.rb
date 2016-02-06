@@ -138,7 +138,11 @@ module BenevolentGaze
 
     get "/dns" do
       dns = Resolv.new
-      dns.getname(get_ip())
+      begin
+       return dns.getname(get_ip())
+      rescue Exception
+        return false
+      end
     end
 
     post "search" do
