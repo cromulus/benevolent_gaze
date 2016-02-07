@@ -9,6 +9,7 @@ require 'aws/s3'
 require 'securerandom'
 require 'mini_magick'
 require 'httparty'
+require 'slack-ruby-client'
 
 Encoding.default_external = 'utf-8'  if defined?(::Encoding)
 
@@ -47,6 +48,19 @@ module BenevolentGaze
         end
       end
 
+      def lookup_slack_id(slack_name)
+        res = HTTParty.get('https://slack.com/api/users.list?token=xoxp-12422969797-12427127041-20531002689-15f0cd6035',format: :json)
+        user = res['members'].select{|u| u["name"] == slack_name.tr('@', '')}
+        return user.length > 0 ? user[0]['id'] : false
+      end
+
+      def is_slack_user_online(slack_name)
+        user_id = lookup_slack_id(slack_name)
+        #if the user doesn't exist, we can't check if they are online!
+        return false unless user_id
+        res = HTTParty.get("https://slack.com/api/users.getPresence?token=xoxp-12422969797-12427127041-20531002689-15f0cd6035&user=#{user_id}",format: :json)
+        return true if res['online']
+      end
 
       def upload(filename, file, device_name)
           doomsday = Time.mktime(2038, 1, 18).to_i
@@ -204,39 +218,61 @@ module BenevolentGaze
     end
 
     post '/ping/' do
+      r = Redis.new
       to = params[:to]
       to.prepend("@") if to[0] != "@"
+
+      # throttle our messages. 1 minute
+      if r.get("msg_throttle:#{to}")
+        status 420 #enhance your chill
+        return false
+      else
+        r.setex("msg_throttle:#{to}",60)
+      end
+
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip())
-        r = Redis.new
+
         result = r.get("slack:#{device_name}")
         if result.nil?
           result = r.get("name:#{device_name}")
         end
       rescue Exception
-        result = 'unknown'
+        status 404
+        return false
       end
       from = result.to_s
 
       from.prepend('@') if from[0] !="@"
 
-      msg = ''
-      if from.include?('labs.robinhood.org') || to.include?('labs.robinhood.org')
-        msg = "<http://intheoffice.labs.robinhood.org/register|Register> your computer & phone!"
+      to_id = lookup_slack_id(to)
+      from_id = lookup_slack_id(from)
+      if from_id
+        from_id = from_id.prepend("<@") + ">"
+      else
+        from_id = from
+      end
+      # no user found!
+      unless to_id
+        status 404
+        return false
       end
 
+      # should be using this: https://api.slack.com/methods/chat.postMessage
+      # post as bot to IM channel
       res = HTTParty.post(ENV['SLACK_HOOK_URL'],
-                    body: {username:"marco-polo-bot",
-                            channel:"#{to}",
-                            text:"Ping from #{from}",
+                    body: {username:"@marco",
+                            channel:"#{to_id}",
+                            text:"Pinging <@#{to_id}> from #{from_id}",
                             icon_emoji: ":ghost:" }.to_json )
-      unless res.response.code == '200'
-        HTTParty.post(ENV['SLACK_HOOK_URL'],
-                    body: {username:"marco-polo-bot",
-                            channel:"#general",
-                            text:"#{from} pings #{to} #{msg}",
-                            icon_emoji: ":ghost:" }.to_json )
+
+      if res.response.code == '200'
+        status 200
+        return true
+      else
+        status 400
+        return false
       end
     end
 
