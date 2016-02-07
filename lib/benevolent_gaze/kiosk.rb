@@ -37,6 +37,12 @@ module BenevolentGaze
       else
         IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
       end
+
+      Slack.configure do |config|
+        config.token = ENV['SLACK_API_TOKEN'] || 'xoxb-20159046901-w2V7crilpVg7Uxcr5fpFMdxl'
+      end
+      @slack = Slack::Web::Client.new
+
     end
 
     helpers do
@@ -49,17 +55,25 @@ module BenevolentGaze
       end
 
       def lookup_slack_id(slack_name)
-        res = HTTParty.get('https://slack.com/api/users.list?token=xoxp-12422969797-12427127041-20531002689-15f0cd6035',format: :json)
-        user = res['members'].select{|u| u["name"] == slack_name.tr('@', '')}
-        return user.length > 0 ? user[0]['id'] : false
+        slack_name.prepend("@") if slack_name[0] != "@"
+        begin
+          res = @slack.users_info(user: slack_name)
+          return res["user"]["id"]
+        rescue Exception
+          # throws an exception if user not found.
+          return false
+        end
       end
 
       def is_slack_user_online(slack_name)
-        user_id = lookup_slack_id(slack_name)
-        #if the user doesn't exist, we can't check if they are online!
-        return false unless user_id
-        res = HTTParty.get("https://slack.com/api/users.getPresence?token=xoxp-12422969797-12427127041-20531002689-15f0cd6035&user=#{user_id}",format: :json)
-        return true if res['online']
+        slack_name.prepend("@") if slack_name[0] != "@"
+        begin
+          res = @slack.users_getPresence(user: slack_name)
+          return res["presence"] == "active"
+        rescue Exception
+          # throws an exception if user not found.
+          return false
+        end
       end
 
       def upload(filename, file, device_name)
@@ -179,16 +193,27 @@ module BenevolentGaze
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
         compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
-        slack_name = params[:slack_name].to_s.strip
         r.set("name:#{device_name}", compound_name)
-        r.set("slack:#{device_name}", slack_name)
       end
+
+      if param[:slack_name]
+        slack_name = params[:slack_name].to_s.strip
+        slack_id = lookup_slack_id(slack_name)
+        if slack_id
+         r.set("slack:#{device_name}", slack_name)
+         r.set("slack_id:#{device_name}", slack_id)
+       else
+        status 401
+        return {success:false,msg:"slack name not found"}.to_json
+      end
+
       if params[:fileToUpload]
         image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
         name_key = "image:" + (compound_name || r.get("name:#{device_name}") || device_name)
         r.set(name_key, image_url_returned_from_upload_function)
       end
-      redirect "thanks.html"
+      status 200
+      return {success:true}.to_json
     end
 
     get "/register" do
@@ -225,7 +250,7 @@ module BenevolentGaze
       # throttle our messages. 1 minute
       if r.get("msg_throttle:#{to}")
         status 420 #enhance your chill
-        return false
+        return {success:false, msg: "enhance your chill."}.to_json
       else
         r.setex("msg_throttle:#{to}",60)
       end
@@ -240,7 +265,7 @@ module BenevolentGaze
         end
       rescue Exception
         status 404
-        return false
+        return {success:false, msg: "We can't seem to figure out who you are."}.to_json
       end
       from = result.to_s
 
@@ -256,23 +281,19 @@ module BenevolentGaze
       # no user found!
       unless to_id
         status 404
-        return false
+        return {success:false,msg: "the person you're trying to ping isn't on slack"}.to_json
       end
 
       # should be using this: https://api.slack.com/methods/chat.postMessage
       # post as bot to IM channel
-      res = HTTParty.post(ENV['SLACK_HOOK_URL'],
-                    body: {username:"@marco",
-                            channel:"#{to_id}",
-                            text:"Pinging <@#{to_id}> from #{from_id}",
-                            icon_emoji: ":ghost:" }.to_json )
+      res = @slack.chat_postMessage(channel: to, text: "ping from #{from}, responses to me will be posted on the board.", as_user: true)
 
-      if res.response.code == '200'
+      if res['ok'] == true
         status 200
-        return true
+        return {success:true}.to_json
       else
         status 400
-        return false
+        return {success:false,msg: "something went horribly wrong."}.to_json
       end
     end
 
@@ -294,7 +315,6 @@ module BenevolentGaze
       devices_on_network.each do |k,v|
         r.hmset("current_devices", k, r.get("name:#{k}"))
       end
-
     end
   end
 end

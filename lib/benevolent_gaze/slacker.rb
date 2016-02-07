@@ -10,22 +10,35 @@ end
 
 module BenevolentGaze
   class Slacker
-
     def self.run!
       client = Slack::RealTime::Client.new(websocket_ping: 60)
-      client.on :hello do
-        puts "Successfully connected, welcome '#{client.self['name']}' to the '#{client.team['name']}' team at https://#{client.team['domain']}.slack.com."
-      end
 
+      ###################################################
+      # What we want to do:
+      ###################################################
+
+      #if from == channel, it is a user responding to marco, send to kiosk
+      #if @marco, check for commands
+      # command: who-> r.hgetall "current_devices"
+      # command: @username -> check redis for device
       client.on :message do |data|
-        #client.message channel: "#bot-testing", text:"Hi <@#{data'user']}>! #{data['text']}"
-        puts data['text']
-        case data['text']
-        when 'bot hi' then
-          client.message channel: "#{data['channel']}", text: "Hi <@#{data.user}>!"
-        when /^bot/ then
-          client.message channel: "#{data['channel']}", text: "Sorry <@#{data.user}>, what?"
+        puts "channel=#{data['channel']}, user=#{data['user']}"
+        if data['channel'] == "D0LGR7LJE"
+          puts "post #{data['text']} to kiosk"
+          client.message channel: "#{data['channel']}", text:"sending message to kiosk not implemented yet"
+        elsif data['text'].match(/<@U0L4P1CSH>/)
+          msg = data['text'].gsub(/<@U0L4P1CSH> /,"")
+          case msg
+          when /^help/
+            client.message channel: "#{data['channel']}", text:" `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board."
+          when /^who/ || /^list/
+            client.message channel: "#{data['channel']}", text:" who is in the office is not implemented"
+          when /<@([^>]+)>/
+
+            client.message channel: "#{data['channel']}", text:"user lookup not implemented. <@#{$1}>"
+          end
         end
+
       end
 
       client.start!
