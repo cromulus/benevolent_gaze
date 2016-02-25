@@ -10,7 +10,9 @@ end
 
 module BenevolentGaze
   class Slacker
+
     def self.run!
+      r = Redis.new
       client = Slack::RealTime::Client.new(websocket_ping: 60)
 
       ###################################################
@@ -21,21 +23,45 @@ module BenevolentGaze
       #if @marco, check for commands
       # command: who-> r.hgetall "current_devices"
       # command: @username -> check redis for device
+      client.on :presence_change do |data|
+        case data["presence"]
+        when "active"
+          r.sadd("current_slackers",data['user'])
+        when "away"
+          r.srem("current_slackers",data['user'])
+        end
+      end
+
       client.on :message do |data|
         puts "channel=#{data['channel']}, user=#{data['user']}"
         if data['channel'] == "D0LGR7LJE"
           puts "post #{data['text']} to kiosk"
-          client.message channel: "#{data['channel']}", text:"sending message to kiosk not implemented yet"
+          user = data['user']
+          msg  = data['text']
+          r.publish("slackback",{user:user,msg:msg}.to_json)
+          client.message channel: "#{data['channel']}", text:"sent '#{msg}' to the kiosk"
         elsif data['text'].match(/<@U0L4P1CSH>/)
           msg = data['text'].gsub(/<@U0L4P1CSH> /,"")
           case msg
           when /^help/
             client.message channel: "#{data['channel']}", text:" `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board."
-          when /^who/ || /^list/
-            client.message channel: "#{data['channel']}", text:" who is in the office is not implemented"
-          when /<@([^>]+)>/
+          when /^who|list/
+            data = []
+            r.hgetall("current_devices").each do |k,v|
+              slack = r.get("slack_id:#{k}") || false
+              next unless slack
+              client.message channel: "#{data['channel']}", text:"<@#{slack}>"
+            end
 
-            client.message channel: "#{data['channel']}", text:"user lookup not implemented. <@#{$1}>"
+          when /<@([^>]+)>/
+            user = $1
+            device_name = nil
+            r.keys("slack_id:*").each{|s| device_name = s if r.get(s)==user }
+            if device_name
+              client.message channel: "#{data['channel']}", text: "Polo"
+            else
+              client.message channel: "#{data['channel']}", text: "*Cricket*"
+            end
           end
         end
 
@@ -45,7 +71,7 @@ module BenevolentGaze
     end
 
     class << self
-      # where our methods go!
+      # where our methods go that implement our things
     end
   end
 end

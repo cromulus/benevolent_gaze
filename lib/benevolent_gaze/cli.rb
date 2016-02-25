@@ -21,6 +21,11 @@ module BenevolentGaze
       BenevolentGaze::Tracker.run!
     end
 
+    desc "slacker", "Start up the slackbot"
+    def slacker
+      BenevolentGaze::Slacker.run!
+    end
+
     desc "add_user device name image", "Add single user's device name, name, slack username and image"
     long_desc <<-LONGDESC
       This command takes a user's device name, real name, image url, and slack username and maps them

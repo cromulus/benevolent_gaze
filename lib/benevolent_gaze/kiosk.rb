@@ -220,6 +220,24 @@ module BenevolentGaze
       redirect "register.html"
     end
 
+    get "/msgs", provides: 'text/event-stream' do
+      cross_origin
+      r = Redis.new
+
+      stream :keep_open do |out|
+        loop do
+          if out.closed?
+            break
+          end
+          r.subscribe('slackback') do |on|
+            on.message do |channel,message|
+              out << "data: #{message}\n\n"
+            end
+          end
+        end
+      end
+    end
+
     get "/feed", provides: 'text/event-stream' do
       cross_origin
       r = Redis.new
