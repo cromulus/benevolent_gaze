@@ -65,6 +65,16 @@ module BenevolentGaze
         end
       end
 
+      def slack_id_to_name(slack_id)
+        begin
+          res = @slack.users_info(user: slack_id)
+          return res["user"]["name"].prepend("@")
+        rescue Exception
+          # throws an exception if user not found.
+          return false
+        end
+      end
+
       def is_slack_user_online(slack_name)
         slack_name.prepend("@") if slack_name[0] != "@"
         begin
@@ -199,12 +209,14 @@ module BenevolentGaze
       if param[:slack_name]
         slack_name = params[:slack_name].to_s.strip
         slack_id = lookup_slack_id(slack_name)
+
         if slack_id
-         r.set("slack:#{device_name}", slack_name)
-         r.set("slack_id:#{device_name}", slack_id)
-       else
-        status 401
-        return {success:false,msg:"slack name not found"}.to_json
+          r.set("slack:#{device_name}", slack_name)
+          r.set("slack_id:#{device_name}", slack_id)
+        else
+          status 401
+          return {success:false,msg:"slack name not found"}.to_json
+        end
       end
 
       if params[:fileToUpload]
@@ -231,7 +243,10 @@ module BenevolentGaze
           end
           r.subscribe('slackback') do |on|
             on.message do |channel,message|
-              out << "data: #{message}\n\n"
+              m = JSON.parse(message)
+              slack_name = slack_id_to_name(m['user'])
+              data = {msg:m['msg'], user:slack_name}.to_json
+              out << "data: #{data}\n\n"
             end
           end
         end

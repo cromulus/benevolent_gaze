@@ -4,13 +4,11 @@ require 'slack-ruby-client'
 require 'celluloid'
 require 'celluloid/io'
 Slack.configure do |config|
-  #config.token =  "xoxp-12422969797-12427127041-20531002689-15f0cd6035" #ENV['SLACK_API_TOKEN']
-  config.token = "xoxb-20159046901-w2V7crilpVg7Uxcr5fpFMdxl"
+  config.token = ENV['SLACK_API_TOKEN']
 end
 
 module BenevolentGaze
   class Slacker
-
     def self.run!
       r = Redis.new
       client = Slack::RealTime::Client.new(websocket_ping: 60)

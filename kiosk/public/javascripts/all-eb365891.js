@@ -11494,6 +11494,8 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 
 }(jQuery);
 
+
+
 /* ========================================================================
  * Bootstrap: tooltip.js v3.3.1
  * http://getbootstrap.com/javascript/#tooltip
@@ -12100,7 +12102,7 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 $(function() {
   var es = new EventSource('/feed');
   var new_people = [];
-  $("input[type!='file']").attr("required", true);
+
   es.onmessage = function(e) {
     //console.log( "Got message", e )
   }
@@ -12111,6 +12113,16 @@ $(function() {
     check_last_seen();
 
 
+  }, false);
+
+  es.addEventListener('open', function(e) {
+    console.log('Connection was opened.');
+  }, false);
+
+  es.addEventListener('error', function(e) {
+    if (e.readyState == EventSource.CLOSED) {
+      console.log('closed');
+    }
   }, false);
 
   $.ajax({url:'/is_registered'}).done(function(data){
@@ -12125,16 +12137,14 @@ $(function() {
     }
   });
 
-  es.addEventListener('open', function(e) {
-    console.log('Connection was opened.');
-  }, false);
+  $("input[type!='file']").attr("required", true);
 
-  es.addEventListener('error', function(e) {
-    if (e.readyState == EventSource.CLOSED) {
-      console.log('closed');
-    }
-  }, false);
 
+  var msg_es = new EventSource('/msgs');
+  msg_es.onmessage = function(e) {
+    console.log(e);
+    msg = JSON.parse(e.data);
+  }
 
   var w;
 
