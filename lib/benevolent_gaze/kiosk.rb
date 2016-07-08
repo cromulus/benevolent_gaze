@@ -10,9 +10,18 @@ require 'securerandom'
 require 'mini_magick'
 require 'httparty'
 require 'slack-ruby-client'
+require "sinatra/reloader"
 
 Encoding.default_external = 'utf-8'  if defined?(::Encoding)
+ENV['AWS_ACCESS_KEY_ID']='AKIAIFUSUPNDXREX5Q7A'
+ENV['AWS_CDN_BUCKET']='benevolentgazebucket'
+ENV['AWS_SECRET_ACCESS_KEY']='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'
+ENV['BG_COMPANY_URL']='http://www.happyfuncorp.com/register'
 
+ENV['IPORT']='4567'
+ENV['PORT']='4567'
+ENV['IGNORE_HOSTS']='printer.brl.nyc,biggie.brl.nyc,smalls.brl.nyc,tiny.brl.nyc,reception.brl.nyc,intern02.brl.nyc,intheoffice.brl.nyc,audiobot.brl.nyc,bustedpi.brl.nyc,pfSense.brl.nyc,intern06.brl.nyc,intern04.brl.nyc,north.brl.nyc,south.brl.nyc,longrange.brl.nyc,lite.brl.nyc,NPI6BBE68.brl.nyc'
+ENV['SLACK_HOOK_URL']='https://hooks.slack.com/services/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'
 module BenevolentGaze
   class Kiosk < Sinatra::Base
     set server: 'thin', connections: []
@@ -45,6 +54,10 @@ module BenevolentGaze
 
     end
 
+    before do
+      @r = Redis.new
+    end
+
     helpers do
       def get_ip
         if request.ip == '127.0.0.1'
@@ -55,10 +68,15 @@ module BenevolentGaze
       end
 
       def lookup_slack_id(slack_name)
+        res = @r.hget('slack_id:slack_name',slack_name)
+        return res if res
         slack_name.prepend("@") if slack_name[0] != "@"
         begin
           res = @slack.users_info(user: slack_name)
-          return res["user"]["id"]
+          slack_id = res["user"]["id"]
+          @r.hset('slack_id:slack_name', slack_id, slack_name)
+          @r.hset('slack_id:slack_name', slack_name, slack_id)
+          return
         rescue Exception
           # throws an exception if user not found.
           return false
@@ -66,9 +84,14 @@ module BenevolentGaze
       end
 
       def slack_id_to_name(slack_id)
+        res = @r.hget('slack_id:slack_name',slack_id)
+        return res if res
         begin
           res = @slack.users_info(user: slack_id)
-          return res["user"]["name"].prepend("@")
+          slack_name = res["user"]["name"].prepend("@")
+          @r.hset('slack_id:slack_name', slack_id, slack_name)
+          @r.hset('slack_id:slack_name', slack_name, slack_id)
+          return slack_name
         rescue Exception
           # throws an exception if user not found.
           return false
@@ -150,15 +173,15 @@ module BenevolentGaze
     end
 
     get "/" do
-      redirect "index.html"
+      send_file "public/index.html"
     end
 
     get "/is_registered" do
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip())
-        r = Redis.new
-        result = r.exists("name:#{device_name}").to_s
+
+        result = @r.exists("name:#{device_name}").to_s
       rescue Exception
         result = false
       end
@@ -173,6 +196,11 @@ module BenevolentGaze
       # return my data: image, name, slack name device name, etc.
     end
 
+    get "/env" do
+      ENV.each_pair{|k,v|
+        puts "#{k}:#{v} \n"
+      }
+    end
 
     get "/dns" do
       dns = Resolv.new
@@ -185,67 +213,67 @@ module BenevolentGaze
 
     post "search" do
       if params[:slack]
-        devices = r.keys("slack:*").select{|k| r.get(k)==params[:slack]}
+        devices = @r.keys("slack:*").select{|k| @r.get(k)==params[:slack]}
         # if device exists, return true, else false
-        return !devices.detect {|d| r.hexists("current_devices",d) }.nil?
+        return !devices.detect {|d| @r.hexists("current_devices",d) }.nil?
       elsif params[:name]
-        names = r.keys("name:*").select{|k| r.get(k)==params[:name]}
-        return !names.detect {|d| r.hexists("current_devices",d) }.nil?
+        names = @r.keys("name:*").select{|k| @r.get(k)==params[:name]}
+        return !names.detect {|d| @r.hexists("current_devices",d) }.nil?
       end
     end
 
     post "/register" do
       dns = Resolv.new
       device_name = dns.getname(get_ip())
-      r = Redis.new
+
 
       compound_name = nil
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
         compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
-        r.set("name:#{device_name}", compound_name)
+        @r.set("name:#{device_name}", compound_name)
       end
 
-      if param[:slack_name]
-        slack_name = params[:slack_name].to_s.strip
-        slack_id = lookup_slack_id(slack_name)
+      # if params[:slack_name]
+      #   slack_name = params[:slack_name].to_s.strip
+      #   slack_id = lookup_slack_id(slack_name)
 
-        if slack_id
-          r.set("slack:#{device_name}", slack_name)
-          r.set("slack_id:#{device_name}", slack_id)
-        else
-          status 401
-          return {success:false,msg:"slack name not found"}.to_json
-        end
-      end
+      #   if slack_id
+      #     @r.set("slack:#{device_name}", slack_name)
+      #     @r.set("slack_id:#{device_name}", slack_id)
+      #   else
+      #     status 401
+      #     return {success:false,msg:"slack name not found"}.to_json
+      #   end
+      # end
 
       if params[:fileToUpload]
         image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
-        name_key = "image:" + (compound_name || r.get("name:#{device_name}") || device_name)
-        r.set(name_key, image_url_returned_from_upload_function)
+        name_key = "image:" + (compound_name || @r.get("name:#{device_name}") || device_name)
+        @r.set(name_key, image_url_returned_from_upload_function)
       end
       status 200
-      return {success:true}.to_json
+      redirect "/"
     end
 
     get "/register" do
-      redirect "register.html"
+      send_file "public/register.html"
     end
 
     get "/msgs", provides: 'text/event-stream' do
       cross_origin
-      r = Redis.new
 
       stream :keep_open do |out|
         loop do
           if out.closed?
             break
           end
+          r = Redis.new
           r.subscribe('slackback') do |on|
             on.message do |channel,message|
               m = JSON.parse(message)
               slack_name = slack_id_to_name(m['user'])
-              data = {msg:m['msg'], user:slack_name}.to_json
+              data = {msg: m['msg'], user: slack_name}.to_json
               out << "data: #{data}\n\n"
             end
           end
@@ -255,7 +283,6 @@ module BenevolentGaze
 
     get "/feed", provides: 'text/event-stream' do
       cross_origin
-      r = Redis.new
 
       stream :keep_open do |out|
         loop do
@@ -263,10 +290,11 @@ module BenevolentGaze
             break
           end
           data = []
-          r.hgetall("current_devices").each do |k,v|
-            name_or_device_name = r.get("name:#{k}") || k
-            slack = r.get("slack:#{k}") || false
-            data << { device_name: k, name: v, slack_name: slack, last_seen: (Time.now.to_f * 1000).to_i, avatar: r.get("image:#{name_or_device_name}") }
+          @r = Redis.new
+          @r.hgetall("current_devices").each do |k,v|
+            name_or_device_name = @r.get("name:#{k}") || k
+            slack = @r.get("slack:#{k}") || false
+            data << { device_name: k, name: v, slack_name: slack, last_seen: (Time.now.to_f * 1000).to_i, avatar: @r.get("image:#{name_or_device_name}") }
           end
 
           out << "data: #{data.to_json}\n\n"
@@ -276,25 +304,25 @@ module BenevolentGaze
     end
 
     post '/ping/' do
-      r = Redis.new
+
       to = params[:to]
       to.prepend("@") if to[0] != "@"
 
       # throttle our messages. 1 minute
-      if r.get("msg_throttle:#{to}")
+      if @r.get("msg_throttle:#{to}")
         status 420 #enhance your chill
         return {success:false, msg: "enhance your chill."}.to_json
       else
-        r.setex("msg_throttle:#{to}",60)
+        @r.setex("msg_throttle:#{to}",60, true)
       end
 
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip())
 
-        result = r.get("slack:#{device_name}")
+        result = @r.get("slack:#{device_name}")
         if result.nil?
-          result = r.get("name:#{device_name}")
+          result = @r.get("name:#{device_name}")
         end
       rescue Exception
         status 404
@@ -336,17 +364,16 @@ module BenevolentGaze
       if IGNORE_HOSTS != false
         devices_on_network.delete_if{|k,v| IGNORE_HOSTS.include?(k)}
       end
-      r = Redis.new
-      old_set = r.hkeys("current_devices")
+      old_set = @r.hkeys("current_devices")
       new_set = devices_on_network.keys
       diff_set = old_set - new_set
 
       diff_set.each do |d|
-        r.hdel("current_devices", d)
+        @r.hdel("current_devices", d)
       end
 
       devices_on_network.each do |k,v|
-        r.hmset("current_devices", k, r.get("name:#{k}"))
+        @r.hmset("current_devices", k, @r.get("name:#{k}"))
       end
     end
   end

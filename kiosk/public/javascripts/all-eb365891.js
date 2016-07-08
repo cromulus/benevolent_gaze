@@ -12142,8 +12142,17 @@ $(function() {
 
   var msg_es = new EventSource('/msgs');
   msg_es.onmessage = function(e) {
-    console.log(e);
+    //console.log(e);
     msg = JSON.parse(e.data);
+    slack_name = msg['user'].replace('@','');
+    console.log(slack_name);
+    var options = {
+      title:msg['msg'],
+      content:msg['msg']
+    }
+    alert(msg['msg']);
+    $('[data-slackname='+slack_name+']').data('tooltip',msg['msg'])
+    $('[data-slackname='+slack_name+']').tooltip('show');
   }
 
   var w;

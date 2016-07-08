@@ -33,10 +33,10 @@ module BenevolentGaze
       client.on :message do |data|
         puts "channel=#{data['channel']}, user=#{data['user']}"
         if data['channel'] == "D0LGR7LJE"
-          puts "post #{data['text']} to kiosk"
+          puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
-          r.publish("slackback",{user:user,msg:msg}.to_json)
+          r.publish("slackback",{user:user,msg:msg,data: data}.to_json)
           client.message channel: "#{data['channel']}", text:"sent '#{msg}' to the kiosk"
         elsif data['text'].match(/<@U0L4P1CSH>/)
           msg = data['text'].gsub(/<@U0L4P1CSH> /,"")
@@ -44,11 +44,13 @@ module BenevolentGaze
           when /^help/
             client.message channel: "#{data['channel']}", text:" `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board."
           when /^who|list/
-            data = []
+            client.message channel: "#{data['channel']}", text:"Currently in the office:"
             r.hgetall("current_devices").each do |k,v|
               slack = r.get("slack_id:#{k}") || false
+              puts slack
+              puts data['channel']
               next unless slack
-              client.message channel: "#{data['channel']}", text:"<@#{slack}>"
+              client.message channel: "#{data['channel']}", text:"<@"+ slack +">"
             end
 
           when /<@([^>]+)>/
