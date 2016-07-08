@@ -51,7 +51,7 @@ module BenevolentGaze
 
       #nmap for the win. slow, but awesome.
       if `which nmap`
-        `nmap -A -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").each{|d|
+        `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").each{|d|
           begin
             name = dns.getname(d)
             devices.add(name)
@@ -67,8 +67,8 @@ module BenevolentGaze
       # speedy, but occasionally deeply innacurrate.
       `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each{|d| devices.add(d)}
 
-      #ping is low memory and largely io bound.
-      device_array = Parallel.map(devices,:in_threads => devices.length) do |name|
+      # ping is low memory and largely io bound.
+      device_array = Parallel.map(devices, :in_threads => devices.length) do |name|
         begin
 
           ip = dns.getaddress(name)
