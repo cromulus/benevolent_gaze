@@ -12269,7 +12269,7 @@ $(function() {
         }).always(function(){
           $.wait(function(){
             worker.children('.pin_and_avatar_container').tooltip('destroy');
-          }, 5);
+          }, 6);
         });
 
       });
