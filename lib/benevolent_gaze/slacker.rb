@@ -32,7 +32,8 @@ module BenevolentGaze
 
       client.on :message do |data|
         puts "channel=#{data['channel']}, user=#{data['user']}"
-        if data['channel'] == "D0LGR7LJE"
+        # responses to the bot's own channel
+        if data['channel'] == "D0LGR7LJE" && data['user'] != "U0L4P1CSH"
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']

@@ -12095,6 +12095,11 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 
 }(jQuery);
 
+$.wait = function( callback, seconds){
+   return window.setTimeout( callback, seconds * 1000 );
+}
+
+
 // fuse search http://kiro.me/projects/fuse.html
 !function(t){function e(t,n){this.list=t,this.options=n=n||{};var i,o,s,r;for(i=0,r=["sort","shouldSort"],o=r.length;o>i;i++)s=r[i],this.options[s]=s in n?n[s]:e.defaultOptions[s];for(i=0,r=["searchFn","sortFn","keys","getFn","include"],o=r.length;o>i;i++)s=r[i],this.options[s]=n[s]||e.defaultOptions[s]}var n=function(t,e){if(e=e||{},this.options=e,this.options.location=e.location||n.defaultOptions.location,this.options.distance="distance"in e?e.distance:n.defaultOptions.distance,this.options.threshold="threshold"in e?e.threshold:n.defaultOptions.threshold,this.options.maxPatternLength=e.maxPatternLength||n.defaultOptions.maxPatternLength,this.pattern=e.caseSensitive?t:t.toLowerCase(),this.patternLen=t.length,this.patternLen>this.options.maxPatternLength)throw new Error("Pattern length is too long");this.matchmask=1<<this.patternLen-1,this.patternAlphabet=this._calculatePatternAlphabet()};n.defaultOptions={location:0,distance:100,threshold:.6,maxPatternLength:32},n.prototype._calculatePatternAlphabet=function(){var t={},e=0;for(e=0;e<this.patternLen;e++)t[this.pattern.charAt(e)]=0;for(e=0;e<this.patternLen;e++)t[this.pattern.charAt(e)]|=1<<this.pattern.length-e-1;return t},n.prototype._bitapScore=function(t,e){var n=t/this.patternLen,i=Math.abs(this.options.location-e);return this.options.distance?n+i/this.options.distance:i?1:n},n.prototype.search=function(t){if(t=this.options.caseSensitive?t:t.toLowerCase(),this.pattern===t)return{isMatch:!0,score:0};var e,n,i,o,s,r,a,h,p,c=t.length,l=this.options.location,f=this.options.threshold,u=t.indexOf(this.pattern,l),d=this.patternLen+c,g=1,m=[];for(-1!=u&&(f=Math.min(this._bitapScore(0,u),f),u=t.lastIndexOf(this.pattern,l+this.patternLen),-1!=u&&(f=Math.min(this._bitapScore(0,u),f))),u=-1,e=0;e<this.patternLen;e++){for(i=0,o=d;o>i;)this._bitapScore(e,l+o)<=f?i=o:d=o,o=Math.floor((d-i)/2+i);for(d=o,s=Math.max(1,l-o+1),r=Math.min(l+o,c)+this.patternLen,a=Array(r+2),a[r+1]=(1<<e)-1,n=r;n>=s;n--)if(p=this.patternAlphabet[t.charAt(n-1)],a[n]=0===e?(a[n+1]<<1|1)&p:(a[n+1]<<1|1)&p|((h[n+1]|h[n])<<1|1)|h[n+1],a[n]&this.matchmask&&(g=this._bitapScore(e,n-1),f>=g)){if(f=g,u=n-1,m.push(u),!(u>l))break;s=Math.max(1,2*l-u)}if(this._bitapScore(e+1,l)>f)break;h=a}return{isMatch:u>=0,score:g}};var i=function(t,e,n){var s,r,a;if(e){a=e.indexOf("."),-1!==a?(s=e.slice(0,a),r=e.slice(a+1)):s=e;var h=t[s];if(h)if(r||"string"!=typeof h&&"number"!=typeof h)if(o.isArray(h))for(var p=0,c=h.length;c>p;p++)i(h[p],r,n);else r&&i(h,r,n);else n.push(h)}else n.push(t);return n},o={deepValue:function(t,e){return i(t,e,[])},isArray:function(t){return"[object Array]"===Object.prototype.toString.call(t)}};e.defaultOptions={id:null,caseSensitive:!1,include:[],shouldSort:!0,searchFn:n,sortFn:function(t,e){return t.score-e.score},getFn:o.deepValue,keys:[]},e.prototype.set=function(t){return this.list=t,t},e.prototype.search=function(t){var e,n,i,s,r=new this.options.searchFn(t,this.options),a=this.list,h=a.length,p=this.options,c=this.options.keys,l=c.length,f=[],u={},d=[],g=function(t,e,n){if(void 0!==t&&null!==t)if("string"==typeof t)i=r.search(t),i.isMatch&&(s=u[n],s?s.score=Math.min(s.score,i.score):(u[n]={item:e,score:i.score},f.push(u[n])));else if(o.isArray(t))for(var a=0;a<t.length;a++)g(t[a],e,n)};if("string"==typeof a[0])for(var m=0;h>m;m++)g(a[m],m,m);else for(var m=0;h>m;m++)for(n=a[m],e=0;l>e;e++)g(p.getFn(n,c[e]),n,m);p.shouldSort&&f.sort(p.sortFn);for(var v=p.id?function(t){f[t].item=p.getFn(f[t].item,p.id)[0]}:function(){},y=function(t){var e;if(p.include.length>0){e={item:f[t].item};for(var t=0;t<p.include.length;t++){var n=p.include[t];e[n]=f[t][n]}}else e=f[t].item;return e},m=0,b=f.length;b>m;m++)v(m),d.push(y(m));return d},"object"==typeof exports?module.exports=e:"function"==typeof define&&define.amd?define(function(){return e}):t.Fuse=e}(this);
 
@@ -12139,21 +12144,49 @@ $(function() {
 
   $("input[type!='file']").attr("required", true);
 
-
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
   var msg_es = new EventSource('/msgs');
   msg_es.onmessage = function(e) {
     //console.log(e);
     msg = JSON.parse(e.data);
     slack_name = msg['user'].replace('@','');
-    console.log(slack_name);
+
     var options = {
-      title:msg['msg'],
-      content:msg['msg']
+      title: "message from:@"+slack_name,
+      content: msg['msg'],
+      trigger:'manual',
+      position:'auto'
     }
-    alert(msg['msg']);
-    $('[data-slackname='+slack_name+']').data('tooltip',msg['msg'])
-    $('[data-slackname='+slack_name+']').tooltip('show');
+
+    // this is the thing that hides the popover and resets it.
+    $('.worker').on('shown.bs.popover', function () {
+      console.log('popover shown!');
+      var $pop = $(this);
+      setTimeout(function () {
+        $pop.popover('destroy');
+        // $pop.setContent();
+        // $pop.$tip.addClass($pop.options.placement);
+      }, 6000);
+    });
+
+    $worker=$('[data-slackname='+slack_name+']')
+    $worker.popover('destroy');
+    $worker.removeClass('animated').removeClass('swing2');
+    $worker.addClass("animated").addClass("swing2");
+    $worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+      $worker.removeClass('animated').removeClass('swing2');
+    });
+
+    $('html, body').animate({
+        scrollTop: $worker.offset().top
+    }, 1000,'swing',function(){
+      $worker.popover(options).popover('show');
+    });
   }
+
+
 
   var w;
 
@@ -12185,7 +12218,7 @@ $(function() {
                  w.addClass(device_name.replace(/\./g, ""));
                },
     add_to_board: function(worker_data){
-    								Worker.add_slack();
+                    Worker.add_slack();
                     Welcome.move_logo_and_welcomes();
                     $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
                     $('.right_column .row').append( w );
@@ -12199,31 +12232,47 @@ $(function() {
                     })
                   },
     add_slack: function(){
-  		$(w).click(function(){
-				//if me, go to register
-				//if slackname, send slack ping
-				var to='';
-				var worker = $(this);
-				if ($(this).data('slackname') === false) {
-					to = $(this).data('name');
-				}else{
-					to = $(this).data('slackname');
-				}
-				$.ajax({
-			    type: 'POST',
-			    // make sure you respect the same origin policy with this url:
-			    // http://en.wikipedia.org/wiki/Same_origin_policy
-			    url: '/ping/',
-			    data: {
-			        'to': to
-			  	}
-			  });
-			  $(this).removeClass('animated').removeClass('swing2');
-			  $(this).addClass("animated").addClass("swing2");
-			  $(this).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-					$(this).removeClass('animated').removeClass('swing2');
-				});
-			});
+      $(w).click(function(){
+        //if me, go to register
+        //if slackname, send slack ping
+        var to='';
+        var worker = $(this);
+        if ($(this).data('slackname') === false) {
+          to = $(this).data('name');
+        }else{
+          to = $(this).data('slackname');
+        }
+        worker.children('.pin_and_avatar_container').tooltip('destroy');
+        $.ajax({
+          type: 'POST',
+          // make sure you respect the same origin policy with this url:
+          // http://en.wikipedia.org/wiki/Same_origin_policy
+          url: '/ping/',
+          data: {
+              'to': to
+          }
+        }).done(function() {
+          worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual'}).tooltip('show');
+          worker.removeClass('animated').removeClass('swing2');
+          worker.addClass("animated").addClass("swing2");
+          worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+            worker.removeClass('animated').removeClass('swing2');
+          });
+        }).fail(function(data) {
+          d=JSON.parse(data.responseText);
+          worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual'}).tooltip('show');
+          worker.removeClass('animated').removeClass('shake');
+          worker.addClass("animated").addClass("shake");
+          worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+            worker.removeClass('animated').removeClass('shake');
+          });
+        }).always(function(){
+          $.wait(function(){
+            worker.children('.pin_and_avatar_container').tooltip('destroy');
+          }, 5);
+        });
+
+      });
     },
     remove_worker: function(k) {
                      $( k ).addClass("animated bounceOutDown");
@@ -12357,4 +12406,3 @@ var worker_redraw = function(){
 }
 
 });
-

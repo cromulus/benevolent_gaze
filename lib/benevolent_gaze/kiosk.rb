@@ -10,7 +10,6 @@ require 'securerandom'
 require 'mini_magick'
 require 'httparty'
 require 'slack-ruby-client'
-require "sinatra/reloader"
 
 Encoding.default_external = 'utf-8'  if defined?(::Encoding)
 ENV['AWS_ACCESS_KEY_ID']='AKIAIFUSUPNDXREX5Q7A'
@@ -50,12 +49,11 @@ module BenevolentGaze
       Slack.configure do |config|
         config.token = ENV['SLACK_API_TOKEN'] || 'xoxb-20159046901-w2V7crilpVg7Uxcr5fpFMdxl'
       end
-      @slack = Slack::Web::Client.new
-
     end
 
     before do
       @r = Redis.new
+      @slack = Slack::Web::Client.new
     end
 
     helpers do
@@ -313,7 +311,7 @@ module BenevolentGaze
         status 420 #enhance your chill
         return {success:false, msg: "enhance your chill."}.to_json
       else
-        @r.setex("msg_throttle:#{to}",60, true)
+        @r.setex("msg_throttle:#{to}",30, true)
       end
 
       begin
