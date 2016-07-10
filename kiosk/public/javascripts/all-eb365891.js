@@ -12173,10 +12173,10 @@ $(function() {
 
     $worker=$('[data-slackname='+slack_name+']')
     $worker.popover('destroy');
-    $worker.removeClass('animated').removeClass('swing2');
-    $worker.addClass("animated").addClass("swing2");
+    $worker.removeClass('animated').removeClass('bounce');
+    $worker.addClass("animated").addClass("bounce");
     $worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-      $worker.removeClass('animated').removeClass('swing2');
+      $worker.removeClass('animated').removeClass('bounce');
     });
 
     $('html, body').animate({
