@@ -66,14 +66,14 @@ module BenevolentGaze
       end
 
       def lookup_slack_id(slack_name)
-        res = @r.hget('slack_id:slack_name',slack_name)
+        res = @r.hget('slack_id2slack_name',slack_name)
         return res if res
         slack_name.prepend("@") if slack_name[0] != "@"
         begin
           res = @slack.users_info(user: slack_name)
           slack_id = res["user"]["id"]
-          @r.hset('slack_id:slack_name', slack_id, slack_name)
-          @r.hset('slack_id:slack_name', slack_name, slack_id)
+          @r.hset('slack_id2slack_name', slack_id, slack_name)
+          @r.hset('slack_id2slack_name', slack_name, slack_id)
           return
         rescue Exception
           # throws an exception if user not found.
@@ -82,13 +82,13 @@ module BenevolentGaze
       end
 
       def slack_id_to_name(slack_id)
-        res = @r.hget('slack_id:slack_name',slack_id)
+        res = @r.hget('slack_id2slack_name',slack_id)
         return res if res
         begin
           res = @slack.users_info(user: slack_id)
           slack_name = res["user"]["name"].prepend("@")
-          @r.hset('slack_id:slack_name', slack_id, slack_name)
-          @r.hset('slack_id:slack_name', slack_name, slack_id)
+          @r.hset('slack_id2slack_name', slack_id, slack_name)
+          @r.hset('slack_id2slack_name', slack_name, slack_id)
           return slack_name
         rescue Exception
           # throws an exception if user not found.
@@ -213,7 +213,7 @@ module BenevolentGaze
       if params[:slack]
         devices = @r.keys("slack:*").select{|k| @r.get(k)==params[:slack]}
         # if device exists, return true, else false
-        return !devices.detect {|d| @r.hexists("current_devices",d) }.nil?
+        return !devices.detect {|d| @r.hexists("current_devices", d) }.nil?
       elsif params[:name]
         names = @r.keys("name:*").select{|k| @r.get(k)==params[:name]}
         return !names.detect {|d| @r.hexists("current_devices",d) }.nil?

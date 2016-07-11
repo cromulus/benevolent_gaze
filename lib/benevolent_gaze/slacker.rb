@@ -56,12 +56,23 @@ module BenevolentGaze
 
           when /<@([^>]+)>/
             user = $1
-            device_name = nil
-            r.keys("slack_id:*").each{|s| device_name = s if r.get(s)==user }
-            if device_name
+
+            online = false
+            unknown = true
+            r.keys("slack_id:*").each do |device|
+              next if online == true
+              if r.get(device) == user
+                unknown = false
+                online = r.hexists("current_devices", device)
+              end
+            end
+
+            if online
               client.message channel: "#{data['channel']}", text: "Polo"
+            elsif unknown
+              client.message channel: "#{data['channel']}", text: "I don't know who you are talking about."
             else
-              client.message channel: "#{data['channel']}", text: "*Cricket*"
+              client.message channel: "#{data['channel']}", text: "*Crickets*"
             end
           end
         end
