@@ -197,6 +197,7 @@ module BenevolentGaze
     get "/env" do
       ENV.each_pair do|k,v|
         puts "#{k}:#{v} \n"
+        puts "<br>"
       end
     end
 
@@ -211,12 +212,12 @@ module BenevolentGaze
 
     post "search" do
       if params[:slack]
-        devices = @r.keys("slack:*").select{|k| @r.get(k)==params[:slack]}
+        devices = @r.keys("slack:*").select{|k| @r.get(k) == params[:slack] }
         # if device exists, return true, else false
         return !devices.detect {|d| @r.hexists("current_devices", d) }.nil?
       elsif params[:name]
-        names = @r.keys("name:*").select{|k| @r.get(k)==params[:name]}
-        return !names.detect {|d| @r.hexists("current_devices",d) }.nil?
+        names = @r.keys("name:*").select{|k| @r.get(k) == params[:name] }
+        return !names.detect {|d| @r.hexists("current_devices", d) }.nil?
       end
     end
 
@@ -232,18 +233,18 @@ module BenevolentGaze
         @r.set("name:#{device_name}", compound_name)
       end
 
-      # if params[:slack_name]
-      #   slack_name = params[:slack_name].to_s.strip
-      #   slack_id = lookup_slack_id(slack_name)
+      if params[:slack_name]
+        slack_name = params[:slack_name].to_s.strip
+        slack_id = lookup_slack_id(slack_name)
 
-      #   if slack_id
-      #     @r.set("slack:#{device_name}", slack_name)
-      #     @r.set("slack_id:#{device_name}", slack_id)
-      #   else
-      #     status 401
-      #     return {success:false,msg:"slack name not found"}.to_json
-      #   end
-      # end
+        if slack_id
+          @r.set("slack:#{device_name}", slack_name)
+          @r.set("slack_id:#{device_name}", slack_id)
+        else
+          status 401
+          return {success:false,msg:"slack name not found"}.to_json
+        end
+      end
 
       if params[:fileToUpload]
         image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
@@ -289,16 +290,16 @@ module BenevolentGaze
           end
           data = []
           @r = Redis.new
-          @r.hgetall("current_devices").each do |k,v|
+          @r.hgetall('current_devices').each do |k,v|
             name_or_device_name = @r.get("name:#{k}") || k
             slack = @r.get("slack:#{k}") || false
             online = false
+
             if slack
               slack_id = lookup_slack_id(slack)
-              online = @r.sismember("slackers",slack_id) || false
-            else
-              online = false
+              online = @r.sismember('slackers',slack_id) || false
             end
+
             data << { device_name: k,
                       name: v,
                       online: online,
@@ -336,13 +337,13 @@ module BenevolentGaze
         end
       rescue Exception
         status 404
-        return {success:false, msg: "We can't seem to figure out who you are."}.to_json
+        return {success: false, msg: "We can't seem to figure out who you are."}.to_json
       end
       from = result.to_s
 
       from.prepend('@') if from[0] !="@"
 
-      to_id = lookup_slack_id(to)
+      to_id   = lookup_slack_id(to)
       from_id = lookup_slack_id(from)
       from_id = if from_id
         from_id.prepend("<@") + ">"
@@ -352,19 +353,26 @@ module BenevolentGaze
       # no user found!
       unless to_id
         status 404
-        return {success:false,msg: "the person you're trying to ping isn't on slack"}.to_json
+        return { success: false,
+                  msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
+      unless @r.sismember('slackers', to_id)
+        status 404
+        return { success: false, msg: "#{to} isn't currently online. Try someone else?" }.to_json
+      end
       # should be using this: https://api.slack.com/methods/chat.postMessage
       # post as bot to IM channel
-      res = @slack.chat_postMessage(channel: to, text: "ping from #{from}, responses to me will be posted on the board.", as_user: true)
+      res = @slack.chat_postMessage(channel: to,
+                                    text: "ping from #{from}, responses to me will be posted on the board.",
+                                    as_user: true)
 
       if res['ok'] == true
         status 200
-        return {success:true}.to_json
+        return {success: true}.to_json
       else
         status 400
-        return {success:false,msg: "something went horribly wrong."}.to_json
+        return {success: false, msg: "something went horribly wrong."}.to_json
       end
     end
 
