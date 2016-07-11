@@ -2,4 +2,4 @@
 
 require 'benevolent_gaze/cli'
 
-BenevolentGaze::Cli.start( ARGV )
+BenevolentGaze::Cli.start(ARGV)

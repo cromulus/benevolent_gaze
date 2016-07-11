@@ -1,7 +1,7 @@
 # For custom domains on github pages
-page "CNAME", layout: false
+page 'CNAME', layout: false
 
-page "docs/*", layout: :docs_layout
+page 'docs/*', layout: :docs_layout
 
 set :font_dir, 'fonts'
 set :css_dir, 'stylesheets'
@@ -9,7 +9,7 @@ set :js_dir, 'javascripts'
 set :images_dir, 'images'
 
 # Better markdown support
-set :markdown, :tables => true, :autolink => true, :gh_blockcode => true, :fenced_code_blocks => true
+set :markdown, tables: true, autolink: true, gh_blockcode: true, fenced_code_blocks: true
 set :markdown_engine, :redcarpet
 
 activate :autometatags
@@ -48,7 +48,6 @@ configure :build do
   # Or use a different image path
   # set :http_prefix, "/blog/"
 end
-
 
 # This will push to the gh-pages branch of the repo, which will
 # host it on github pages (If this is a github repository)

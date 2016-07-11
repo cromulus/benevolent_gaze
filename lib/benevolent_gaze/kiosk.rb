@@ -40,10 +40,10 @@ module BenevolentGaze
         USE_AWS = false
       end
 
-      if ENV['IGNORE_HOSTS'].nil?
-        IGNORE_HOSTS = false
+       = if ENV['IGNORE_HOSTS'].nil?
+        false
       else
-        IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
+        ENV['IGNORE_HOSTS'].split(',')
       end
 
       Slack.configure do |config|
@@ -195,9 +195,9 @@ module BenevolentGaze
     end
 
     get "/env" do
-      ENV.each_pair{|k,v|
+      ENV.each_pair do|k,v|
         puts "#{k}:#{v} \n"
-      }
+      end
     end
 
     get "/dns" do
@@ -268,7 +268,7 @@ module BenevolentGaze
           end
           r = Redis.new
           r.subscribe('slackback') do |on|
-            on.message do |channel,message|
+            on.message do |_channel,message|
               m = JSON.parse(message)
               slack_name = slack_id_to_name(m['user'])
               data = {msg: m['msg'], user: slack_name}.to_json
@@ -292,7 +292,19 @@ module BenevolentGaze
           @r.hgetall("current_devices").each do |k,v|
             name_or_device_name = @r.get("name:#{k}") || k
             slack = @r.get("slack:#{k}") || false
-            data << { device_name: k, name: v, slack_name: slack, last_seen: (Time.now.to_f * 1000).to_i, avatar: @r.get("image:#{name_or_device_name}") }
+            online = false
+            if slack
+              slack_id = lookup_slack_id(slack)
+              online = @r.sismember("slackers",slack_id) || false
+            else
+              online = false
+            end
+            data << { device_name: k,
+                      name: v,
+                      online: online,
+                      slack_name: slack,
+                      last_seen: (Time.now.to_f * 1000).to_i,
+                      avatar: @r.get("image:#{name_or_device_name}") }
           end
 
           out << "data: #{data.to_json}\n\n"
@@ -308,8 +320,8 @@ module BenevolentGaze
 
       # throttle our messages. 1 minute
       if @r.get("msg_throttle:#{to}")
-        status 420 #enhance your chill
-        return {success:false, msg: "enhance your chill."}.to_json
+        status 420 # enhance your chill
+        return { success: false, msg: "enhance your chill."}.to_json
       else
         @r.setex("msg_throttle:#{to}",30, true)
       end
@@ -332,10 +344,10 @@ module BenevolentGaze
 
       to_id = lookup_slack_id(to)
       from_id = lookup_slack_id(from)
-      if from_id
-        from_id = from_id.prepend("<@") + ">"
+      from_id = if from_id
+        from_id.prepend("<@") + ">"
       else
-        from_id = from
+        from
       end
       # no user found!
       unless to_id
@@ -360,7 +372,7 @@ module BenevolentGaze
       #grab current devices on network.  Save them to the devices on network key after we make sure that we grab the names that have been added already to the whole list and then save them to the updated hash for redis.
       devices_on_network = JSON.parse(params[:devices])
       if IGNORE_HOSTS != false
-        devices_on_network.delete_if{|k,v| IGNORE_HOSTS.include?(k)}
+        devices_on_network.delete_if{|k,_v| IGNORE_HOSTS.include?(k)}
       end
       old_set = @r.hkeys("current_devices")
       new_set = devices_on_network.keys
@@ -370,7 +382,7 @@ module BenevolentGaze
         @r.hdel("current_devices", d)
       end
 
-      devices_on_network.each do |k,v|
+      devices_on_network.each do |k,_v|
         @r.hmset("current_devices", k, @r.get("name:#{k}"))
       end
     end

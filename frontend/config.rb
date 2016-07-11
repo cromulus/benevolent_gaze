@@ -1,5 +1,5 @@
 # For custom domains on github pages
-page "CNAME", layout: false
+page 'CNAME', layout: false
 
 set :build_dir, '../kiosk/public'
 set :css_dir, 'stylesheets'
@@ -35,7 +35,7 @@ configure :build do
   activate :minify_css
 
   # Minify Javascript on build
-  #activate :minify_javascript
+  # activate :minify_javascript
 
   # Enable cache buster
   activate :asset_hash
@@ -46,7 +46,6 @@ configure :build do
   # Or use a different image path
   # set :http_prefix, "/blog/"
 end
-
 
 # This will push to the gh-pages branch of the repo, which will
 # host it on github pages (If this is a github repository)
