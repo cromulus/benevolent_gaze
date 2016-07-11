@@ -297,7 +297,7 @@ module BenevolentGaze
 
             if slack
               slack_id = lookup_slack_id(slack)
-              online = @r.sismember('slackers',slack_id) || false
+              online = @r.sismember('current_slackers',slack_id) || false
             end
 
             data << { device_name: k,
@@ -357,7 +357,7 @@ module BenevolentGaze
                   msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
-      unless @r.sismember('slackers', to_id)
+      unless @r.sismember('current_slackers', to_id)
         status 404
         return { success: false, msg: "#{to} isn't currently online. Try someone else?" }.to_json
       end
