@@ -41,9 +41,9 @@ module BenevolentGaze
       end
 
       if ENV['IGNORE_HOSTS'].nil?
-        false
+        IGNORE_HOSTS = false
       else
-        ENV['IGNORE_HOSTS'].split(',')
+        IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
       end
 
       Slack.configure do |config|
