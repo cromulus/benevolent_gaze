@@ -12157,7 +12157,7 @@ $(function() {
       title: "message from:@"+slack_name,
       content: msg['msg'],
       trigger:'manual',
-      position:'auto'
+      placement: 'auto'
     }
 
     // this is the thing that hides the popover and resets it.
@@ -12252,7 +12252,7 @@ $(function() {
               'to': to
           }
         }).done(function() {
-          worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual'}).tooltip('show');
+          worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual', placement: 'auto'}).tooltip('show');
           worker.removeClass('animated').removeClass('swing2');
           worker.addClass("animated").addClass("swing2");
           worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
@@ -12260,7 +12260,7 @@ $(function() {
           });
         }).fail(function(data) {
           d=JSON.parse(data.responseText);
-          worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual'}).tooltip('show');
+          worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
           worker.removeClass('animated').removeClass('shake');
           worker.addClass("animated").addClass("shake");
           worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {

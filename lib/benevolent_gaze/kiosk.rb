@@ -225,7 +225,13 @@ module BenevolentGaze
 
     post '/register' do
       dns = Resolv.new
-      device_name = dns.getname(get_ip)
+      begin
+        device_name = dns.getname(get_ip)
+      rescue Exception => e
+        status 500
+        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+      end
+
 
       compound_name = nil
 
@@ -236,10 +242,12 @@ module BenevolentGaze
 
       if params[:slack_name]
         slack_name = params[:slack_name].to_s.strip
+
         slack_id = lookup_slack_id(slack_name)
 
         if slack_id
-          @r.set("slack:#{device_name}", slack_name)
+          # no @ in data-slackname! breaks jquery
+          @r.set("slack:#{device_name}", slack_name.delete('@'))
           @r.set("slack_id:#{device_name}", slack_id)
         else
           status 401
@@ -335,15 +343,10 @@ module BenevolentGaze
       end
       from = result.to_s
 
-      from.prepend('@') if from[0] != '@'
-
       to_id   = lookup_slack_id(to)
       from_id = lookup_slack_id(from)
-      from_id = if from_id
-                  from_id.prepend('<@') + '>'
-                else
-                  from
-      end
+      from = from_id ? from_id.prepend('<@') + '>' : from
+
       # no user found!
       unless to_id
         status 404
@@ -371,7 +374,10 @@ module BenevolentGaze
     end
 
     post '/information' do
-      # grab current devices on network.  Save them to the devices on network key after we make sure that we grab the names that have been added already to the whole list and then save them to the updated hash for redis.
+      # grab current devices on network.
+      # Save them to the devices on network key after we make sure that we
+      # grab the names that have been added already to the whole list and
+      # then save them to the updated hash (set?)for redis.
       devices_on_network = JSON.parse(params[:devices])
       if IGNORE_HOSTS != false
         devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
