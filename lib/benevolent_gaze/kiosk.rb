@@ -100,7 +100,9 @@ module BenevolentGaze
         slack_name.prepend('@') if slack_name[0] != '@'
         begin
           res = @slack.users_getPresence(user: slack_name)
-          return res['presence'] == 'active'
+          online = res['presence'] == 'active'
+          @r.sadd 'current_slackers', lookup_slack_id(slack_name) if online
+          return online
         rescue Exception
           # throws an exception if user not found.
           return false
@@ -349,7 +351,7 @@ module BenevolentGaze
                  msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
-      unless @IGNORE_HOSTS
+      unless @r.sismember 'current_slackers', to_id
         status 404
         return { success: false, msg: "#{to} isn't currently online. Try someone else?" }.to_json
       end
