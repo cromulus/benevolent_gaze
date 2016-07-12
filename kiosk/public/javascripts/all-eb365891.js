@@ -12108,16 +12108,17 @@ $(function() {
   var es = new EventSource('/feed');
   var new_people = [];
 
-  es.onmessage = function(e) {
-    //console.log( "Got message", e )
-  }
-
   es.addEventListener('message', function(e) {
-    new_people = JSON.parse(e.data)
+    data = JSON.parse(e.data);
+
+    new_people = jQuery.grep( data, function(d){
+      return d.type === 'device'});
+
+    msgs = jQuery.grep( data, function(d){return d.type ==='msg'});
+    msgs.forEach(onmessage);
     add_remove_workers(new_people);
+
     check_last_seen();
-
-
   }, false);
 
   es.addEventListener('open', function(e) {
@@ -12136,9 +12137,7 @@ $(function() {
       $('.right_column').show();
       console.log('registered!');
     }else{
-      $('.left_column').show();
-      $('.right_column').hide();
-      console.log('not registered');
+      window.location.replace("/register");
     }
   });
 
@@ -12147,10 +12146,10 @@ $(function() {
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-  var msg_es = new EventSource('/msgs');
-  msg_es.onmessage = function(e) {
-    //console.log(e);
-    msg = JSON.parse(e.data);
+
+  var onmessage = function(msg) {
+    console.log(msg);
+
     slack_name = msg['user'].replace('@','');
 
     var options = {
@@ -12235,8 +12234,15 @@ $(function() {
       $(w).click(function(){
         //if me, go to register
         //if slackname, send slack ping
+
         var to='';
         var worker = $(this);
+        $.ajax({url:'/dns'}).done(function(d){
+          if (worker.data('devicename') === d) {
+            window.location = '/register';
+          }
+        });
+
         if ($(this).data('slackname') === false) {
           to = $(this).data('name');
         }else{
@@ -12334,6 +12340,9 @@ $(function() {
         return name_change
   };
 
+  var strip_at_symbol = function(slack_name){
+    return slack_name.replace('@','');
+  };
 
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
@@ -12370,7 +12379,11 @@ $(function() {
 
 var filter = function(){
   var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
-  var options={keys:['name','slackname']};
+  var options = {
+    keys:['name','slackname'],
+    distance: 5,
+    threshold: 0.3
+  };
   var f = new Fuse(workers,options);
   var q = $("input").val();
   var found = [];

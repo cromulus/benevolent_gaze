@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'sinatra'
   spec.add_dependency 'redis'
+  spec.add_dependency 'hiredis'
+  spec.add_dependency 'em-synchrony'
   spec.add_dependency 'sinatra-support'
   spec.add_dependency 'sinatra-contrib'
   spec.add_dependency 'thin'

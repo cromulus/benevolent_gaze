@@ -3,6 +3,8 @@ require 'sinatra/base'
 require 'sinatra/support'
 require 'sinatra/json'
 require 'redis'
+require 'hiredis'
+require 'em-synchrony'
 require 'resolv'
 require 'sinatra/cross_origin'
 require 'aws/s3'
@@ -21,6 +23,10 @@ ENV['IPORT'] = '4567'
 ENV['PORT'] = '4567'
 ENV['IGNORE_HOSTS'] = 'printer.brl.nyc,biggie.brl.nyc,smalls.brl.nyc,tiny.brl.nyc,reception.brl.nyc,intern02.brl.nyc,intheoffice.brl.nyc,audiobot.brl.nyc,bustedpi.brl.nyc,pfSense.brl.nyc,intern06.brl.nyc,intern04.brl.nyc,north.brl.nyc,south.brl.nyc,longrange.brl.nyc,lite.brl.nyc,NPI6BBE68.brl.nyc'
 ENV['SLACK_HOOK_URL'] = 'https://hooks.slack.com/services/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'
+
+# slack names do not have an @ in front of them for our purposes.
+# for slack, they do.
+
 module BenevolentGaze
   class Kiosk < Sinatra::Base
     set server: 'thin', connections: []
@@ -66,27 +72,35 @@ module BenevolentGaze
       end
 
       def lookup_slack_id(slack_name)
+        slack_name.delete!('@')
         res = @r.hget('slack_id2slack_name', slack_name)
         return res if res
-        slack_name.prepend('@') if slack_name[0] != '@'
+
         begin
-          res = @slack.users_info(user: slack_name)
+          res = get_slack_info(slack_name)
           slack_id = res['user']['id']
           @r.hset('slack_id2slack_name', slack_id, slack_name)
           @r.hset('slack_id2slack_name', slack_name, slack_id)
-          return
+          return slack_id
         rescue Exception
           # throws an exception if user not found.
           return false
         end
       end
 
+      def get_slack_info(sname)
+        sname.prepend('@') if sname[0] != '@'
+        res = @slack.users_info(user: sname)
+        sname.delete!('@') #wtf.
+        return res
+      end
+
       def slack_id_to_name(slack_id)
         res = @r.hget('slack_id2slack_name', slack_id)
-        return res if res
+        return res.delete('@') if res
         begin
           res = @slack.users_info(user: slack_id)
-          slack_name = res['user']['name'].prepend('@')
+          slack_name = res['user']['name'].delete('@')
           @r.hset('slack_id2slack_name', slack_id, slack_name)
           @r.hset('slack_id2slack_name', slack_name, slack_id)
           return slack_name
@@ -96,14 +110,16 @@ module BenevolentGaze
         end
       end
 
-      def is_slack_user_online(slack_name)
-        slack_name.prepend('@') if slack_name[0] != '@'
+      def is_slack_user_online(sname)
+        sname.prepend('@') if sname[0] != '@'
         begin
-          res = @slack.users_getPresence(user: slack_name)
+          res = @slack.users_getPresence(user: sname)
           online = res['presence'] == 'active'
-          @r.sadd 'current_slackers', lookup_slack_id(slack_name) if online
+          @r.sadd 'current_slackers', lookup_slack_id(sname) if online
+          sname.delete!('@')
           return online
         rescue Exception
+          sname.delete!('@')
           # throws an exception if user not found.
           return false
         end
@@ -208,6 +224,7 @@ module BenevolentGaze
       begin
         return dns.getname(get_ip)
       rescue Exception
+        status = 404
         return false
       end
     end
@@ -242,12 +259,12 @@ module BenevolentGaze
 
       if params[:slack_name]
         slack_name = params[:slack_name].to_s.strip
-
+        slack_name.delete!('@')
         slack_id = lookup_slack_id(slack_name)
 
         if slack_id
           # no @ in data-slackname! breaks jquery
-          @r.set("slack:#{device_name}", slack_name.delete('@'))
+          @r.set("slack:#{device_name}", slack_name)
           @r.set("slack_id:#{device_name}", slack_id)
         else
           status 401
@@ -268,44 +285,53 @@ module BenevolentGaze
       send_file 'public/register.html'
     end
 
-    get '/msgs', provides: 'text/event-stream' do
-      cross_origin
-
-      stream :keep_open do |out|
-        loop do
-          break if out.closed?
-          r = Redis.new
-          r.subscribe('slackback') do |on|
-            on.message do |_channel, message|
-              m = JSON.parse(message)
-              slack_name = slack_id_to_name(m['user'])
-              data = { msg: m['msg'], user: slack_name }.to_json
-              out << "data: #{data}\n\n"
-            end
-          end
-        end
-      end
-    end
+    # get '/msgs', provides: 'text/event-stream' do
+    #   cross_origin
+    #   response.headers['X-Accel-Buffering'] = 'no'
+    #   stream :keep_open do |out|
+    #     loop do
+    #       break if out.closed?
+    #       r = Redis.connect
+    #       r.subscribe('slackback') do |on|
+    #         on.message do |_channel, message|
+    #           m = JSON.parse(message)
+    #           slack_name = slack_id_to_name(m['user'])
+    #           data = { msg: m['msg'], user: slack_name.delete('@') }.to_json
+    #           out << "data: #{data}\n\n"
+    #         end
+    #       end
+    #     end
+    #   end
+    # end
 
     get '/feed', provides: 'text/event-stream' do
       cross_origin
-
+      response.headers['X-Accel-Buffering'] = 'no'
       stream :keep_open do |out|
         loop do
           break if out.closed?
           data = []
-          @r = Redis.new
+          @r = Redis.connect
+          # grab all recent messages.
+          while @r.llen('slackback') > 0
+            m = JSON.parse(@r.lpop('slackback'))
+            slack_name = slack_id_to_name(m['user'])
+            data << { type: 'msg', msg: m['msg'], user: slack_name.delete('@') }
+          end
+
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
             slack = @r.get("slack:#{k}") || false
             online = false
-
+            # if we have a slack, remove the @. if not, set to false
             if slack
+              slack.delete!('@')
               slack_id = lookup_slack_id(slack)
               online = @r.sismember('current_slackers', slack_id) || false
             end
 
-            data << { device_name: k,
+            data << { type: 'device',
+                      device_name: k,
                       name: v,
                       online: online,
                       slack_name: slack,
@@ -314,7 +340,7 @@ module BenevolentGaze
           end
 
           out << "data: #{data.to_json}\n\n"
-          sleep 1
+          sleep 0.5
         end
       end
     end
@@ -360,7 +386,7 @@ module BenevolentGaze
       end
       # should be using this: https://api.slack.com/methods/chat.postMessage
       # post as bot to IM channel
-      res = @slack.chat_postMessage(channel: to,
+      res = @slack.chat_postMessage(channel: "@#{to}",
                                     text: "ping from #{from}, responses to me will be posted on the board.",
                                     as_user: true)
 
