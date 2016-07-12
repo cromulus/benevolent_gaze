@@ -14,21 +14,12 @@ require 'httparty'
 require 'slack-ruby-client'
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
-ENV['AWS_ACCESS_KEY_ID'] = 'AKIAIFUSUPNDXREX5Q7A'
-ENV['AWS_CDN_BUCKET'] = 'benevolentgazebucket'
-ENV['AWS_SECRET_ACCESS_KEY'] = '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'
-ENV['BG_COMPANY_URL'] = 'http://www.happyfuncorp.com/register'
-
-ENV['IPORT'] = '4567'
-ENV['PORT'] = '4567'
-ENV['IGNORE_HOSTS'] = 'printer.brl.nyc,biggie.brl.nyc,smalls.brl.nyc,tiny.brl.nyc,reception.brl.nyc,intern02.brl.nyc,intheoffice.brl.nyc,audiobot.brl.nyc,bustedpi.brl.nyc,pfSense.brl.nyc,intern06.brl.nyc,intern04.brl.nyc,north.brl.nyc,south.brl.nyc,longrange.brl.nyc,lite.brl.nyc,NPI6BBE68.brl.nyc'
-ENV['SLACK_HOOK_URL'] = 'https://hooks.slack.com/services/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'
-
 # slack names do not have an @ in front of them for our purposes.
 # for slack, they do.
 
 module BenevolentGaze
   class Kiosk < Sinatra::Base
+
     set server: 'thin', connections: []
     set :bind, '0.0.0.0'
     set :app_file, __FILE__
@@ -53,7 +44,7 @@ module BenevolentGaze
       end
 
       Slack.configure do |config|
-        config.token = ENV['SLACK_API_TOKEN'] || 'xoxb-20159046901-w2V7crilpVg7Uxcr5fpFMdxl'
+        config.token = ENV['SLACK_API_TOKEN']
       end
     end
 

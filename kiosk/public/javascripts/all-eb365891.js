@@ -12137,7 +12137,10 @@ $(function() {
       $('.right_column').show();
       console.log('registered!');
     }else{
-      window.location.replace("/register");
+      if(window.location.href.indexOf('register') === -1)
+        // got a bit loopy here
+        window.location.replace("/register");
+      }
     }
   });
 
