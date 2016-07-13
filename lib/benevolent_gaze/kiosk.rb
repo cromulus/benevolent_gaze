@@ -225,7 +225,7 @@ module BenevolentGaze
       end
     end
 
-    get '/slack_me_up' do
+    get '/slack_me_up/:id' do
       dns = Resolv.new
       begin
         device_name = dns.getname(get_ip)
@@ -241,18 +241,22 @@ module BenevolentGaze
         return { success: false, msg: 'Slack ID Not Found' }.to_json
       end
       u_data = res['user']
-      name = u_data['real_name'].empty? ? u_data['name'] : u_data['real_name']
+
+      # hunting for a name...
+      name = u_data['profile']['real_name_normalized']
+      name = u_data['real_name']  if name.empty?
+      name = u_data['profile']['real_name'] if name.empty?
+      name = u_data['name'] if name.empty?
+
       @r.set("name:#{device_name}", name)
       @r.set("slack:#{device_name}", u_data['name'])
       @r.set("slack_id:#{device_name}", slack_id)
+
       name = name.empty? ? false : name
-
       image_url = u_data['profile']['image_512']
+      image_name_key = 'image:' + (name || device_name)
+      @r.set(image_name_key, image_url)
 
-      # get image, save it somewhere, upload it.
-      upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
-      name_key = 'image:' + (name || device_name)
-      # @r.set(name_key, image_url_returned_from_upload_function)
       status 200
       redirect '/'
     end
@@ -286,6 +290,8 @@ module BenevolentGaze
 
       end
 
+      image_name_key = 'image:' + (compound_name || @r.get("name:#{device_name}") || device_name)
+
       if params[:slack_name]
         slack_name = params[:slack_name].to_s.strip
         slack_name.delete!('@')
@@ -295,6 +301,8 @@ module BenevolentGaze
           # no @ in data-slackname! breaks jquery
           @r.set("slack:#{device_name}", slack_name)
           @r.set("slack_id:#{device_name}", slack_id)
+          res = get_slack_info(slack_id)
+          @r.set(image_name_key, res['user']['profile']['image_512'])
         else
           status 401
           return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
@@ -303,8 +311,7 @@ module BenevolentGaze
 
       if params[:fileToUpload]
         image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
-        name_key = 'image:' + (compound_name || @r.get("name:#{device_name}") || device_name)
-        @r.set(name_key, image_url_returned_from_upload_function)
+        @r.set(image_name_key, image_url_returned_from_upload_function)
       end
 
       @r.set("name:#{device_name}", compound_name)
@@ -353,12 +360,21 @@ module BenevolentGaze
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
             slack = @r.get("slack:#{k}") || false
+            slack_id = @r.get("slack_id:#{k}")
+            next unless slack # if you're not setup, we don't want to see you.
+
             online = false
             # if we have a slack, remove the @. if not, set to false
             if slack
               slack.delete!('@')
               slack_id = lookup_slack_id(slack)
               online = @r.sismember('current_slackers', slack_id) || false
+            end
+            image_url = @r.get("image:#{name_or_device_name}")
+
+            unless image_url # force people to use their slack images...
+              res = get_slack_info(slack_id)
+              @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
             end
 
             data << { type: 'device',
@@ -367,7 +383,8 @@ module BenevolentGaze
                       online: online,
                       slack_name: slack,
                       last_seen: (Time.now.to_f * 1000).to_i,
-                      avatar: @r.get("image:#{name_or_device_name}") }
+                      avatar: image_url
+                       }
           end
 
           out << "data: #{data.to_json}\n\n"

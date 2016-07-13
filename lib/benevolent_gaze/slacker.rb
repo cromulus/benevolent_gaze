@@ -26,6 +26,15 @@ module BenevolentGaze
         case data['presence']
         when 'active'
           r.sadd('current_slackers', data['user'])
+          # if we haven't invited them AND they aren't registered...
+          # invite them!
+          if !r.sismember('slinvited',data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
+            puts "inviting #{data['user']}"
+            client.web_client.chat_postMessage(channel: data['user'],
+                                    text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                    as_user: true)
+            r.sadd('slinvited',data['user'])
+          end
         when 'away'
           r.srem('current_slackers', data['user'])
         end
@@ -46,14 +55,17 @@ module BenevolentGaze
           when /^help/
             client.message channel: (data['channel']).to_s, text: '`@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board. Register here: http://150.brl.nyc/'
           when /^who|list/
-            client.message channel: (data['channel']).to_s, text: 'Currently in the office:'
+
+            names = []
             r.hgetall('current_devices').each do |device, real_name|
               slack = r.get("slack:#{device}") || false
               next unless slack
               name = real_name.empty? ? slack : real_name
-              client.message channel: (data['channel']).to_s, text: name
+              names << name
             end
-            client.message channel: (data['channel']).to_s, text: 'Register your devices here: http://150.brl.nyc/ '
+            client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
+            ')}
+Register your devices here: http://150.brl.nyc/"
           when /<@([^>]+)>/
             user = Regexp.last_match(1)
 

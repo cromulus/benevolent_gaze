@@ -12213,6 +12213,7 @@ $(function() {
                 $(w).attr("data-devicename", worker_data.device_name);
                 $(w).attr("data-slackname", worker_data.slack_name);
                 $(w).data('online', worker_data.online);
+                // $(w).addClass('online-'+worker_data.online); // future
               },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
