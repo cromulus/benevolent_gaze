@@ -26,7 +26,7 @@ module BenevolentGaze
     set :port, ENV['IPORT']
     set :static, true
     set :public_folder, ENV['PUBLIC_FOLDER'] || 'public'
-    @@local_file_system = ENV['PUBLIC_FOLDER']
+    @@local_file_system = ENV['PUBLIC_FOLDER'] || 'public'
 
     register Sinatra::CrossOrigin
 
@@ -205,7 +205,30 @@ module BenevolentGaze
     end
 
     get '/me' do
-      # return my data: image, name, slack name device name, etc.
+      begin
+        dns = Resolv.new
+        device_name = dns.getname(get_ip)
+
+        connected = @r.exists("name:#{device_name}")
+        unless connected
+          status 404
+          return { success: false, msg: "we don't seem to have your info" }.to_json
+        end
+      rescue Exception
+        status 500
+        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+      end
+      name = @r.hget("current_devices", device_name)
+      name = @r.get("name:#{device_name}") if name.nil?
+      name_or_device_name = name ? name : device_name
+      data = {
+        real_name: name,
+        slack_name: @r.get("slack:#{device_name}"),
+        avatar: @r.get("image:#{name_or_device_name}")
+      }
+
+      status 200
+      return {success:true,data: data }.to_json
     end
 
     get '/env' do
@@ -282,15 +305,16 @@ module BenevolentGaze
         return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
       end
 
+      real_name = nil
 
-      compound_name = nil
-
-      if !params[:real_first_name].empty? || !params[:real_last_name].empty?
-        compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
-
+      unless params[:real_name].empty?
+        real_name = params[:real_name].to_s.strip
+      else
+        status 401
+        return "Please tell us your name! <a href'http://150.brl.nyc/register'>go back and try again.</a>"
       end
 
-      image_name_key = 'image:' + (compound_name || @r.get("name:#{device_name}") || device_name)
+      image_name_key = "image:#{real_name}"
 
       if params[:slack_name]
         slack_name = params[:slack_name].to_s.strip
@@ -314,7 +338,7 @@ module BenevolentGaze
         @r.set(image_name_key, image_url_returned_from_upload_function)
       end
 
-      @r.set("name:#{device_name}", compound_name)
+      @r.set("name:#{device_name}", real_name)
       status 200
       redirect '/'
     end

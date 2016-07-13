@@ -49,11 +49,23 @@ module BenevolentGaze
           r.lpush('slackback', { user: user, msg: msg, data: data }.to_json)
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         elsif data['text'] =~ /<@U0L4P1CSH>/
-          puts "channel=#{data['channel']}, user=#{data['user']} msg=#{data['text']}"
+
           msg = data['text'].gsub(/<@U0L4P1CSH>/, '').delete(':').lstrip
+          puts "channel=#{data['channel']}, user=#{data['user']} msg=#{msg}"
           case msg
+          when /^invite/
+            m = /<@([^>]+)>/.match(msg)
+            user = m.nil? ? data['user'] : m[1]
+            puts "sending invite to #{user}"
+
+            client.web_client.chat_postMessage(channel: user.to_s,
+                                    text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                    as_user: true)
           when /^help/
-            client.message channel: (data['channel']).to_s, text: '`@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board. Register here: http://150.brl.nyc/'
+            client.message channel: (data['channel']).to_s, text: '`@marco @username` checks if they are in the office,
+            `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board.
+            `marco invite me` will send an invitation link to you.
+            Register here: http://150.brl.nyc/'
           when /^who|list/
 
             names = []

@@ -20,7 +20,7 @@ module BenevolentGaze
       private
 
       def ping(host)
-        result = `ping -q -i 0.2 -c 2 #{host}`
+        `ping -q -i 0.2 -c 2 #{host}`
         if $CHILD_STATUS.exitstatus == 0
           return true
         else
@@ -50,7 +50,8 @@ module BenevolentGaze
 
         # nmap for the win. slow, but awesome.
         if `which nmap`
-          `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").each do|d|
+          nmapping = `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n")
+          Parallel.each(nmapping) do |d|
             begin
               name = dns.getname(d)
               devices.add(name)
@@ -72,8 +73,8 @@ module BenevolentGaze
 
             ip = dns.getaddress(name)
             # pinging IP.
-            result = `ping -q -i 0.2 -c 3 #{ip}`
-            result = nil
+            `ping -q -i 0.2 -c 2 #{ip}`
+
             # next if ping fails, meaning exitstatus !=0
             next if $CHILD_STATUS.exitstatus != 0
 

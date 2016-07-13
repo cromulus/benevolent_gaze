@@ -12144,6 +12144,23 @@ $(function() {
     }
   });
 
+  // populate our registration fields for registered users
+  if (window.location.href.indexOf('register')!= -1) {
+    $.ajax({url:'/me', dataType: "json"}).done(function(d){
+      if (d['success'] === true) {
+        $('input[name=real_name]').val(d['data']['real_name']);
+        $('input[name=slack_name]').val(d['data']['slack_name']);
+        var avatar = d['data']['avatar'];
+        if (avatar.indexOf('http') === -1 && avatar.indexOf('/') > 0) {
+          avatar = "/" + avatar;
+        };
+        $("#img_holder").html('<img src="'+ avatar +'" alt="yourimage" />');
+      }
+    }).fail(function(){
+      console.log('not yet registered');
+    });
+  }
+
   $("input[type!='file']").attr("required", true);
 
 ///////////////////////////////////////////////////////////////////////////
@@ -12173,17 +12190,14 @@ $(function() {
       }, 6000);
     });
 
-    $worker=$('[data-slackname='+slack_name+']')
+    $worker = $('[data-slackname='+slack_name+']')
     $worker.popover('destroy');
-    $worker.removeClass('animated').removeClass('bounce');
-    $worker.addClass("animated").addClass("bounce");
-    $worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-      $worker.removeClass('animated').removeClass('bounce');
-    });
+
+    Worker.animate_worker($worker,'bounce')
 
     $('html, body').animate({
         scrollTop: $worker.offset().top
-    }, 1000,'swing',function(){
+    }, 600,'swing',function(){
       $worker.popover(options).popover('show');
     });
   }
@@ -12241,8 +12255,8 @@ $(function() {
         //if slackname, send slack ping
         var to='';
         var worker = $(this);
-        $.ajax({url:'/dns'}).done(function(d){
-          if (worker.data('devicename') === d) {
+        $.ajax({url:'/me', dataType: 'json',}).done(function(d){
+          if (worker.data('name') === d['data']['real_name']) {
             window.location = '/register';
           }
         });
@@ -12262,26 +12276,30 @@ $(function() {
               'to': to
           }
         }).done(function() {
+
+          Worker.animate_worker(worker,'swing2');
+
           worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual', placement: 'auto'}).tooltip('show');
-          worker.removeClass('animated').removeClass('swing2');
-          worker.addClass("animated").addClass("swing2");
-          worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-            worker.removeClass('animated').removeClass('swing2');
-          });
+
         }).fail(function(data) {
           d=JSON.parse(data.responseText);
+
+          Worker.animate_worker(worker,'shake');
           worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
-          worker.removeClass('animated').removeClass('shake');
-          worker.addClass("animated").addClass("shake");
-          worker.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-            worker.removeClass('animated').removeClass('shake');
-          });
+
         }).always(function(){
           $.wait(function(){
             worker.children('.pin_and_avatar_container').tooltip('destroy');
           }, 6);
         });
 
+      });
+    },
+    animate_worker: function(el,animation){
+      el.removeClass('animated').removeClass(animation);
+      el.addClass("animated").addClass(animation);
+      el.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+        el.removeClass('animated').removeClass(animation);
       });
     },
     remove_worker: function(k) {

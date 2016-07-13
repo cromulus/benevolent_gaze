@@ -30,6 +30,7 @@
         <br>
         <div class='col-md-4 col-md-offset-4'>
           <form action='/register' enctype='multipart/form-data' method='POST'>
+            <div id="img_holder"></div>
             <div class='form-group'>
               <label for='fileToUpload' id='fileToUpload'>
                 Take a photo!
@@ -38,8 +39,7 @@
             </div>
             <div class='form-group'>
               <label>What is Your Name? Same for all devices...</label>
-              <input class='form-control' name='real_first_name' placeholder='First Name' type='text'>
-              <input class='form-control' name='real_last_name' placeholder='Last Name' type='text'>
+              <input class='form-control' name='real_name' placeholder='Your First and Last Name' type='text'>
               <input class='form-control' name='slack_name' placeholder='Slack name' type='text'>
                 <input class='device_id_for_form' name='device_name' type='hidden'>
               </input>
