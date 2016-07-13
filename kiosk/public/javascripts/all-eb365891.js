@@ -12137,7 +12137,7 @@ $(function() {
       $('.right_column').show();
       console.log('registered!');
     }else{
-      if(window.location.href.indexOf('register') === -1)
+      if(window.location.href.indexOf('register') === -1){
         // got a bit loopy here
         window.location.replace("/register");
       }
@@ -12202,16 +12202,17 @@ $(function() {
             Worker.add_to_board(worker_object);
           },
     grab_worker: function(){
-                   w = $('.worker').first().clone().removeClass('hidden');
-                 },
+                  w = $('.worker').first().clone().removeClass('hidden');
+                },
     set_image: function(string){
-      $('img', w).attr('src', string);
-    },
+                $('img', w).attr('src', string);
+              },
     set_name: function(worker_data){
                 $('.tape', w ).text(worker_data.name || sanitize_name(worker_data.device_name));
                 $(w).attr("data-name", (worker_data.name || worker_data.device_name));
                 $(w).attr("data-devicename", worker_data.device_name);
                 $(w).attr("data-slackname", worker_data.slack_name);
+                $(w).data('online', worker_data.online);
               },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
@@ -12237,7 +12238,6 @@ $(function() {
       $(w).click(function(){
         //if me, go to register
         //if slackname, send slack ping
-
         var to='';
         var worker = $(this);
         $.ajax({url:'/dns'}).done(function(d){
@@ -12305,22 +12305,30 @@ $(function() {
   }
 
   var add_remove_workers = function(w){
-
+    // this function need some love.
     w.map(function(worker_data){
       data_attribute = "[data-name='" + (worker_data.name || worker_data.device_name) + "']";
       data_attribute_device = "[data-name='" + worker_data.device_name + "']";
       $element = $(data_attribute);
       if ($element.length > 0) {
+        // the worker was already there, updating
         $element.attr("data-lastseen", $.now());
         change_avatar(worker_data, data_attribute);
+        $element.data('slackname', worker_data.slack_name);
+        $element.data('online', worker_data.online);
+
         data_attribute_worker = "[data-devicename='" + worker_data.device_name + "']";
+
         if ( $(data_attribute_worker).find(".tape").text() !== ( worker_data.name || sanitize_name(worker_data.device_name) ) ) {
-          //console.log("this is the problem");
+          // if the tape (shown name) isn't right, we nuke now to add later
+          // console.log("this is the problem");
           Worker.remove_worker(data_attribute_worker);
         }
       } else {
+        // the worker wasn't there before.
         Worker.setup_and_add(worker_data);
         if (worker_data.name) {
+          // removing the device version if it's there, keeping the name one.
           //console.log("No this is the problem");
           Worker.remove_worker(data_attribute_device);
         }

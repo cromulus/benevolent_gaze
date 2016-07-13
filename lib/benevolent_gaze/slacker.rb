@@ -22,6 +22,7 @@ module BenevolentGaze
       # command: who-> r.hgetall "current_devices"
       # command: @username -> check redis for device
       client.on :presence_change do |data|
+        puts "user #{data['user']} is #{data['presence']}"
         case data['presence']
         when 'active'
           r.sadd('current_slackers', data['user'])
@@ -31,21 +32,19 @@ module BenevolentGaze
       end
 
       client.on :message do |data|
-        puts "channel=#{data['channel']}, user=#{data['user']} msg=#{data['msg']}"
         # responses to the bot's own channel
-        if data['channel'] == 'D0LGR7LJE' && data['user'] != 'U0L4P1CSH'
+        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
           r.lpush('slackback', { user: user, msg: msg, data: data }.to_json)
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         elsif data['text'] =~ /<@U0L4P1CSH>/
+          puts "channel=#{data['channel']}, user=#{data['user']} msg=#{data['text']}"
           msg = data['text'].gsub(/<@U0L4P1CSH>/, '').delete(':').lstrip
           case msg
           when /^help/
-            client.message channel: (data['channel']).to_s, text: ' `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board.
-              Register here: http://150.brl.nyc/
-            '
+            client.message channel: (data['channel']).to_s, text: '`@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board. Register here: http://150.brl.nyc/'
           when /^who|list/
             client.message channel: (data['channel']).to_s, text: 'Currently in the office:'
             r.hgetall('current_devices').each do |device, real_name|
@@ -77,10 +76,7 @@ module BenevolentGaze
             end
           else
             client.message channel: (data['channel']).to_s, text: "
-              I didn't understand that.... I'm just a robit...
-              `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board.
-              Register your devices here: http://150.brl.nyc/
-            "
+              I didn't understand that.... I'm just a robot... `@marco @username` checks if they are in the office, `@marco who` lists all people in the office. If you get a message from @marco, your responses to that message will be posted to the board.Register your devices here: http://150.brl.nyc/"
           end
         end
       end

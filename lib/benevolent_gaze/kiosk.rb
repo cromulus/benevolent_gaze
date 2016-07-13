@@ -80,11 +80,12 @@ module BenevolentGaze
       end
 
       def get_slack_info(sname)
-        sname.prepend('@') if sname[0] != '@'
+        sname.prepend('@') if sname[0] != 'U'
         res = @slack.users_info(user: sname)
         sname.delete!('@') #wtf.
         return res
       end
+
 
       def slack_id_to_name(slack_id)
         res = @r.hget('slack_id2slack_name', slack_id)
@@ -106,7 +107,11 @@ module BenevolentGaze
         begin
           res = @slack.users_getPresence(user: sname)
           online = res['presence'] == 'active'
-          @r.sadd 'current_slackers', lookup_slack_id(sname) if online
+          if online
+            @r.sadd 'current_slackers', lookup_slack_id(sname)
+          else
+            @r.srem 'current_slackers', lookup_slack_id(sname)
+          end
           sname.delete!('@')
           return online
         rescue Exception
@@ -220,6 +225,39 @@ module BenevolentGaze
       end
     end
 
+    get '/slack_me_up' do
+      dns = Resolv.new
+      begin
+        device_name = dns.getname(get_ip)
+      rescue Exception => e
+        status 500
+        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+      end
+      slack_id = params['id']
+      begin
+        res = get_slack_info(slack_id)
+      rescue Exception => e
+        status 404
+        return { success: false, msg: 'Slack ID Not Found' }.to_json
+      end
+      u_data = res['user']
+      name = u_data['real_name'].empty? ? u_data['name'] : u_data['real_name']
+      @r.set("name:#{device_name}", name)
+      @r.set("slack:#{device_name}", u_data['name'])
+      @r.set("slack_id:#{device_name}", slack_id)
+      name = name.empty? ? false : name
+
+      image_url = u_data['profile']['image_512']
+
+      # get image, save it somewhere, upload it.
+      upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
+      name_key = 'image:' + (name || device_name)
+      # @r.set(name_key, image_url_returned_from_upload_function)
+      status 200
+      redirect '/'
+    end
+
+
     post 'search' do
       if params[:slack]
         devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
@@ -245,7 +283,7 @@ module BenevolentGaze
 
       if !params[:real_first_name].empty? || !params[:real_last_name].empty?
         compound_name = "#{params[:real_first_name].to_s.strip} #{params[:real_last_name].to_s.strip}"
-        @r.set("name:#{device_name}", compound_name)
+
       end
 
       if params[:slack_name]
@@ -259,7 +297,7 @@ module BenevolentGaze
           @r.set("slack_id:#{device_name}", slack_id)
         else
           status 401
-          return { success: false, msg: 'slack name not found' }.to_json
+          return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
         end
       end
 
@@ -268,6 +306,8 @@ module BenevolentGaze
         name_key = 'image:' + (compound_name || @r.get("name:#{device_name}") || device_name)
         @r.set(name_key, image_url_returned_from_upload_function)
       end
+
+      @r.set("name:#{device_name}", compound_name)
       status 200
       redirect '/'
     end
@@ -338,14 +378,10 @@ module BenevolentGaze
 
     post '/ping/' do
       to = params[:to]
-      to.prepend('@') if to[0] != '@'
-
       # throttle our messages. 1 minute
       if @r.get("msg_throttle:#{to}")
         status 420 # enhance your chill
         return { success: false, msg: 'enhance your chill.' }.to_json
-      else
-        @r.setex("msg_throttle:#{to}", 30, true)
       end
 
       begin
@@ -371,15 +407,19 @@ module BenevolentGaze
                  msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
-      unless @r.sismember 'current_slackers', to_id
+      unless is_slack_user_online(to)
         status 404
-        return { success: false, msg: "#{to} isn't currently online. Try someone else?" }.to_json
+        return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
       # should be using this: https://api.slack.com/methods/chat.postMessage
       # post as bot to IM channel
+
+
       res = @slack.chat_postMessage(channel: "@#{to}",
                                     text: "ping from #{from}, responses to me will be posted on the board.",
                                     as_user: true)
+      # set throttle
+      @r.setex("msg_throttle:#{to}", 30, true)
 
       if res['ok'] == true
         status 200
