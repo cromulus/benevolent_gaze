@@ -12,6 +12,7 @@ require 'securerandom'
 require 'mini_magick'
 require 'httparty'
 require 'slack-ruby-client'
+require 'google-api-client'
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
 # slack names do not have an @ in front of them for our purposes.

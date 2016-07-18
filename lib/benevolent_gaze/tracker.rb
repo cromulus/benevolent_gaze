@@ -26,7 +26,8 @@ module BenevolentGaze
         p = Net::Ping::External.new(host)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        return p.ping? or p.ping?
+        res = p.ping? or p.ping? or p.ping?
+        return res
       end
 
       # def check_time # unused
