@@ -75,6 +75,7 @@ module BenevolentGaze
               name = real_name.empty? ? slack : real_name
               names << name
             end
+            names.uniq!
             client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
             ')}
 Register your devices here: http://150.brl.nyc/"

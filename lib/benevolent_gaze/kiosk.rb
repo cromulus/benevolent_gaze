@@ -378,6 +378,7 @@ module BenevolentGaze
           while @r.llen('slackback') > 0
             m = JSON.parse(@r.lpop('slackback'))
             slack_name = slack_id_to_name(m['user'])
+            next if slack_name == false
             data << { type: 'msg', msg: m['msg'], user: slack_name.delete('@') }
           end
 
