@@ -16,20 +16,159 @@
     <link href="stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
     <script src='javascripts/moment.min.js'></script>
     <script src='javascripts/fullcalendar.min.js'></script>
+    <script src='javascripts/gcal.js'></script>
+    <script src='javascripts/jquery.touchSwipe.min.js'></script>
   </head>
   <body>
   <script>
-  $('#calendar').fullCalendar({
-    set all options : options,
-    selectable: true,
-    selectHelper: true,
-    // here is the part :
-    select: function(start, end) {
+  var isMobile = window.matchMedia("only screen and (max-width: 760px)");
+
+  $( document ).ready(function() {
+    $('#calendar').fullCalendar({
+      theme: true,
+      header: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'agendaWeek,agendaDay'
+      },
+      defaultView:'agendaDay',
+      defaultDate: moment(),
+      eventLimit: true,
+      eventOverlap: false,
+      slotEventOverlap:false,
+      editable:true,
+      selectable: true,
+      selectHelper: true,
+      // here is the part :
+      select: function(start, end) {
             modalbox(start.format(),end.format());
-    },
-    editable: true
+      },
+      googleCalendarApiKey: 'AIzaSyAOzgZPmbbgrd79XHDyWu9oyhmcJaVfXv8',
+      eventSources:[
+        {
+          googleCalendarId: 'robinhood.org_2d37313337333130363239@resource.calendar.google.com',
+          className: 'tiny',
+          color: 'green'
+        },
+        {
+          googleCalendarId: 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
+          className:'smalls',
+          color:'silver'
+        },{
+          googleCalendarId:'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
+          className:'biggie',
+          color:'blue'
+        }
+      ],
+      eventRender: function(event, element){
+        var room = event.source.className[0];
+        element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
+      }
+    });
+    // touch screen!!
+  var isTouchDevice = 'ontouchstart' in document.documentElement;
+  if( isTouchDevice ) {
+    $("#calendar").swipe( {
+      tap:function(event, target) {
+          msg(target);
+      },
+      doubleTap:function(event, target) {
+          msg(target);
+      },
+      longTap:function(event, target) {
+          msg(target);
+      },
+      swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
+        if (direction == 'right') { $('#calendar').fullCalendar('prev'); }
+        if (direction == 'left') { $('#calendar').fullCalendar('next'); }
+      },
+      threshold:50,
+      fingers:'all',
+      allowPageScroll:"vertical"
+    });
+  }
+  function modalbox(start,end) {
+    ID = "popup";
+    // Title
+    console.log('inpopup')
+    var pop_content = '<h2>New event:</h2><form><div style="float:left;width:70%;text-align:right"><INPUT TYPE="TEXT" ID="title" style="width:200px;height:30px;line-height:30px;margin:5px;background-color:#EEF4F7" NAME="title" ><br>';
+    // Place
+    pop_content += '<div style="font-size:11px;color:gray;margin-top:10px">Place: <INPUT TYPE="TEXT" ID="calendar" style="width:200px;height:20px;line-height:20px;margin:3px;vertical-align:middle"  NAME="where_event"><br>';
+
+    // Submit
+    pop_content += '<INPUT type="submit" style="height:40px;width:90px" value="OK">';
+    // Start and End of the event
+    pop_content += '<INPUT TYPE="HIDDEN" ID="start" NAME="start" value="'+start+'"><INPUT type="HIDDEN" ID="end" NAME="end" value="'+end+'"></form>';
+
+    /****** Some CSS effect *****************/
+    $('#'+ID).fadeIn().css({'width': 500})
+        .empty()
+        .prepend('<a href="#" class="close"><img src="images/close.png" border="0" class="btn_close" title="Fermer" alt="Fermer" /></a>')
+        .append(pop_content);
+    // Some CSS Adjust for centering the box
+    var popMargTop = ($('#' + ID).height() + 80) / 2;
+    var popMargLeft = ($('#' + ID).width() + 80) / 2;
+    $('#' + ID).css({
+        'margin-top' : -popMargTop,
+        'margin-left' : -popMargLeft
+    });
+    //Effet fade-in du fond opaque
+    $('body').append('<div id="fade"></div>'); //Ajout du fond opaque noir
+    //Apparition du fond - .css({'filter' : 'alpha(opacity=80)'}) pour corriger les bogues de IE
+    $('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn();
+    //Fade in the Popup and add close button
+    }
+    /********** end of CSS effects *************/
+
+  $('#popup').submit(function(event) {
+    event.preventDefault(); // on stop le submit
+    var title = $('#title').val();
+    var start = $('#start').val();
+    var end = $('#end').val();
+    var calendar = $('#calendar').val();
+
+
+    // because we want immediate reaction of FullCalendar, we render the created event on the FullCalendar, even if it's only temporarily
+    if (title) {
+        $('#calendar').fullCalendar('renderEvent',
+            {
+            title: title,
+            start: start,
+            end: end
+            },
+            true // make the event "stick"
+        );
+    // Now we push it to Google also :
+    add_event_gcal(title,start,end,where_event,content_event);
+    }
+
+    // Wether we had the form fulfilled or not, we clean FullCalendar and close the popup
+    $('#calendar').fullCalendar('unselect');
+    $('#fade , .popup_block').fadeOut(function() {
+        $('#fade, a.close').hide("normal");
+    });
+});
+
+
+/****** NOW WE ASK THE EVENT TO BE PUSHED TO GOOGLE **************/
+function add_event_gcal(title,start,end,calendar) {
+    // I will create the eventInsert script in a new page, and I name it here :
+    var url = "/calendar";
+    var data = {'title' :title, 'start' : start, 'end' :end, 'calendar' : calendar};
+
+    // I want to check in the page the result of what happened
+    $('#gcal_loader').post(url,data,function(responseTxt,statusTxt,xhr){
+            if(statusTxt=="error") alert("Error: "+xhr.status+": "+xhr.statusText);
+    });
+  }
+
+
   });
+
   </script>
   <div id="calendar"></div>
+
+  <div id="popup" class="popup_block"></div>
+
   </body>
 </html>

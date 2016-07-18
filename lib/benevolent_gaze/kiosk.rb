@@ -13,6 +13,9 @@ require 'mini_magick'
 require 'httparty'
 require 'slack-ruby-client'
 require 'google-api-client'
+require 'google/apis/calendar_v3'
+require 'googleauth'
+require 'googleauth/stores/file_token_store'
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
 # slack names do not have an @ in front of them for our purposes.
@@ -348,6 +351,17 @@ module BenevolentGaze
       send_file 'public/register.html'
     end
 
+
+    get '/calendar' do
+      send_file 'public/calendar.html'
+    end
+
+    # handle the creation of events.
+    post '/calendar' do
+      # get event info from params
+      # send event to google calendar
+
+    end
     # get '/msgs', provides: 'text/event-stream' do
     #   cross_origin
     #   response.headers['X-Accel-Buffering'] = 'no'
