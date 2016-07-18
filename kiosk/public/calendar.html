@@ -61,8 +61,10 @@
         }
       ],
       eventRender: function(event, element){
-        var room = event.source.className[0];
-        element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
+        if (typeof(event.source) != 'undefined' && typeof(event.source.className)!='undefined') {
+          var room = event.source.className[0];
+          element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
+        }
       }
     });
     // touch screen!!
@@ -70,13 +72,13 @@
   if( isTouchDevice ) {
     $("#calendar").swipe( {
       tap:function(event, target) {
-          msg(target);
+        $(target).click();
       },
       doubleTap:function(event, target) {
-          msg(target);
+        $(target).click();
       },
       longTap:function(event, target) {
-          msg(target);
+        msg(target);
       },
       swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
         if (direction == 'right') { $('#calendar').fullCalendar('prev'); }
@@ -87,8 +89,17 @@
       allowPageScroll:"vertical"
     });
   }
+  jQuery.fn.center = function () {
+    this.css("position","absolute");
+    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) +
+                                                $(window).scrollTop()) + "px");
+    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) +
+                                                $(window).scrollLeft()) + "px");
+    return this;
+  }
   function modalbox(start,end) {
-    ID = "popup";
+    $pop = $('#popup');
+
     // Title
     console.log('inpopup')
     var pop_content = '<h2>New event:</h2><form><div style="float:left;width:70%;text-align:right"><INPUT TYPE="TEXT" ID="title" style="width:200px;height:30px;line-height:30px;margin:5px;background-color:#EEF4F7" NAME="title" ><br>';
@@ -101,17 +112,15 @@
     pop_content += '<INPUT TYPE="HIDDEN" ID="start" NAME="start" value="'+start+'"><INPUT type="HIDDEN" ID="end" NAME="end" value="'+end+'"></form>';
 
     /****** Some CSS effect *****************/
-    $('#'+ID).fadeIn().css({'width': 500})
+    $pop.fadeIn().css({'width': 500}).css({'z-index':1000}).css({'background-color':'white'})
         .empty()
         .prepend('<a href="#" class="close"><img src="images/close.png" border="0" class="btn_close" title="Fermer" alt="Fermer" /></a>')
         .append(pop_content);
     // Some CSS Adjust for centering the box
-    var popMargTop = ($('#' + ID).height() + 80) / 2;
-    var popMargLeft = ($('#' + ID).width() + 80) / 2;
-    $('#' + ID).css({
-        'margin-top' : -popMargTop,
-        'margin-left' : -popMargLeft
-    });
+
+
+    $pop.center();
+
     //Effet fade-in du fond opaque
     $('body').append('<div id="fade"></div>'); //Ajout du fond opaque noir
     //Apparition du fond - .css({'filter' : 'alpha(opacity=80)'}) pour corriger les bogues de IE
