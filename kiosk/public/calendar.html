@@ -12,12 +12,13 @@
     <meta content='width=device-width' initial-scale='1' name='viewport'>
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
     <link href="stylesheets/fullcalendar.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/jquery-ui.min.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/application-5a00a15f.css" rel="stylesheet" type="text/css" />
     <link href="stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
     <script src='javascripts/moment.min.js'></script>
     <script src='javascripts/fullcalendar.min.js'></script>
     <script src='javascripts/gcal.js'></script>
     <script src='javascripts/jquery.touchSwipe.min.js'></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
   </head>
   <body>
   <script>
@@ -25,7 +26,6 @@
 
   $( document ).ready(function() {
     $('#calendar').fullCalendar({
-      theme: true,
       header: {
         left: 'prev,next today',
         center: 'title',
@@ -34,11 +34,18 @@
       defaultView:'agendaDay',
       defaultDate: moment(),
       eventLimit: true,
+      nowIndicator: true,
       eventOverlap: false,
       slotEventOverlap:false,
       editable:true,
       selectable: true,
       selectHelper: true,
+      eventClick:  function(event, jsEvent, view) {
+            $('#modalTitle').html(event.title);
+            $('#modalBody').html(event.description);
+            $('#eventUrl').attr('href',event.url);
+            $('#fullCalModal').modal();
+        },
       // here is the part :
       select: function(start, end) {
             modalbox(start.format(),end.format());
@@ -178,6 +185,22 @@ function add_event_gcal(title,start,end,calendar) {
   <div id="calendar"></div>
 
   <div id="popup" class="popup_block"></div>
+
+  <div id="fullCalModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
+                <h4 id="modalTitle" class="modal-title"></h4>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button class="btn btn-primary"><a id="eventUrl" target="_blank">Event Page</a></button>
+            </div>
+        </div>
+    </div>
+</div>
 
   </body>
 </html>

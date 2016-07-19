@@ -12144,6 +12144,17 @@ $(function() {
     }
   });
 
+  var ping_poll = function(){
+    $.ajax({url:'/ping',dataType:'json',timeout: 500, async: true}).done(function(){
+      $('#ping-status').hide();
+      $('#register').show();
+    }).fail(function(){
+      $('#ping-status').show();
+      $('#register').hide();
+      setTimeout(ping_poll, 350);
+    });
+  }
+
   // populate our registration fields for registered users
   if (window.location.href.indexOf('register')!= -1) {
 
@@ -12162,17 +12173,6 @@ $(function() {
     });
     // don't let people register if they can't be pinged!
     ping_poll();
-  }
-
-  var ping_poll = function(){
-    $.getJSON({url:'ping',timeout: 500, async: true}).done(function(){
-      $('#ping-status').hide();
-      $('#register').show();
-    }).fail(function(){
-      $('#ping-status').show();
-      $('#register').hide();
-      setTimeout(ping_poll, 100);
-    });
   }
 
   $("input[type!='file']").attr("required", true);
