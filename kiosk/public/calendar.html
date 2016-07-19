@@ -50,41 +50,45 @@
       eventClick:  function(event, jsEvent, view) {
             $('#modalTitle').html(event.title);
             $('#modalBody').html(event.description);
+            $('#modalStart').val(event.start);
+            $('#modalEnd').val(event.end);
             $('#eventUrl').attr('href',event.url);
             $('#fullCalModal').modal();
+            jsEvent.preventDefault();
         },
       // here is the part :
-      select: function(start, end) {
-            modalbox(start.format(),end.format());
+      select: function(start, end, event,view,res) {
+
+        modalbox(start.format(),end.format(), res);
       },
       googleCalendarApiKey: 'AIzaSyAOzgZPmbbgrd79XHDyWu9oyhmcJaVfXv8',
       resources: [
-            { id: 'a', title: 'Tiny' },
-            { id: 'b', title: 'Smalls' },
-            { id: 'c', title: 'Biggie' }
+            { id: 'tiny', title: 'Tiny' },
+            { id: 'smalls', title: 'Smalls' },
+            { id: 'biggie', title: 'Biggie' }
         ],
       eventSources:[
         {
           googleCalendarId: 'robinhood.org_2d37313337333130363239@resource.calendar.google.com',
           className: 'tiny',
           color: 'green',
-          resourceId: 'a'
+          resourceId: 'tiny'
         },
         {
           googleCalendarId: 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
           className: 'smalls',
           color: 'silver',
-          resourceId: 'b'
+          resourceId: 'smalls'
         },{
           googleCalendarId: 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
           className: 'biggie',
           color: 'blue',
-          resourceId: 'c'
+          resourceId: 'biggie'
         }
       ],
       eventRender: function(event, element){
         if (typeof(event.source) != 'undefined' && typeof(event.source.className)!='undefined') {
-          console.log(event);
+
           var room = event.source.className[0];
           element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
         }
@@ -120,7 +124,7 @@
                                                 $(window).scrollLeft()) + "px");
     return this;
   }
-  function modalbox(start,end) {
+  function modalbox(start,end,res) {
     $pop = $('#popup');
 
     // Title
@@ -137,7 +141,7 @@
     /****** Some CSS effect *****************/
     $pop.fadeIn().css({'width': 500}).css({'z-index':1000}).css({'background-color':'white'})
         .empty()
-        .prepend('<a href="#" class="close"><img src="images/close.png" border="0" class="btn_close" title="Fermer" alt="Fermer" /></a>')
+        .prepend('<a href="#" class="close" onclick="$(\'#popup\').hide();">X</a>')
         .append(pop_content);
     // Some CSS Adjust for centering the box
 
