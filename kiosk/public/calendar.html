@@ -16,6 +16,7 @@
     <link href="stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
     <script src='javascripts/moment.min.js'></script>
     <script src='javascripts/fullcalendar.min.js'></script>
+    <script src='javascripts/scheduler.min.js'></script>
     <script src='javascripts/gcal.js'></script>
     <script src='javascripts/jquery.touchSwipe.min.js'></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
@@ -33,10 +34,14 @@
       },
       defaultView:'agendaDay',
       defaultDate: moment(),
+      aspectRatio: 1.8,
+      scrollTime: '00:00', // undo default 6am scrollTime
       eventLimit: true,
       nowIndicator: true,
       eventOverlap: false,
-      slotEventOverlap:false,
+      slotEventOverlap: false,
+      schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+      groupByResource: true,
       editable:true,
       selectable: true,
       selectHelper: true,
@@ -51,20 +56,28 @@
             modalbox(start.format(),end.format());
       },
       googleCalendarApiKey: 'AIzaSyAOzgZPmbbgrd79XHDyWu9oyhmcJaVfXv8',
+      resources: [
+            { id: 'a', title: 'Tiny' },
+            { id: 'b', title: 'Smalls' },
+            { id: 'c', title: 'Biggie' }
+        ],
       eventSources:[
         {
           googleCalendarId: 'robinhood.org_2d37313337333130363239@resource.calendar.google.com',
           className: 'tiny',
-          color: 'green'
+          color: 'green',
+          resourceId: 'a'
         },
         {
           googleCalendarId: 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
-          className:'smalls',
-          color:'silver'
+          className: 'smalls',
+          color: 'silver',
+          resourceId: 'b'
         },{
-          googleCalendarId:'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
-          className:'biggie',
-          color:'blue'
+          googleCalendarId: 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
+          className: 'biggie',
+          color: 'blue',
+          resourceId: 'c'
         }
       ],
       eventRender: function(event, element){
