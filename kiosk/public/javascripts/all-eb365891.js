@@ -12146,6 +12146,7 @@ $(function() {
 
   // populate our registration fields for registered users
   if (window.location.href.indexOf('register')!= -1) {
+
     $.ajax({url:'/me', dataType: "json"}).done(function(d){
       if (d['success'] === true) {
         $('input[name=real_name]').val(d['data']['real_name']);
@@ -12158,6 +12159,19 @@ $(function() {
       }
     }).fail(function(){
       console.log('not yet registered');
+    });
+    // don't let people register if they can't be pinged!
+    ping_poll();
+  }
+
+  var ping_poll = function(){
+    $.getJSON({url:'ping',timeout: 500, async: true}).done(function(){
+      $('#ping-status').hide();
+      $('#register').show();
+    }).fail(function(){
+      $('#ping-status').show();
+      $('#register').hide();
+      setTimeout(ping_poll, 100);
     });
   }
 
@@ -12271,7 +12285,7 @@ $(function() {
           type: 'POST',
           // make sure you respect the same origin policy with this url:
           // http://en.wikipedia.org/wiki/Same_origin_policy
-          url: '/ping/',
+          url: '/slack_ping/',
           data: {
               'to': to
           }

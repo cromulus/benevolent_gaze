@@ -11,6 +11,7 @@ require 'aws/s3'
 require 'securerandom'
 require 'mini_magick'
 require 'httparty'
+require 'net/ping'
 require 'slack-ruby-client'
 require 'google-api-client'
 require 'google/apis/calendar_v3'
@@ -65,6 +66,15 @@ module BenevolentGaze
           request.ip
         end
       end
+
+      def ping(host)
+        p = Net::Ping::External.new(host)
+        # or makes sense here, actually. first pings can sometimes fail as
+        # the device might be asleep...
+        res = p.ping? or p.ping? or p.ping?
+        return res
+      end
+
 
       def lookup_slack_id(slack_name)
         slack_name.delete!('@')
@@ -208,6 +218,16 @@ module BenevolentGaze
       get_ip
     end
 
+    get 'ping' do
+      res = ping(get_ip)
+      if res
+        status 200
+        return {success: true}.to_json
+      else
+        status 404
+        return {success:false}.to_json
+    end
+
     get '/me' do
       begin
         dns = Resolv.new
@@ -253,6 +273,12 @@ module BenevolentGaze
     end
 
     get '/slack_me_up/:id' do
+
+      unless ping(get_ip)
+        status 404
+        return {success:false,msg: 'we cannot ping your device'}.to_json
+      end
+
       dns = Resolv.new
       begin
         device_name = dns.getname(get_ip)
@@ -301,6 +327,13 @@ module BenevolentGaze
     end
 
     post '/register' do
+
+      # no registration for un-pingable devices
+      unless ping(get_ip)
+        status 404
+        return { success: false, msg: 'we cannot ping your device' }.to_json
+      end
+
       dns = Resolv.new
       begin
         device_name = dns.getname(get_ip)
@@ -433,7 +466,7 @@ module BenevolentGaze
       end
     end
 
-    post '/ping/' do
+    post '/slack_ping/' do
       to = params[:to]
       # throttle our messages. 1 minute
       if @r.get("msg_throttle:#{to}")
