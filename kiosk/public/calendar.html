@@ -34,8 +34,8 @@
       },
       defaultView:'agendaDay',
       defaultDate: moment(),
-      aspectRatio: 1.8,
-      scrollTime: '00:00', // undo default 6am scrollTime
+
+      scrollTime: '09:00:00', // undo default 6am scrollTime
       eventLimit: true,
       nowIndicator: true,
       eventOverlap: false,
@@ -45,6 +45,8 @@
       editable:true,
       selectable: true,
       selectHelper: true,
+      slotDuration:'00:15:00',
+      minTime:'08:00:00',
       eventClick:  function(event, jsEvent, view) {
             $('#modalTitle').html(event.title);
             $('#modalBody').html(event.description);
@@ -82,6 +84,7 @@
       ],
       eventRender: function(event, element){
         if (typeof(event.source) != 'undefined' && typeof(event.source.className)!='undefined') {
+          console.log(event);
           var room = event.source.className[0];
           element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
         }
