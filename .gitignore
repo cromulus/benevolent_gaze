@@ -17,3 +17,7 @@ kiosk/.env
 mkmf.log
 .DS_Store
 /bg_public/
+
+
+client_secret.json
+.credentials

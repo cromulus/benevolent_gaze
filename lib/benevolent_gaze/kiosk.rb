@@ -13,10 +13,10 @@ require 'mini_magick'
 require 'httparty'
 require 'net/ping'
 require 'slack-ruby-client'
-require 'google-api-client'
 require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
+require 'pp'
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
 # slack names do not have an @ in front of them for our purposes.
@@ -30,6 +30,7 @@ module BenevolentGaze
     set :app_file, __FILE__
     set :port, ENV['IPORT']
     set :static, true
+    set :logging, true
     set :public_folder, ENV['PUBLIC_FOLDER'] || 'public'
     @@local_file_system = ENV['PUBLIC_FOLDER'] || 'public'
 
@@ -51,6 +52,17 @@ module BenevolentGaze
       Slack.configure do |config|
         config.token = ENV['SLACK_API_TOKEN']
       end
+
+      OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
+      APPLICATION_NAME = 'Blue Ridge Calendaring'
+      CLIENT_SECRETS_PATH = 'client_secret.json'
+      CREDENTIALS_PATH = File.join(Dir.home, '.credentials',
+                                   "calendar-ruby-quickstart.yaml")
+      SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
+      CALENDAR_IDS = {
+        'biggie' => 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
+        'smalls' => 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
+      'tiny' => 'robinhood.org_2d37313337333130363239@resource.calendar.google.com'}
     end
 
     before do
@@ -87,7 +99,7 @@ module BenevolentGaze
           @r.hset('slack_id2slack_name', slack_id, slack_name)
           @r.hset('slack_id2slack_name', slack_name, slack_id)
           return slack_id
-        rescue Exception
+        rescue Slack::Web::Api::Error => e
           # throws an exception if user not found.
           return false
         end
@@ -110,7 +122,7 @@ module BenevolentGaze
           @r.hset('slack_id2slack_name', slack_id, slack_name)
           @r.hset('slack_id2slack_name', slack_name, slack_id)
           return slack_name
-        rescue Exception
+        rescue Slack::Web::Api::Error
           # throws an exception if user not found.
           return false
         end
@@ -128,12 +140,32 @@ module BenevolentGaze
           end
           sname.delete!('@')
           return online
-        rescue Exception
+        rescue Slack::Web::Api::Error
           sname.delete!('@')
           # throws an exception if user not found.
           return false
         end
       end
+
+      def service
+        return @service unless @service.nil?
+
+        client_id = Google::Auth::ClientId.from_file(CLIENT_SECRETS_PATH)
+        token_store = Google::Auth::Stores::FileTokenStore.new(file: CREDENTIALS_PATH)
+        authorizer = Google::Auth::UserAuthorizer.new(
+        client_id, SCOPE, token_store)
+        user_id = 'bill@robinhood.org'
+        credentials = authorizer.get_credentials(user_id)
+        @service = Google::Apis::CalendarV3::CalendarService.new
+        @service.client_options.application_name = APPLICATION_NAME
+        @service.authorization = credentials
+        @service
+      end
+
+      def calendar_name_to_id(name)
+        CALENDAR_IDS[name]
+      end
+
 
       def upload(filename, file, device_name)
         doomsday = Time.mktime(2038, 1, 18).to_i
@@ -202,13 +234,22 @@ module BenevolentGaze
       send_file 'public/index.html'
     end
 
+    get '/register' do
+      send_file 'public/register.html'
+    end
+
+
+    get '/calendar' do
+      send_file 'public/calendar.html'
+    end
+
     get '/is_registered' do
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip)
 
         result = @r.exists("name:#{device_name}").to_s
-      rescue Exception
+      rescue Resolv::ResolvError
         result = false
       end
       return result
@@ -226,320 +267,376 @@ module BenevolentGaze
       else
         status 404
         return {success:false}.to_json
-    end
+      end
 
-    get '/me' do
-      begin
-        dns = Resolv.new
-        device_name = dns.getname(get_ip)
+      get '/me' do
+        begin
+          dns = Resolv.new
+          device_name = dns.getname(get_ip)
 
-        connected = @r.exists("name:#{device_name}")
-        unless connected
-          status 404
-          return { success: false, msg: "we don't seem to have your info" }.to_json
+          connected = @r.exists("name:#{device_name}")
+          unless connected
+            status 404
+            return { success: false, msg: "we don't seem to have your info" }.to_json
+          end
+        rescue Resolv::ResolvError => e
+          status 500
+          return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
         end
-      rescue Exception
-        status 500
-        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
-      end
-      name = @r.hget("current_devices", device_name)
-      name = @r.get("name:#{device_name}") if name.nil?
-      name_or_device_name = name ? name : device_name
-      data = {
-        real_name: name,
-        slack_name: @r.get("slack:#{device_name}"),
-        avatar: @r.get("image:#{name_or_device_name}")
-      }
+        name = @r.hget("current_devices", device_name)
+        name = @r.get("name:#{device_name}") if name.nil?
+        name_or_device_name = name ? name : device_name
+        data = {
+          real_name: name,
+          slack_name: @r.get("slack:#{device_name}"),
+          avatar: @r.get("image:#{name_or_device_name}")
+        }
 
-      status 200
-      return {success:true,data: data }.to_json
-    end
-
-    get '/env' do
-      ENV.each_pair do|k, v|
-        puts "#{k}:#{v} \n"
-        puts '<br>'
-      end
-    end
-
-    get '/dns' do
-      dns = Resolv.new
-      begin
-        return dns.getname(get_ip)
-      rescue Exception
-        status = 404
-        return false
-      end
-    end
-
-    get '/slack_me_up/:id' do
-
-      unless ping(get_ip)
-        status 404
-        return {success:false,msg: 'we cannot ping your device'}.to_json
+        status 200
+        return {success:true,data: data }.to_json
       end
 
-      dns = Resolv.new
-      begin
-        device_name = dns.getname(get_ip)
-      rescue Exception => e
-        status 500
-        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
-      end
-      slack_id = params['id']
-      begin
-        res = get_slack_info(slack_id)
-      rescue Exception => e
-        status 404
-        return { success: false, msg: 'Slack ID Not Found' }.to_json
-      end
-      u_data = res['user']
-
-      # hunting for a name...
-      name = u_data['profile']['real_name_normalized']
-      name = u_data['real_name']  if name.empty?
-      name = u_data['profile']['real_name'] if name.empty?
-      name = u_data['name'] if name.empty?
-
-      @r.set("name:#{device_name}", name)
-      @r.set("slack:#{device_name}", u_data['name'])
-      @r.set("slack_id:#{device_name}", slack_id)
-
-      name = name.empty? ? false : name
-      image_url = u_data['profile']['image_512']
-      image_name_key = 'image:' + (name || device_name)
-      @r.set(image_name_key, image_url)
-
-      status 200
-      redirect '/'
-    end
-
-
-    post 'search' do
-      if params[:slack]
-        devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
-        # if device exists, return true, else false
-        return !devices.detect { |d| @r.hexists('current_devices', d) }.nil?
-      elsif params[:name]
-        names = @r.keys('name:*').select { |k| @r.get(k) == params[:name] }
-        return !names.detect { |d| @r.hexists('current_devices', d) }.nil?
-      end
-    end
-
-    post '/register' do
-
-      # no registration for un-pingable devices
-      unless ping(get_ip)
-        status 404
-        return { success: false, msg: 'we cannot ping your device' }.to_json
+      get '/env' do
+        ENV.each_pair do|k, v|
+          puts "#{k}:#{v} \n"
+          puts '<\br>'
+        end
       end
 
-      dns = Resolv.new
-      begin
-        device_name = dns.getname(get_ip)
-      rescue Exception => e
-        status 500
-        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+      get '/dns' do
+        dns = Resolv.new
+        begin
+          return dns.getname(get_ip)
+        rescue Resolv::ResolvError
+          status = 404
+          return false
+        end
       end
 
-      real_name = nil
+      get '/slack_me_up/:id' do
 
-      unless params[:real_name].empty?
-        real_name = params[:real_name].to_s.strip
-      else
-        status 401
-        return "Please tell us your name! <a href'http://150.brl.nyc/register'>go back and try again.</a>"
-      end
+        unless ping(get_ip)
+          status 404
+          return {success:false,msg: 'we cannot ping your device'}.to_json
+        end
 
-      image_name_key = "image:#{real_name}"
-
-      if params[:slack_name]
-        slack_name = params[:slack_name].to_s.strip
-        slack_name.delete!('@')
-        slack_id = lookup_slack_id(slack_name)
-
-        if slack_id
-          # no @ in data-slackname! breaks jquery
-          @r.set("slack:#{device_name}", slack_name)
-          @r.set("slack_id:#{device_name}", slack_id)
+        dns = Resolv.new
+        begin
+          device_name = dns.getname(get_ip)
+        rescue Resolv::ResolvError
+          status 500
+          return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+        end
+        slack_id = params['id']
+        begin
           res = get_slack_info(slack_id)
-          @r.set(image_name_key, res['user']['profile']['image_512'])
+        rescue Slack::Web::Api::Error
+          status 404
+          return { success: false, msg: 'Slack ID Not Found' }.to_json
+        end
+        u_data = res['user']
+
+        # hunting for a name...
+        name = u_data['profile']['real_name_normalized']
+        name = u_data['real_name']  if name.empty?
+        name = u_data['profile']['real_name'] if name.empty?
+        name = u_data['name'] if name.empty?
+
+        @r.set("name:#{device_name}", name)
+        @r.set("slack:#{device_name}", u_data['name'])
+        @r.set("slack_id:#{device_name}", slack_id)
+
+        name = name.empty? ? false : name
+        image_url = u_data['profile']['image_512']
+        image_name_key = 'image:' + (name || device_name)
+        @r.set(image_name_key, image_url)
+
+        status 200
+        redirect '/'
+      end
+
+
+      post 'search' do
+        if params[:slack]
+          devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
+          # if device exists, return true, else false
+          return !devices.detect { |d| @r.hexists('current_devices', d) }.nil?
+        elsif params[:name]
+          names = @r.keys('name:*').select { |k| @r.get(k) == params[:name] }
+          return !names.detect { |d| @r.hexists('current_devices', d) }.nil?
+        end
+      end
+
+      post '/register' do
+
+        # no registration for un-pingable devices
+        unless ping(get_ip)
+          status 404
+          return { success: false, msg: 'we cannot ping your device' }.to_json
+        end
+
+        dns = Resolv.new
+        begin
+          device_name = dns.getname(get_ip)
+        rescue Resolv::ResolvError
+          status 500
+          return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+        end
+
+        real_name = nil
+
+        unless params[:real_name].empty?
+          real_name = params[:real_name].to_s.strip
         else
           status 401
-          return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
+          return "Please tell us your name! <a href'http://150.brl.nyc/register'>go back and try again.</a>"
         end
-      end
 
-      if params[:fileToUpload]
-        image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
-        @r.set(image_name_key, image_url_returned_from_upload_function)
-      end
+        image_name_key = "image:#{real_name}"
 
-      @r.set("name:#{device_name}", real_name)
-      status 200
-      redirect '/'
-    end
+        if params[:slack_name]
+          slack_name = params[:slack_name].to_s.strip
+          slack_name.delete!('@')
+          slack_id = lookup_slack_id(slack_name)
 
-    get '/register' do
-      send_file 'public/register.html'
-    end
-
-
-    get '/calendar' do
-      send_file 'public/calendar.html'
-    end
-
-    # handle the creation of events.
-    post '/calendar' do
-      # get event info from params
-      # send event to google calendar
-
-    end
-    # get '/msgs', provides: 'text/event-stream' do
-    #   cross_origin
-    #   response.headers['X-Accel-Buffering'] = 'no'
-    #   stream :keep_open do |out|
-    #     loop do
-    #       break if out.closed?
-    #       r = Redis.connect
-    #       r.subscribe('slackback') do |on|
-    #         on.message do |_channel, message|
-    #           m = JSON.parse(message)
-    #           slack_name = slack_id_to_name(m['user'])
-    #           data = { msg: m['msg'], user: slack_name.delete('@') }.to_json
-    #           out << "data: #{data}\n\n"
-    #         end
-    #       end
-    #     end
-    #   end
-    # end
-
-    get '/feed', provides: 'text/event-stream' do
-      cross_origin
-      response.headers['X-Accel-Buffering'] = 'no'
-      stream :keep_open do |out|
-        loop do
-          break if out.closed?
-          data = []
-          @r = Redis.connect
-          # grab all recent messages.
-          while @r.llen('slackback') > 0
-            m = JSON.parse(@r.lpop('slackback'))
-            slack_name = slack_id_to_name(m['user'])
-            next if slack_name == false
-            data << { type: 'msg', msg: m['msg'], user: slack_name.delete('@') }
+          if slack_id
+            # no @ in data-slackname! breaks jquery
+            @r.set("slack:#{device_name}", slack_name)
+            @r.set("slack_id:#{device_name}", slack_id)
+            res = get_slack_info(slack_id)
+            @r.set(image_name_key, res['user']['profile']['image_512'])
+          else
+            status 401
+            return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
           end
-
-          @r.hgetall('current_devices').each do |k, v|
-            name_or_device_name = @r.get("name:#{k}") || k
-            slack = @r.get("slack:#{k}") || false
-            slack_id = @r.get("slack_id:#{k}")
-            next unless slack # if you're not setup, we don't want to see you.
-
-            online = false
-            # if we have a slack, remove the @. if not, set to false
-            if slack
-              slack.delete!('@')
-              slack_id = lookup_slack_id(slack)
-              online = @r.sismember('current_slackers', slack_id) || false
-            end
-            image_url = @r.get("image:#{name_or_device_name}")
-
-            unless image_url # force people to use their slack images...
-              res = get_slack_info(slack_id)
-              @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
-            end
-
-            data << { type: 'device',
-                      device_name: k,
-                      name: v,
-                      online: online,
-                      slack_name: slack,
-                      last_seen: (Time.now.to_f * 1000).to_i,
-                      avatar: image_url
-                       }
-          end
-
-          out << "data: #{data.to_json}\n\n"
-          sleep 0.5
         end
-      end
-    end
 
-    post '/slack_ping/' do
-      to = params[:to]
-      # throttle our messages. 1 minute
-      if @r.get("msg_throttle:#{to}")
-        status 420 # enhance your chill
-        return { success: false, msg: 'enhance your chill.' }.to_json
-      end
+        if params[:fileToUpload]
+          image_url_returned_from_upload_function = upload(params[:fileToUpload][:filename], params[:fileToUpload][:tempfile], device_name)
+          @r.set(image_name_key, image_url_returned_from_upload_function)
+        end
 
-      begin
-        dns = Resolv.new
-        device_name = dns.getname(get_ip)
-
-        result = @r.get("slack:#{device_name}")
-        result = @r.get("name:#{device_name}") if result.nil?
-      rescue Exception
-        status 404
-        return { success: false, msg: "We can't seem to figure out who you are." }.to_json
-      end
-      from = result.to_s
-
-      to_id   = lookup_slack_id(to)
-      from_id = lookup_slack_id(from)
-      from = from_id ? from_id.prepend('<@') + '>' : from
-
-      # no user found!
-      unless to_id
-        status 404
-        return { success: false,
-                 msg: "the person you're trying to ping isn't on slack" }.to_json
+        @r.set("name:#{device_name}", real_name)
+        status 200
+        redirect '/'
       end
 
-      unless is_slack_user_online(to)
-        status 404
-        return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
-      end
-      # should be using this: https://api.slack.com/methods/chat.postMessage
-      # post as bot to IM channel
+      # event is in the calendar we think it is, update.
+      # event is in another calendar, move and then update
+      # event isn't in any calendar, it's new! create it!
+      #
+      # handle the creation & editing of events.
+      post '/calendar' do
+        e_id      = params[:id]
+        e_start   = DateTime.parse(params[:start])
+        e_end     = DateTime.parse(params[:end])
+        calendar  = params[:calendar]
+        title     = params[:title]
+        sequence  = 1 # must update sequence if event exists.
 
 
-      res = @slack.chat_postMessage(channel: "@#{to}",
-                                    text: "ping from #{from}, responses to me will be posted on the board.",
-                                    as_user: true)
-      # set throttle
-      @r.setex("msg_throttle:#{to}", 30, true)
+        calendar_id = calendar_name_to_id(calendar)
+        event = nil
+        old_cal_id = nil
+        begin
+          # event found in this calendar.
+          event = service.get_event(calendar_id, e_id)
+        rescue Google::Apis::ClientError
+          # event doesn't exist in this calendar.
+          # find in others?
+        end
 
-      if res['ok'] == true
+        other_calendars = CALENDAR_IDS.values
+        other_calendars.delete(calendar_id)
+
+        other_calendars.each do |cal_id|
+          begin
+            event = service.get_event(calendar_id, e_id)
+            old_cal_id =  calendar_id if event
+          rescue Google::Apis::ClientError
+
+          end
+        end if event.nil?
+
+        if event
+          # we move the event if it was in another calendar
+          if old_cal_id
+            service.move_event(old_cal_id, event.id, calendar_id)
+          end
+          event.sequence += 2 # moving changes sequence +1, i think.
+          event.start.date_time = e_start
+          event.start.time_zone = 'America/New_York'
+          event.end.date_time = e_end
+          event.end.time_zone = 'America/New_York'
+          result = service.update_event(calendar_id, event.id, event)
+        else # wholly new event!
+          options = {
+            summary: title,
+            location: calendar,
+            description: title,
+            start: {
+              date_time: e_start,
+            time_zone: 'America/New_York'},
+            end: {
+              date_time: e_end,
+          time_zone: 'America/New_York'}}
+          event = Google::Apis::CalendarV3::Event.new(options)
+          result = service.insert_event(calendar_id, event)
+        end
+
         status 200
         return { success: true }.to_json
-      else
-        status 400
-        return { success: false, msg: 'something went horribly wrong.' }.to_json
+      end
+
+      # get '/msgs', provides: 'text/event-stream' do
+      #   cross_origin
+      #   response.headers['X-Accel-Buffering'] = 'no'
+      #   stream :keep_open do |out|
+      #     loop do
+      #       break if out.closed?
+      #       r = Redis.connect
+      #       r.subscribe('slackback') do |on|
+      #         on.message do |_channel, message|
+      #           m = JSON.parse(message)
+      #           slack_name = slack_id_to_name(m['user'])
+      #           data = { msg: m['msg'], user: slack_name.delete('@') }.to_json
+      #           out << "data: #{data}\n\n"
+      #         end
+      #       end
+      #     end
+      #   end
+      # end
+
+      get '/feed', provides: 'text/event-stream' do
+        cross_origin
+        response.headers['X-Accel-Buffering'] = 'no'
+        stream :keep_open do |out|
+          loop do
+            break if out.closed?
+            data = []
+            @r = Redis.connect
+            # grab all recent messages.
+            while @r.llen('slackback') > 0
+              m = JSON.parse(@r.lpop('slackback'))
+              slack_name = slack_id_to_name(m['user'])
+              next if slack_name == false
+              data << { type: 'msg', msg: m['msg'], user: slack_name.delete('@') }
+            end
+
+            @r.hgetall('current_devices').each do |k, v|
+              name_or_device_name = @r.get("name:#{k}") || k
+              slack = @r.get("slack:#{k}") || false
+              slack_id = @r.get("slack_id:#{k}")
+              next unless slack # if you're not setup, we don't want to see you.
+
+              online = false
+              # if we have a slack, remove the @. if not, set to false
+              if slack
+                slack.delete!('@')
+                slack_id = lookup_slack_id(slack)
+                online = @r.sismember('current_slackers', slack_id) || false
+              end
+              image_url = @r.get("image:#{name_or_device_name}")
+
+              unless image_url # force people to use their slack images...
+                res = get_slack_info(slack_id)
+                @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
+              end
+
+              data << { type: 'device',
+                        device_name: k,
+                        name: v,
+                        online: online,
+                        slack_name: slack,
+                        last_seen: (Time.now.to_f * 1000).to_i,
+                        avatar: image_url
+                        }
+            end
+
+            out << "data: #{data.to_json}\n\n"
+            sleep 0.5
+          end
+        end
+      end
+
+      post '/slack_ping/' do
+        to = params[:to]
+        # throttle our messages. 1 minute
+        if @r.get("msg_throttle:#{to}")
+          status 420 # enhance your chill
+          return { success: false, msg: 'enhance your chill.' }.to_json
+        end
+
+        begin
+          dns = Resolv.new
+          device_name = dns.getname(get_ip)
+
+          result = @r.get("slack:#{device_name}")
+          result = @r.get("name:#{device_name}") if result.nil?
+        rescue Resolv::ResolvError => e
+          status 404
+          return { success: false, msg: "We can't seem to figure out who you are. #{e}" }.to_json
+        end
+        from = result.to_s
+
+        to_id   = lookup_slack_id(to)
+        from_id = lookup_slack_id(from)
+        from = from_id ? from_id.prepend('<@') + '>' : from
+
+        # no user found!
+        unless to_id
+          status 404
+          return { success: false,
+                   msg: "the person you're trying to ping isn't on slack" }.to_json
+        end
+
+        unless is_slack_user_online(to)
+          status 404
+          return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
+        end
+        # should be using this: https://api.slack.com/methods/chat.postMessage
+        # post as bot to IM channel
+
+
+        res = @slack.chat_postMessage(channel: "@#{to}",
+                                      text: "ping from #{from}, responses to me will be posted on the board.",
+                                      as_user: true)
+        # set throttle
+        @r.setex("msg_throttle:#{to}", 30, true)
+
+        if res['ok'] == true
+          status 200
+          return { success: true }.to_json
+        else
+          status 400
+          return { success: false, msg: 'something went horribly wrong.' }.to_json
+        end
+      end
+
+      post '/information' do
+        # grab current devices on network.
+        # Save them to the devices on network key after we make sure that we
+        # grab the names that have been added already to the whole list and
+        # then save them to the updated hash (set?)for redis.
+        devices_on_network = JSON.parse(params[:devices])
+        if IGNORE_HOSTS != false
+          devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
+        end
+        old_set = @r.hkeys('current_devices')
+        new_set = devices_on_network.keys
+        diff_set = old_set - new_set
+
+        diff_set.each do |d|
+          @r.hdel('current_devices', d)
+        end
+
+        devices_on_network.each do |k, _v|
+          @r.hmset('current_devices', k, @r.get("name:#{k}"))
+        end
       end
     end
-
-    post '/information' do
-      # grab current devices on network.
-      # Save them to the devices on network key after we make sure that we
-      # grab the names that have been added already to the whole list and
-      # then save them to the updated hash (set?)for redis.
-      devices_on_network = JSON.parse(params[:devices])
-      if IGNORE_HOSTS != false
-        devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
-      end
-      old_set = @r.hkeys('current_devices')
-      new_set = devices_on_network.keys
-      diff_set = old_set - new_set
-
-      diff_set.each do |d|
-        @r.hdel('current_devices', d)
-      end
-
-      devices_on_network.each do |k, _v|
-        @r.hmset('current_devices', k, @r.get("name:#{k}"))
-      end
-    end
+  end
+  Sinatra::Application.routes.each do |route|
+     puts route
   end
 end

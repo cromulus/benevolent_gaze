@@ -28,12 +28,12 @@ module BenevolentGaze
           r.sadd('current_slackers', data['user'])
           # if we haven't invited them AND they aren't registered...
           # invite them!
-          if !r.sismember('slinvited',data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
+          if !r.sismember('slinvited', data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
             puts "inviting #{data['user']}"
             client.web_client.chat_postMessage(channel: data['user'],
-                                    text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
-                                    as_user: true)
-            r.sadd('slinvited',data['user'])
+                                               text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                               as_user: true)
+            r.sadd('slinvited', data['user'])
           end
         when 'away'
           r.srem('current_slackers', data['user'])
@@ -59,8 +59,8 @@ module BenevolentGaze
             puts "sending invite to #{user}"
 
             client.web_client.chat_postMessage(channel: user.to_s,
-                                    text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
-                                    as_user: true)
+                                               text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                               as_user: true)
           when /^help/
             client.message channel: (data['channel']).to_s, text: '`@marco @username` checks if they are in the office,
             `@marco who` lists all people in the office. If you get a message from marco, your responses to that message will be posted to the board.

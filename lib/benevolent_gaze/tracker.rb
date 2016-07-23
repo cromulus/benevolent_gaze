@@ -26,8 +26,8 @@ module BenevolentGaze
         p = Net::Ping::External.new(host)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        res = p.ping? or p.ping? or p.ping?
-        return res
+        (res = p.ping?) || p.ping? || p.ping?
+        res
       end
 
       # def check_time # unused
@@ -72,14 +72,12 @@ module BenevolentGaze
         # speedy, but occasionally deeply innacurrate.
         # `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each { |d| devices.add(d) }
 
-
         # so, we don't want ALL ip on net, just registered ones.
         # this could also be a request to to the web service too...
-        @r.keys("slack:*").map{|k| devices.add k.gsub('slack:','') }
+        @r.keys('slack:*').map { |k| devices.add k.gsub('slack:', '') }
 
         # ping is low memory and largely io bound.
         device_array = Parallel.map(devices) do |name|
-
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
@@ -87,7 +85,6 @@ module BenevolentGaze
           rescue Exception => _e
             next
           end
-
 
           # next if ping fails
           next unless ping(ip)

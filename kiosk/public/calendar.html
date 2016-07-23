@@ -11,19 +11,29 @@
     <meta content='Gonna blow your mind. Get ready.' name='description'>
     <meta content='width=device-width' initial-scale='1' name='viewport'>
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
-    <link href="stylesheets/fullcalendar.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/application-5a00a15f.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
-    <script src='javascripts/moment.min.js'></script>
-    <script src='javascripts/fullcalendar.min.js'></script>
-    <script src='javascripts/scheduler.min.js'></script>
-    <script src='javascripts/gcal.js'></script>
-    <script src='javascripts/jquery.touchSwipe.min.js'></script>
+    <link href="/stylesheets/fullcalendar.css" rel="stylesheet" type="text/css" />
+    <link href="/stylesheets/application-5a00a15f.css" rel="stylesheet" type="text/css" />
+    <link href="/stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
+
+    <script src='/javascripts/moment.min.js'></script>
+    <script src='/javascripts/fullcalendar.min.js'></script>
+    <script src='/javascripts/scheduler.min.js'></script>
+    <script src='/javascripts/gcal.js'></script>
+    <script src='/javascripts/jquery.touchSwipe.min.js'></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
   </head>
   <body>
   <script>
   var isMobile = window.matchMedia("only screen and (max-width: 760px)");
+  var me = {};
+  $.ajax({url:'/me',dataType:'json'}).done(function(d){
+    me = d;
+  }).fail(function(){
+    // later!
+    // window.location("/register");
+    me={full_name:'Bill Cromie',slackname:'@billcromie'};
+  });
 
   $( document ).ready(function() {
     $('#calendar').fullCalendar({
@@ -40,6 +50,7 @@
       nowIndicator: true,
       eventOverlap: false,
       slotEventOverlap: false,
+      allDaySlot: false,
       schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
       groupByResource: true,
       editable:true,
@@ -48,18 +59,38 @@
       slotDuration:'00:15:00',
       minTime:'08:00:00',
       eventClick:  function(event, jsEvent, view) {
-            $('#modalTitle').html(event.title);
-            $('#modalBody').html(event.description);
-            $('#modalStart').val(event.start);
-            $('#modalEnd').val(event.end);
-            $('#eventUrl').attr('href',event.url);
-            $('#fullCalModal').modal();
-            jsEvent.preventDefault();
-        },
-      // here is the part :
-      select: function(start, end, event,view,res) {
+        console.log(event)
+        $('#modalEventId').val(event.id);
+        $('#modalTitle').html(event.title);
+        $('#modalBody').html(event.description);
+        $('#modalStart').val(event.start);
+        $('#modalEnd').val(event.end);
+        $('#modalCalendar').val(event.resourceId);
+        $('#eventUrl').attr('href',event.url);
+        $('#fullCalModal').modal();
+        jsEvent.preventDefault();
+      },
+      // user selects times on the calendar for a new event
+      select: function(start, end, event, view, res) {
+        resource_select(start.format(),end.format(), res);
+      },
+      eventDrop:function( event, delta, revertFunc, jsEvent, ui, view ) {
+        // delta is the change in milliseconds to the start of the event.
+        console.log(event);
 
-        modalbox(start.format(),end.format(), res);
+
+        // get event id, get new resource id, update color, update title, etc. etc.
+        // send new times to backend
+        // on success refresh calendar events
+        // on fail call refertFunc.
+
+      },
+      eventResize: function( event, delta, revertFunc, jsEvent, ui, view ) {
+        // delta is the change in milliseconds to the end of the event.
+
+        // get event id, send new times to backend
+        // on success refresh calendar events
+        // on fail call refertFunc.
       },
       googleCalendarApiKey: 'AIzaSyAOzgZPmbbgrd79XHDyWu9oyhmcJaVfXv8',
       resources: [
@@ -72,18 +103,21 @@
           googleCalendarId: 'robinhood.org_2d37313337333130363239@resource.calendar.google.com',
           className: 'tiny',
           color: 'green',
-          resourceId: 'tiny'
+          resourceId: 'tiny',
+          editable:true
         },
         {
           googleCalendarId: 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
           className: 'smalls',
-          color: 'silver',
-          resourceId: 'smalls'
+          color: 'red',
+          resourceId: 'smalls',
+          editable:true
         },{
           googleCalendarId: 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
           className: 'biggie',
           color: 'blue',
-          resourceId: 'biggie'
+          resourceId: 'biggie',
+          editable:true
         }
       ],
       eventRender: function(event, element){
@@ -105,107 +139,69 @@
         $(target).click();
       },
       longTap:function(event, target) {
-        msg(target);
+        $(target).click();
       },
       swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
         if (direction == 'right') { $('#calendar').fullCalendar('prev'); }
         if (direction == 'left') { $('#calendar').fullCalendar('next'); }
       },
-      threshold:50,
-      fingers:'all',
-      allowPageScroll:"vertical"
+      threshold: 50,
+      fingers: 'all',
+      allowPageScroll: "vertical"
     });
   }
-  jQuery.fn.center = function () {
-    this.css("position","absolute");
-    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) +
-                                                $(window).scrollTop()) + "px");
-    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) +
-                                                $(window).scrollLeft()) + "px");
-    return this;
-  }
-  function modalbox(start,end,res) {
-    $pop = $('#popup');
 
-    // Title
-    console.log('inpopup')
-    var pop_content = '<h2>New event:</h2><form><div style="float:left;width:70%;text-align:right"><INPUT TYPE="TEXT" ID="title" style="width:200px;height:30px;line-height:30px;margin:5px;background-color:#EEF4F7" NAME="title" ><br>';
-    // Place
-    pop_content += '<div style="font-size:11px;color:gray;margin-top:10px">Place: <INPUT TYPE="TEXT" ID="calendar" style="width:200px;height:20px;line-height:20px;margin:3px;vertical-align:middle"  NAME="where_event"><br>';
-
-    // Submit
-    pop_content += '<INPUT type="submit" style="height:40px;width:90px" value="OK">';
-    // Start and End of the event
-    pop_content += '<INPUT TYPE="HIDDEN" ID="start" NAME="start" value="'+start+'"><INPUT type="HIDDEN" ID="end" NAME="end" value="'+end+'"></form>';
-
-    /****** Some CSS effect *****************/
-    $pop.fadeIn().css({'width': 500}).css({'z-index':1000}).css({'background-color':'white'})
-        .empty()
-        .prepend('<a href="#" class="close" onclick="$(\'#popup\').hide();">X</a>')
-        .append(pop_content);
-    // Some CSS Adjust for centering the box
-
-
-    $pop.center();
-
-    //Effet fade-in du fond opaque
-    $('body').append('<div id="fade"></div>'); //Ajout du fond opaque noir
-    //Apparition du fond - .css({'filter' : 'alpha(opacity=80)'}) pour corriger les bogues de IE
-    $('#fade').css({'filter' : 'alpha(opacity=80)'}).fadeIn();
-    //Fade in the Popup and add close button
-    }
-    /********** end of CSS effects *************/
-
-  $('#popup').submit(function(event) {
-    event.preventDefault(); // on stop le submit
-    var title = $('#title').val();
-    var start = $('#start').val();
-    var end = $('#end').val();
-    var calendar = $('#calendar').val();
-
-
-    // because we want immediate reaction of FullCalendar, we render the created event on the FullCalendar, even if it's only temporarily
-    if (title) {
-        $('#calendar').fullCalendar('renderEvent',
-            {
-            title: title,
-            start: start,
-            end: end
-            },
-            true // make the event "stick"
-        );
-    // Now we push it to Google also :
-    add_event_gcal(title,start,end,where_event,content_event);
-    }
-
-    // Wether we had the form fulfilled or not, we clean FullCalendar and close the popup
+  function resource_select(start,end,res){
+    var e_id = uuid();
+    var calendar =  res.id;
+    var title = res.id + " - " + me.full_name;
+    $('#calendar').fullCalendar('renderEvent',
+      {
+        id: e_id,
+        title: title,
+        start: start,
+        end: end,
+        resourceId: calendar
+      },
+      true // make the event "stick"
+    );
+    save_event_gcal(e_id,title,start,end,calendar);
     $('#calendar').fullCalendar('unselect');
-    $('#fade , .popup_block').fadeOut(function() {
-        $('#fade, a.close').hide("normal");
-    });
-});
+  }
 
-
-/****** NOW WE ASK THE EVENT TO BE PUSHED TO GOOGLE **************/
-function add_event_gcal(title,start,end,calendar) {
-    // I will create the eventInsert script in a new page, and I name it here :
+  // saves the event, revert on fail.
+  function save_event_gcal(id,title,start,end,calendar,revertFunc) {
     var url = "/calendar";
-    var data = {'title' :title, 'start' : start, 'end' :end, 'calendar' : calendar};
+    var data = {
+      'id': id,
+      'title': title,
+      'start': start,
+      'end': end,
+      'calendar': calendar
+    };
 
-    // I want to check in the page the result of what happened
-    $('#gcal_loader').post(url,data,function(responseTxt,statusTxt,xhr){
-            if(statusTxt=="error") alert("Error: "+xhr.status+": "+xhr.statusText);
+    $.post(url,data,function(responseTxt,statusTxt,xhr){
+            if(statusTxt=="error") {
+              alert("Error: "+xhr.status+": "+xhr.statusText);
+            }
     });
   }
 
-
-  });
-
-  </script>
+  function uuid() {
+    // 128 character random string. Should literally never collide.
+    var uuid = "", i, random;
+    for (i = 0; i < 128; i++) {
+      random = Math.random() * 16 | 0;
+      uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+    }
+    return uuid;
+  }
+});
+</script>
+  <!-- fullcalendar  -->
   <div id="calendar"></div>
 
-  <div id="popup" class="popup_block"></div>
-
+  <!--  the click modal. url to and delete;-->
   <div id="fullCalModal" class="modal fade">
     <div class="modal-dialog">
         <div class="modal-content">
