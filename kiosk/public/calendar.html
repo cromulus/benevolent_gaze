@@ -108,13 +108,13 @@
   $( document ).ready(function() {
 
 
-    $(document).ajaxStart(function() {
-      $('.loading').loadingOverlay();
-    });
+    // $(document).ajaxStart(function() {
+    //   $('.loading').loadingOverlay();
+    // });
 
-    $(document).ajaxComplete(function() {
-      $('.loading').loadingOverlay('remove');
-    });
+    // $(document).ajaxComplete(function() {
+    //   $('.loading').loadingOverlay('remove');
+    // });
 
     window.setInterval(function(){
       // get the events from google every 15 seconds
@@ -220,6 +220,7 @@
         // on success refresh calendar events
         // on fail call refertFunc.
         save_event_gcal(id,event.title,start,end,calendar,revertFunc);
+        return true;
       },
       eventResize: function( event, delta, revertFunc, jsEvent, ui, view ) {
         // delta is the change in milliseconds to the end of the event.
@@ -301,11 +302,11 @@
       );
       $('#calendar').fullCalendar('unselect');
       return true
-    }).fail(function(){
+    }).fail(function(d){
+      console.log(d);
       if ($.isFunction(revertFunc)) {
         alert('could not save event')
         revertFunc();
-        save_event_gcal(e_id,title,start,end,calendar);
       }
       $('#calendar').fullCalendar('unselect');
       return false

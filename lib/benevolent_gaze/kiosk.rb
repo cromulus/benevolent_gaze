@@ -467,11 +467,13 @@ module BenevolentGaze
         # event found in this calendar.
         event = service.get_event(calendar_id, e_id)
         if event.status == 'cancelled'
+          logger.info("event is cancelled")
           event = nil
-          e_id = gen_cal_id # we need a whole new event here.
+          #e_id = gen_cal_id # we need a whole new event here.
         end
       rescue Google::Apis::ClientError
-        logger.info("#{title} not in #{calendar}")
+        logger.info("#{title} not in #{calendar} or new")
+
         # event doesn't exist in this calendar.
         # find in others?
       end
@@ -483,8 +485,10 @@ module BenevolentGaze
         begin
           event = service.get_event(cal_id, e_id)
           if event && event.status != 'cancelled'
+            logger.info('event is in another calendar and not cancelled')
             old_cal_id = cal_id
           else
+            logger.info('event is either cancelled or not in the calendar')
             event = nil
           end
         rescue Google::Apis::ClientError
@@ -493,20 +497,21 @@ module BenevolentGaze
       end if event.nil?
 
       if event
-        # we move the event if it was in another calendar
+        logger.info("event exists and not cancelled")
         if old_cal_id
+          # we move the event if it was in another calendar
           logger.info('moving event!')
           event = service.move_event(old_cal_id, event.id, calendar_id)
-          event = event.updated
+          logger.info(event.status)
         end
-        event.sequence += 2 # moving changes sequence +1, i think.
+        event.sequence += 2
         event.start.date_time = e_start
         event.end.date_time = e_end
-
-        service.update_event(calendar_id, event.id, event)
+        event.status = 'confirmed'
+        res = service.update_event(calendar_id, event.id, event)
+        logger.info(res)
       else # wholly new event!
         logger.info('new event!')
-        logger.info "e_start: #{e_start.class} e_end:#{e_end.class}"
 
         options = {
           id: e_id,
