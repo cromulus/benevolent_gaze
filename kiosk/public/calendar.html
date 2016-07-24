@@ -541,6 +541,7 @@ table.fc-border-separate {
       },
       eventDrop:function( event, delta, revertFunc, jsEvent, ui, view ) {
         // delta is the change in milliseconds to the start and end of the event.
+        console.log('dropped')
 
         var id = event.id;
         var start = event.start.format();
@@ -552,12 +553,21 @@ table.fc-border-separate {
 
         event.title = calendar + " - " + me.real_name + '#>' + event.title;
         event.color = resourceId2color(calendar);
-        // get event id, get new resource id, update color, update title, etc. etc.
-        // send new times to backend
-        // on success refresh calendar events
-        // on fail call refertFunc.
-        save_event_gcal(id,event.title,start,end,calendar,revertFunc);
-        return true;
+
+        var url = "/calendar";
+        var data = {
+          'id': id,
+          'title': event.title,
+          'start': start,
+          'end': end,
+          'calendar': calendar
+        };
+
+        $.post(url,data).fail(function(){
+          console.log('in fail!');
+          refertFunc();
+        });
+
       },
       eventResize: function( event, delta, revertFunc, jsEvent, ui, view ) {
         // delta is the change in milliseconds to the end of the event.
@@ -602,7 +612,7 @@ table.fc-border-separate {
       ],
       eventRender: function(event, element){
         if (typeof(event.source) != 'undefined' && typeof(event.source.className)!='undefined') {
-          element.find('.fc-time').append('<div class="h4 title pull-right" >'+ event.source.className +'</div>');
+          element.find('.fc-time').append('<div class="h5 title pull-right" >'+ event.source.className +'</div>');
         }
       }
     });
@@ -627,26 +637,26 @@ table.fc-border-separate {
     };
 
     $.post(url,data).done(function(d){
+
       $('#calendar').fullCalendar('renderEvent',
         { id: id,
           title: title,
-          start: moment(start).tz('America/New_York').format(),
-          end: moment(end).tz('America/New_York').format(),
+          start: start,
+          end: end,
           resourceId: calendar,
           color: resourceId2color(calendar)
         },
         false
       );
-      $('#calendar').fullCalendar('unselect');
-      return true
+
+
     }).fail(function(d){
       console.log(d);
       if ($.isFunction(revertFunc)) {
         alert('could not save event')
         revertFunc();
       }
-      $('#calendar').fullCalendar('unselect');
-      return false
+
     });
 
     setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 5000);
