@@ -563,7 +563,9 @@ table.fc-border-separate {
           'calendar': calendar
         };
 
-        $.post(url,data).fail(function(){
+        $.post(url,data).done(function(){
+          setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 1000);
+        }).fail(function(){
           console.log('in fail!');
           refertFunc();
         });
