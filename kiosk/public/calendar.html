@@ -7,35 +7,128 @@
   <head>
     <meta charset='utf-8'>
     <meta content='IE=edge' http-equiv='X-UA-Compatible'>
-    <title></title>
+    <title>Calendar</title>
     <meta content='Gonna blow your mind. Get ready.' name='description'>
     <meta content='width=device-width' initial-scale='1' name='viewport'>
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
     <link href="/stylesheets/fullcalendar.css" rel="stylesheet" type="text/css" />
     <link href="/stylesheets/application-5a00a15f.css" rel="stylesheet" type="text/css" />
     <link href="/stylesheets/animate-31203878.css" rel="stylesheet" type="text/css" />
-
+    <script src='/javascripts/loading-overlay.min.js'></script>
     <script src='/javascripts/moment.min.js'></script>
     <script src='/javascripts/fullcalendar.min.js'></script>
     <script src='/javascripts/scheduler.min.js'></script>
     <script src='/javascripts/gcal.js'></script>
     <script src='/javascripts/jquery.touchSwipe.min.js'></script>
+    <script src='/javascripts/moment-timezone-with-data-2010-2020.js'></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
+  <style>
+  @keyframes loadingStart {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading .loading-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  -webkit-animation: loadingStart 0.2s 300ms linear 1 both;
+  -moz-animation: loadingStart 0.2s 300ms linear 1 both;
+  -o-animation: loadingStart 0.2s 300ms linear 1 both;
+  animation: loadingStart 0.2s 300ms linear 1 both;
+  background: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+.loading .loading-text {
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+  text-shadow: white 0 0 1em, white 0 0 0.5em, white 0 0 0.25em;
+  position: relative;
+  display: block;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.loading .loading-text:after {
+  content: "...";
+}
+.loading .loading-spinner {
+  position: absolute;
+  top: 50%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: -3.9375rem auto 0;
+  color: #1a1d1d;
+  text-align: center;
+}
+.loading .loading-icon {
+  font-size: 4.8125rem;
+  line-height: 5.25rem;
+  text-shadow: rgba(255, 255, 255, 0.75) 0 0 0.5em;
+  -webkit-animation: loading 1s steps(4) infinite;
+  -moz-animation: loading 1s steps(4) infinite;
+  -o-animation: loading 1s steps(4) infinite;
+  animation: loading 1s steps(4) infinite;
+  display: block;
+  vertical-align: middle;
+}
+.loading .loading-icon:before {
+  vertical-align: middle;
+  content: "\e000";
+}
+
+</style>
   </head>
   <body>
   <script>
-  var isMobile = window.matchMedia("only screen and (max-width: 760px)");
-  var me = {};
-  $.ajax({url:'/me',dataType:'json'}).done(function(d){
-    me = d;
-  }).fail(function(){
-    // later!
-    // window.location("/register");
-    me={full_name:'Bill Cromie',slackname:'@billcromie'};
-  });
 
   $( document ).ready(function() {
+
+
+    $(document).ajaxStart(function() {
+      $('.loading').loadingOverlay();
+    });
+
+    $(document).ajaxComplete(function() {
+      $('.loading').loadingOverlay('remove');
+    });
+
+    window.setInterval(function(){
+      // get the events from google every 15 seconds
+      $('#calendar').fullCalendar( 'refetchEvents' )
+    }, 15000);
+
+    var isMobile = window.matchMedia("only screen and (max-width: 760px)");
+    var me = {};
+    $.ajax({url:'/me',dataType:'json',cache: true}).done(function(d){
+      me = d['data'];
+    }).fail(function(){
+      window.location("/register");
+    });
+
     $('#calendar').fullCalendar({
       header: {
         left: 'prev,next today',
@@ -43,12 +136,13 @@
         right: 'agendaWeek,agendaDay'
       },
       defaultView:'agendaDay',
-      defaultDate: moment(),
+      defaultDate: moment().tz('America/New_York'),
 
       scrollTime: '09:00:00', // undo default 6am scrollTime
       eventLimit: true,
       nowIndicator: true,
       eventOverlap: false,
+      timezone: 'America/New_York',
       slotEventOverlap: false,
       allDaySlot: false,
       schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
@@ -62,28 +156,67 @@
         console.log(event)
         $('#modalEventId').val(event.id);
         $('#modalTitle').html(event.title);
-        $('#modalBody').html(event.description);
-        $('#modalStart').val(event.start);
-        $('#modalEnd').val(event.end);
+
+        $('#modalStart').html(event.start.format("dd, Do h:mm a"));
+        $('#modalEnd').html(event.end.format("dd, Do h:mm a"));
         $('#modalCalendar').val(event.resourceId);
         $('#eventUrl').attr('href',event.url);
+        $('#modalDelete').data('event_id',event.id);
+        $('#modalDelete').data('calendar',event.resourceId);
+
         $('#fullCalModal').modal();
+
         jsEvent.preventDefault();
+        $('#modalDelete').on('click',function(el){
+          var $el = $(this);
+          if (window.confirm("Really delete event?")) {
+            var event_id = $el.data('event_id');
+            var calendar = $el.data('calendar');
+            var obj = {id: event_id, calendar: calendar}
+             $.ajax({ type:'DELETE',
+                      cache: false,
+                      url:'/calendar',
+                      dataType:'json',
+                      data: obj}).done(function(d){
+                        $('#calendar').fullCalendar('removeEvents', event_id);
+                        $('#fullCalModal').modal('hide');
+                    }).fail(function(d){
+                      alert('error:'+ d.msg);
+                    });
+          }
+        })
       },
       // user selects times on the calendar for a new event
       select: function(start, end, event, view, res) {
+        $('#calendar').fullCalendar('renderEvent',
+          { id: event.id,
+            title: event.resourceId + " - " + me.real_name,
+            start: moment(start).tz('America/New_York').format(),
+            end: moment(end).tz('America/New_York').format(),
+            resourceId: event.resourceId,
+          },
+          false
+        );
         resource_select(start.format(),end.format(), res);
       },
       eventDrop:function( event, delta, revertFunc, jsEvent, ui, view ) {
-        // delta is the change in milliseconds to the start of the event.
-        console.log(event);
+        // delta is the change in milliseconds to the start and end of the event.
 
+        var id = event.id;
+        var start = event.start.format();
+        var end = event.end.format();
+        var calendar = event.resourceId;
+        if (event.title.indexOf("#>") !=-1) {
+           event.title = event.title.split('#>')[1];
+        }
 
+        event.title = calendar + " - " + me.real_name + '#>' + event.title;
+        event.color = resourceId2color(calendar);
         // get event id, get new resource id, update color, update title, etc. etc.
         // send new times to backend
         // on success refresh calendar events
         // on fail call refertFunc.
-
+        save_event_gcal(id,event.title,start,end,calendar,revertFunc);
       },
       eventResize: function( event, delta, revertFunc, jsEvent, ui, view ) {
         // delta is the change in milliseconds to the end of the event.
@@ -91,6 +224,12 @@
         // get event id, send new times to backend
         // on success refresh calendar events
         // on fail call refertFunc.
+        var id = event.id;
+        var start = event.start.format();
+        var end = event.end.format();
+        var calendar = event.resourceId;
+        var title = event.title;
+        save_event_gcal(id,title,start,end,calendar,revertFunc);
       },
       googleCalendarApiKey: 'AIzaSyAOzgZPmbbgrd79XHDyWu9oyhmcJaVfXv8',
       resources: [
@@ -122,13 +261,70 @@
       ],
       eventRender: function(event, element){
         if (typeof(event.source) != 'undefined' && typeof(event.source.className)!='undefined') {
-
-          var room = event.source.className[0];
-          element.find('.fc-time').append('<div class="title pull-right" >'+ room +'</div>');
+          element.find('.fc-time').append('<div class="h4 title pull-right" >'+ event.source.className +'</div>');
         }
       }
     });
-    // touch screen!!
+
+  function resource_select(start,end,res){
+    var e_id = uuid();
+    var calendar =  res.id;
+    var title = res.id + " - " + me.real_name;
+    save_event_gcal(e_id,title,start,end,calendar);
+
+  }
+
+  // saves the event, revert on fail.
+  function save_event_gcal(id,title,start,end,calendar,revertFunc) {
+    var url = "/calendar";
+    var data = {
+      'id': id,
+      'title': title,
+      'start': start,
+      'end': end,
+      'calendar': calendar
+    };
+
+    $.post(url,data).done(function(d){
+      $('#calendar').fullCalendar('renderEvent',
+        { id: id,
+          title: title,
+          start: moment(start).tz('America/New_York').format(),
+          end: moment(end).tz('America/New_York').format(),
+          resourceId: calendar,
+          color: resourceId2color(calendar)
+        },
+        false
+      );
+      $('#calendar').fullCalendar('unselect');
+      return true
+    }).fail(function(){
+      if ($.isFunction(revertFunc)) {
+        alert('could not save event')
+        revertFunc();
+        save_event_gcal(e_id,title,start,end,calendar);
+      }
+      $('#calendar').fullCalendar('unselect');
+      return false
+    });
+
+    setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 5000);
+  }
+
+  function uuid() {
+    // 128 character random string. Should literally never collide.
+    var uuid = "", i, random;
+    for (i = 0; i < 128; i++) {
+      random = Math.random() * 16 | 0;
+      uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+    }
+    return uuid;
+  }
+  function resourceId2color(res){
+    obj={'biggie':'blue','tiny':'green','smalls':'red'};
+    return obj[res];
+  }
+  // touch screen!!
   var isTouchDevice = 'ontouchstart' in document.documentElement;
   if( isTouchDevice ) {
     $("#calendar").swipe( {
@@ -150,52 +346,6 @@
       allowPageScroll: "vertical"
     });
   }
-
-  function resource_select(start,end,res){
-    var e_id = uuid();
-    var calendar =  res.id;
-    var title = res.id + " - " + me.full_name;
-    $('#calendar').fullCalendar('renderEvent',
-      {
-        id: e_id,
-        title: title,
-        start: start,
-        end: end,
-        resourceId: calendar
-      },
-      true // make the event "stick"
-    );
-    save_event_gcal(e_id,title,start,end,calendar);
-    $('#calendar').fullCalendar('unselect');
-  }
-
-  // saves the event, revert on fail.
-  function save_event_gcal(id,title,start,end,calendar,revertFunc) {
-    var url = "/calendar";
-    var data = {
-      'id': id,
-      'title': title,
-      'start': start,
-      'end': end,
-      'calendar': calendar
-    };
-
-    $.post(url,data,function(responseTxt,statusTxt,xhr){
-            if(statusTxt=="error") {
-              alert("Error: "+xhr.status+": "+xhr.statusText);
-            }
-    });
-  }
-
-  function uuid() {
-    // 128 character random string. Should literally never collide.
-    var uuid = "", i, random;
-    for (i = 0; i < 128; i++) {
-      random = Math.random() * 16 | 0;
-      uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
-    }
-    return uuid;
-  }
 });
 </script>
   <!-- fullcalendar  -->
@@ -208,15 +358,26 @@
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
                 <h4 id="modalTitle" class="modal-title"></h4>
+                <span id='modalEventId' class='hidden'></span>
             </div>
-            <div id="modalBody" class="modal-body"></div>
+
+            <div id="modalBody" class="modal-body">
+              <dl >
+              <dt>start</dt>
+              <dl id='modalStart'></dl>
+              <dt>end</dt>
+              <dl id='modalEnd'></dl>
+            </dl>
+
+            </div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button class="btn btn-primary"><a id="eventUrl" target="_blank">Event Page</a></button>
+                <button id='modalDelete' class="btn btn-danger">Delete</button>
             </div>
         </div>
     </div>
-</div>
-
-  </body>
+  </div>
+<div id='loading'></div>
+</body>
 </html>

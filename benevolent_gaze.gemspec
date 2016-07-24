@@ -19,6 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'sinatra'
+  spec.add_dependency 'sinatra-advanced-routes'
   spec.add_dependency 'redis'
   spec.add_dependency 'hiredis'
   spec.add_dependency 'em-synchrony'
@@ -39,6 +40,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dotenv'
   spec.add_dependency 'net-ping'
   spec.add_dependency 'google-api-client'
+  spec.add_dependency 'activesupport'
+
 
   spec.add_development_dependency 'bundler', '~> 1.7'
   spec.add_development_dependency 'rake', '~> 10.0'
