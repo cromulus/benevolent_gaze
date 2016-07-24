@@ -158,10 +158,8 @@
       slotDuration:'00:15:00',
       minTime:'08:00:00',
       eventClick:  function(event, jsEvent, view) {
-        console.log(event)
         $('#modalEventId').val(event.id);
         $('#modalTitle').html(event.title);
-
         $('#modalStart').html(event.start.format("dd, Do h:mm a"));
         $('#modalEnd').html(event.end.format("dd, Do h:mm a"));
         $('#modalCalendar').val(event.resourceId);
