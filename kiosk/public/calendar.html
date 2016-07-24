@@ -121,6 +121,11 @@
       $('#calendar').fullCalendar( 'refetchEvents' )
     }, 15000);
 
+    $("#fullCalModal").on('hidden.bs.modal', function () {
+      $(this).data('bs.modal', null);
+    });
+
+
     var isMobile = window.matchMedia("only screen and (max-width: 760px)");
     var me = {};
     $.ajax({url:'/me',dataType:'json',cache: true}).done(function(d){
@@ -167,7 +172,7 @@
         $('#fullCalModal').modal();
 
         jsEvent.preventDefault();
-        $('#modalDelete').on('click',function(el){
+        $('#modalDelete').one('click',function(el){
           var $el = $(this);
           if (window.confirm("Really delete event?")) {
             var event_id = $el.data('event_id');
