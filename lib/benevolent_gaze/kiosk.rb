@@ -555,15 +555,9 @@ module BenevolentGaze
       stream :keep_open do |out|
         loop do
           break if out.closed?
+          settings.connections << out # so we can use this stream elsewhere
           data = []
           @r = Redis.connect
-          # grab all recent messages.
-          while @r.llen('slackback') > 0
-            m = JSON.parse(@r.lpop('slackback'))
-            slack_name = slack_id_to_name(m['user'])
-            next if slack_name == false
-            data << { type: 'msg', msg: m['msg'], user: slack_name.delete('@') }
-          end
 
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
@@ -596,7 +590,7 @@ module BenevolentGaze
           end
 
           out << "data: #{data.to_json}\n\n"
-          sleep 0.5
+          sleep 1
         end
       end
     end
@@ -655,11 +649,21 @@ module BenevolentGaze
       end
     end
 
+    post '/msg' do
+      # https://github.com/sinatra/sinatra/blob/master/examples/chat.rb
+      connections.each { |out| out << "data: #{params[:msg]}\n\n" }
+      status 204 # response without entity body
+    end
+
     post '/information' do
       # grab current devices on network.
       # Save them to the devices on network key after we make sure that we
       # grab the names that have been added already to the whole list and
       # then save them to the updated hash (set?)for redis.
+
+      # or push them out to all the clients.
+      # https://blog.alexmaccaw.com/killing-a-library
+
       devices_on_network = JSON.parse(params[:devices])
       if IGNORE_HOSTS != false
         devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
@@ -675,6 +679,7 @@ module BenevolentGaze
       devices_on_network.each do |k, _v|
         @r.hmset('current_devices', k, @r.get("name:#{k}"))
       end
+      status 204 # response without entity body
     end
   end
 end

@@ -42,11 +42,14 @@ module BenevolentGaze
 
       client.on :message do |data|
         # responses to the bot's own channel
-        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH' && data['text'] !=~ /<@U0L4P1CSH>/
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
-          r.lpush('slackback', { user: user, msg: msg, data: data }.to_json)
+          slack_msg = { user: user, msg: msg, data: data }.to_json
+
+          HTTParty.post("http://localhost:#{ENV['IPORT']}/msg",
+                        query: { msg: slack_msg })
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         elsif data['text'] =~ /<@U0L4P1CSH>/
 
