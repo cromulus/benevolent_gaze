@@ -9,7 +9,7 @@
     <meta content='IE=edge' http-equiv='X-UA-Compatible'>
     <title>Calendar</title>
     <meta content='Gonna blow your mind. Get ready.' name='description'>
-    <meta content='width=device-width' initial-scale='1' name='viewport'>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
     <link href="/stylesheets/fullcalendar.css" rel="stylesheet" type="text/css" />
     <link href="/stylesheets/application-5a00a15f.css" rel="stylesheet" type="text/css" />
@@ -472,9 +472,17 @@ table.fc-border-separate {
     });
 
     $('#calendar').fullCalendar({
+      customButtons: {
+        people: {
+            text: 'Back to The People',
+            click: function() {
+                window.location = '/';
+            }
+        }
+      },
       header: {
         left: 'prev,next today',
-        center: 'title',
+        center: 'title people',
         right: 'agendaWeek,agendaDay'
       },
       defaultView:'agendaDay',
@@ -701,8 +709,11 @@ table.fc-border-separate {
   }
 });
 </script>
-  <!-- fullcalendar  -->
-  <div id="calendar"></div>
+  <div class="container-fluid" style='margin:5%;'>
+    <!-- fullcalendar  -->
+    <div id="calendar"></div>
+  </div>
+
 
   <!--  the click modal. url to and delete;-->
   <div id="fullCalModal" class="modal fade">

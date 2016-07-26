@@ -12114,7 +12114,7 @@ $(function() {
     new_people = jQuery.grep( data, function(d){
       return d.type === 'device'});
 
-    msgs = jQuery.grep( data, function(d){return d.type ==='msg'});
+    msgs = jQuery.grep( data, function(d){return d.type === 'msg'});
     msgs.forEach(onmessage);
     add_remove_workers(new_people);
 

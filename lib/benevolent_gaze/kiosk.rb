@@ -19,7 +19,7 @@ require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'active_support/core_ext/time'
 require 'securerandom'
-
+require 'set'
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
 # slack names do not have an @ in front of them for our purposes.
@@ -29,7 +29,7 @@ module BenevolentGaze
   class Kiosk < Sinatra::Application
 
 
-    set server: 'thin', connections: []
+    set server: 'thin', connections: Set.new
     set :bind, '0.0.0.0'
     set :app_file, __FILE__
     set :port, ENV['IPORT']
@@ -174,7 +174,7 @@ module BenevolentGaze
       end
 
       def gen_cal_id
-        SecureRandom.uuid.delete('-')
+        SecureRandom.uuid.to_s.delete('-')
       end
 
       def upload(filename, file, device_name)
@@ -650,9 +650,18 @@ module BenevolentGaze
     end
 
     post '/msg' do
-      # https://github.com/sinatra/sinatra/blob/master/examples/chat.rb
-      connections.each { |out| out << "data: #{params[:msg]}\n\n" }
-      status 204 # response without entity body
+
+      m = JSON.parse(params[:msg])
+      slack_name = slack_id_to_name(m['user'])
+      if slack_name != false
+        # we used to send arrays.
+        msg = [{ id: SecureRandom.uuid.to_s, type: 'msg', msg: m['msg'], user: slack_name.delete('@') }]
+        # https://github.com/sinatra/sinatra/blob/master/examples/chat.rb
+        settings.connections.each { |out| out << "data: #{msg.to_json}\n\n" }
+        status 204 # response without entity body
+      else
+        status 404
+      end
     end
 
     post '/information' do
