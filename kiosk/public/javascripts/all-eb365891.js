@@ -12207,13 +12207,21 @@ $(function() {
     $worker = $('[data-slackname='+slack_name+']')
     $worker.popover('destroy');
 
-    Worker.animate_worker($worker,'bounce')
+    // scrolling so the worker is in the middle
+    var elOffset = $worker.offset().top;
+    var elHeight = $worker.height();
+    var windowHeight = $(window).height();
+    var offset;
 
-    $('html, body').animate({
-        scrollTop: $worker.offset().top
-    }, 600,'swing',function(){
-      $worker.popover(options).popover('show');
-    });
+    if (elHeight < windowHeight) {
+      offset = elOffset - ((windowHeight / 2) - (elHeight / 2));
+    }
+    else {
+      offset = elOffset;
+    }
+    $('html, body').animate({scrollTop:offset}, 600,'swing');
+    Worker.animate_worker($worker,'bounce')
+    $worker.popover(options).popover('show');
   }
 
 
@@ -12264,7 +12272,7 @@ $(function() {
                     })
                   },
     add_slack: function(){
-      $(w).click(function(){
+      $(w).click(function(e){
         //if me, go to register
         //if slackname, send slack ping
         var to='';
@@ -12272,6 +12280,7 @@ $(function() {
         $.ajax({url:'/me', dataType: 'json',}).done(function(d){
           if (worker.data('name') === d['data']['real_name']) {
             window.location = '/register';
+            return;
           }
         });
 

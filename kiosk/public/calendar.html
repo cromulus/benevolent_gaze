@@ -542,6 +542,7 @@ table.fc-border-separate {
             start: moment(start).tz('America/New_York').format(),
             end: moment(end).tz('America/New_York').format(),
             resourceId: event.resourceId,
+            className: 'loading'
           },
           false
         );
@@ -561,6 +562,7 @@ table.fc-border-separate {
 
         event.title = calendar + " - " + me.real_name + '#>' + event.title;
         event.color = resourceId2color(calendar);
+        event.className = 'loading';
 
         var url = "/calendar";
         var data = {
@@ -632,7 +634,7 @@ table.fc-border-separate {
     var calendar =  res.id;
     var title = res.id + " - " + me.real_name;
     save_event_gcal(e_id,title,start,end,calendar);
-
+    $('#calendar').fullCalendar('unselect');
   }
 
   // saves the event, revert on fail.
@@ -647,19 +649,18 @@ table.fc-border-separate {
     };
 
     $.post(url,data).done(function(d){
-
+      console.log('rendering event.')
       $('#calendar').fullCalendar('renderEvent',
         { id: id,
           title: title,
           start: start,
           end: end,
+          className:'loading',
           resourceId: calendar,
           color: resourceId2color(calendar)
         },
         false
       );
-
-
     }).fail(function(d){
       console.log(d);
       if ($.isFunction(revertFunc)) {
