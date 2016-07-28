@@ -60,8 +60,15 @@ module BenevolentGaze
 
       OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
       APPLICATION_NAME = 'Blue Ridge Calendaring'
-      CLIENT_SECRETS_PATH = '/etc/bg/client_secret.json'
-      CREDENTIALS_PATH = File.join("/etc/bg/.credentials/calendar-ruby-quickstart.yaml")
+
+      if File.exists?('/etc/bg/client_secret.json')
+        CLIENT_SECRETS_PATH = '/etc/bg/client_secret.json'
+        CREDENTIALS_PATH = File.join("/etc/bg/.credentials/calendar-ruby-quickstart.yaml")
+      else
+        CLIENT_SECRETS_PATH = 'client_secret.json'
+        CREDENTIALS_PATH = File.join(Dir.home, '.credentials',
+                                     "calendar-ruby-quickstart.yaml")
+      end
       SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
       CALENDAR_IDS = {
         'biggie' => 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',

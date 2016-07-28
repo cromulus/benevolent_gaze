@@ -24,90 +24,26 @@
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 
   <style>
-  @keyframes loadingStart {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes loading {
-  0% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(180deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
 
-.loading {
-  position: relative;
-  pointer-events: none;
-}
-
-.loading .loading-overlay {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  -webkit-animation: loadingStart 0.2s 300ms linear 1 both;
-  -moz-animation: loadingStart 0.2s 300ms linear 1 both;
-  -o-animation: loadingStart 0.2s 300ms linear 1 both;
-  animation: loadingStart 0.2s 300ms linear 1 both;
-  background: rgba(255, 255, 255, 0.5);
-  text-align: center;
-}
-.loading .loading-text {
-  font-size: 0.875rem;
-  line-height: 1.3125rem;
-  text-shadow: white 0 0 1em, white 0 0 0.5em, white 0 0 0.25em;
-  position: relative;
-  display: block;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-.loading .loading-text:after {
-  content: "...";
-}
-.loading .loading-spinner {
-  position: absolute;
-  top: 50%;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: -3.9375rem auto 0;
-  color: #1a1d1d;
-  text-align: center;
-}
-.loading .loading-icon {
-  font-size: 4.8125rem;
-  line-height: 5.25rem;
-  text-shadow: rgba(255, 255, 255, 0.75) 0 0 0.5em;
-  -webkit-animation: loading 1s steps(4) infinite;
-  -moz-animation: loading 1s steps(4) infinite;
-  -o-animation: loading 1s steps(4) infinite;
-  animation: loading 1s steps(4) infinite;
-  display: block;
-  vertical-align: middle;
-}
-.loading .loading-icon:before {
-  vertical-align: middle;
-  content: "\e000";
-}
+  .loading {
+    opacity:0.45;
+    -moz-opacity:0.45;
+    filter:alpha(opacity=45);
+    position: relative;
+    background-attachment: fixed;
+    background-image: url(/images/spinner.gif);
+    background-repeat: no-repeat;
+    background-position: right top;
+  }
 
 .fc {
   direction: ltr;
   text-align: left; }
-  .fc table {
-    border-collapse: collapse;
-    border-spacing: 0; }
-  .fc .btn {
-    line-height: 1.2em; }
+.fc table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+.fc .btn {
+  line-height: 1.2em; }
 
 html .fc {
   font-size: 1em; }
@@ -135,9 +71,9 @@ html .fc {
 .fc-header-title {
   display: inline-block;
   vertical-align: top; }
-  .fc-header-title h2 {
-    margin-top: 0;
-    white-space: nowrap; }
+.fc-header-title h2 {
+  margin-top: 0;
+  white-space: nowrap; }
 
 .fc .fc-header-space {
   padding-left: 10px; }
@@ -227,38 +163,38 @@ thead th.fc-last {
   line-height: 1.9em;
   padding: 0 0.6em;
   white-space: nowrap; }
-  .fc-button-content .fc-icon-wrap {
-    position: relative;
-    float: left;
-    top: 50%; }
-  .fc-button-content .ui-icon {
-    position: relative;
-    float: left;
-    margin-top: -50%;
-    *margin-top: 0;
-    *top: -50%; }
+.fc-button-content .fc-icon-wrap {
+  position: relative;
+  float: left;
+  top: 50%; }
+.fc-button-content .ui-icon {
+  position: relative;
+  float: left;
+  margin-top: -50%;
+  *margin-top: 0;
+  *top: -50%; }
 
 .fc-state-default {
   border-style: solid;
   border-color: #cccccc #bbbbbb #aaaaaa;
   background: #f3f3f3;
   color: black; }
-  .fc-state-default .fc-button-effect {
-    position: absolute;
-    top: 50%;
-    left: 0; }
-    .fc-state-default .fc-button-effect span {
-      position: absolute;
-      top: -100px;
-      left: 0;
-      width: 500px;
-      height: 100px;
-      border-width: 100px 0 0 1px;
-      border-style: solid;
-      border-color: white;
-      background: #444444;
-      opacity: 0.09;
-      filter: alpha(opacity=9); }
+.fc-state-default .fc-button-effect {
+  position: absolute;
+  top: 50%;
+  left: 0; }
+.fc-state-default .fc-button-effect span {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  width: 500px;
+  height: 100px;
+  border-width: 100px 0 0 1px;
+  border-style: solid;
+  border-color: white;
+  background: #444444;
+  opacity: 0.09;
+  filter: alpha(opacity=9); }
   .fc-state-default .fc-button-inner {
     border-style: solid;
     border-color: #cccccc #bbbbbb #aaaaaa;
@@ -267,34 +203,34 @@ thead th.fc-last {
 
 .fc-state-hover {
   border-color: #999999; }
-  .fc-state-hover .fc-button-inner {
-    border-color: #999999; }
+.fc-state-hover .fc-button-inner {
+  border-color: #999999; }
 
 .fc-state-down {
   border-color: #555555;
   background: #777777; }
-  .fc-state-down .fc-button-inner {
-    border-color: #555555;
-    background: #777777; }
+.fc-state-down .fc-button-inner {
+  border-color: #555555;
+  background: #777777; }
 
 .fc-state-active {
   border-color: #555555;
   background: #777777;
   color: white; }
-  .fc-state-active .fc-button-inner {
-    border-color: #555555;
-    background: #777777;
-    color: white; }
+.fc-state-active .fc-button-inner {
+  border-color: #555555;
+  background: #777777;
+  color: white; }
 
 .fc-state-disabled {
   color: #999999;
   border-color: #dddddd;
   cursor: default; }
-  .fc-state-disabled .fc-button-inner {
-    color: #999999;
-    border-color: #dddddd; }
-  .fc-state-disabled .fc-button-effect {
-    display: none; }
+.fc-state-disabled .fc-button-inner {
+  color: #999999;
+  border-color: #dddddd; }
+.fc-state-disabled .fc-button-effect {
+  display: none; }
 
 .fc-event {
   border-style: solid;
@@ -336,19 +272,19 @@ a.fc-event {
 .fc-event-hori {
   border-width: 1px 0;
   margin-bottom: 1px; }
-  .fc-event-hori .ui-resizable-e {
-    top: 0 !important; }
-  .fc-event-hori .ui-resizable-w {
-    top: 0 !important;
-    left: -3px !important;
-    width: 7px !important;
-    height: 100% !important;
-    cursor: w-resize; }
-  .fc-event-hori .ui-resizable-handle {
-    _padding-bottom: 14px; }
+.fc-event-hori .ui-resizable-e {
+  top: 0 !important; }
+.fc-event-hori .ui-resizable-w {
+  top: 0 !important;
+  left: -3px !important;
+  width: 7px !important;
+  height: 100% !important;
+  cursor: w-resize; }
+.fc-event-hori .ui-resizable-handle {
+_padding-bottom: 14px; }
 
 table.fc-border-separate {
-  border-collapse: separate; }
+border-collapse: separate; }
 
 .fc-border-separate th, .fc-border-separate td {
   border-width: 1px 0 0 1px; }
@@ -422,14 +358,14 @@ table.fc-border-separate {
 
 .fc-event-vert {
   border-width: 0 1px; }
-  .fc-event-vert .fc-event-head, .fc-event-vert .fc-event-content {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    overflow: hidden; }
-  .fc-event-vert .fc-event-time {
-    white-space: nowrap;
-    font-size: 10px; }
+.fc-event-vert .fc-event-head, .fc-event-vert .fc-event-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  overflow: hidden; }
+.fc-event-vert .fc-event-time {
+  white-space: nowrap;
+  font-size: 10px; }
 
 .fc .ui-draggable-dragging .fc-event-bg, .fc-select-helper .fc-event-bg {
   display: none; }
@@ -445,19 +381,12 @@ table.fc-border-separate {
   $( document ).ready(function() {
 
 
-    // $(document).ajaxStart(function() {
-    //   $('.loading').loadingOverlay();
-    // });
-
-    // $(document).ajaxComplete(function() {
-    //   $('.loading').loadingOverlay('remove');
-    // });
-
     window.setInterval(function(){
       // get the events from google every 15 seconds
       $('#calendar').fullCalendar( 'refetchEvents' )
     }, 15000);
 
+    // zero out the modal on hide
     $("#fullCalModal").on('hidden.bs.modal', function () {
       $(this).data('bs.modal', null);
     });
@@ -517,21 +446,20 @@ table.fc-border-separate {
         jsEvent.preventDefault();
         $('#modalDelete').one('click',function(el){
           var $el = $(this);
-          if (window.confirm("Really delete event?")) {
-            var event_id = $el.data('event_id');
-            var calendar = $el.data('calendar');
-            var obj = {id: event_id, calendar: calendar}
-             $.ajax({ type:'DELETE',
-                      cache: false,
-                      url:'/calendar',
-                      dataType:'json',
-                      data: obj}).done(function(d){
-                        $('#calendar').fullCalendar('removeEvents', event_id);
-                        $('#fullCalModal').modal('hide');
-                    }).fail(function(d){
-                      alert('error:'+ d.msg);
-                    });
-          }
+          $('#fullCalModal').modal('hide');
+          var event_id = $el.data('event_id');
+          var calendar = $el.data('calendar');
+          var obj = {id: event_id, calendar: calendar}
+           $.ajax({ type:'DELETE',
+                    cache: false,
+                    url:'/calendar',
+                    dataType:'json',
+                    data: obj}).done(function(d){
+                      $('#calendar').fullCalendar('removeEvents', event_id);
+                  }).fail(function(d){
+                    alert('error:'+ d.msg);
+                  });
+
         })
       },
       // user selects times on the calendar for a new event
@@ -574,7 +502,7 @@ table.fc-border-separate {
         };
 
         $.post(url,data).done(function(){
-          setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 1000);
+          setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 500);
         }).fail(function(){
           console.log('in fail!');
           refertFunc();
@@ -634,7 +562,6 @@ table.fc-border-separate {
     var calendar =  res.id;
     var title = res.id + " - " + me.real_name;
     save_event_gcal(e_id,title,start,end,calendar);
-    $('#calendar').fullCalendar('unselect');
   }
 
   // saves the event, revert on fail.
@@ -649,7 +576,8 @@ table.fc-border-separate {
     };
 
     $.post(url,data).done(function(d){
-      console.log('rendering event.')
+      console.log('rendering event.');
+      $('#calendar').fullCalendar('unselect');
       $('#calendar').fullCalendar('renderEvent',
         { id: id,
           title: title,
@@ -661,6 +589,7 @@ table.fc-border-separate {
         },
         false
       );
+
     }).fail(function(d){
       console.log(d);
       if ($.isFunction(revertFunc)) {
@@ -670,7 +599,7 @@ table.fc-border-separate {
 
     });
 
-    setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 5000);
+    setTimeout($('#calendar').fullCalendar( 'refetchEvents' ), 500);
   }
 
   function uuid() {
