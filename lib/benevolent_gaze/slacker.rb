@@ -42,17 +42,15 @@ module BenevolentGaze
 
       client.on :message do |data|
         # responses to the bot's own channel
-        require 'pp'
-        pp data
-        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH' && data['text'] !~ /<@U0L4P1CSH>/
-
-          puts "post '#{data['text']}' to kiosk from #{data['user']}. again."
+        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+          puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
           slack_msg = { user: user, msg: msg, data: data }.to_json
 
           HTTParty.post("http://localhost:#{ENV['IPORT']}/msg",
                         query: { msg: slack_msg })
+
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         elsif data['text'] =~ /<@U0L4P1CSH>/
 
@@ -83,8 +81,8 @@ module BenevolentGaze
             end
             names.uniq!
             client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
-            ')}"
-            client.message channel: (data['channel']).to_s, text: "Register your devices here: http://150.brl.nyc/"
+            ')}
+Register your devices here: http://150.brl.nyc/"
           when /<@([^>]+)>/
             user = Regexp.last_match(1)
 
