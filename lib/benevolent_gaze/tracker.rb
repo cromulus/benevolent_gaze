@@ -23,7 +23,7 @@ module BenevolentGaze
       private
 
       def ping(host)
-        p = Net::Ping::External.new(host)
+        p = Net::Ping::External.new(host,timeout: 1)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
         (res = p.ping?) || p.ping? || p.ping?
@@ -77,7 +77,7 @@ module BenevolentGaze
         @r.keys('slack:*').map { |k| devices.add k.gsub('slack:', '') }
 
         # ping is low memory and largely io bound.
-        device_array = Parallel.map(devices) do |name|
+        device_array = Parallel.map(devices, in_threads: devices.length) do |name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
