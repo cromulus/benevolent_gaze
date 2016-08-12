@@ -27,12 +27,13 @@ $(function() {
 
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
-      $.ajax({url:'/me', dataType: "json"}).done(function(data){
+      $.ajax({url:'/me', dataType: "json"}).done(function(d){
         if (d['data']['real_name'] === 'Reception') {
-          // do the touchscreen keyboard thing!
-           $(":text").onScreenKeyboard();
+           $(":text").onScreenKeyboard('draggable': true,
+                                       'topPosition': '90%',
+                                       'leftPosition': '5%');
         }
-      }
+      });
       console.log('registered!');
     }else{
       if(window.location.href.indexOf('register') === -1){
@@ -155,7 +156,7 @@ $(function() {
                     Worker.add_slack();
                     Welcome.move_logo_and_welcomes();
                     $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
-                    $('.right_column .row').append( w );
+                    $('.workers.row').append( w );
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
                     $('.newcomer_avatar img').attr('src', worker_data.avatar || "/images/visitor_art@1x-21d82dcb.png");
                     $('.newcomer_avatar, .newcomer').show().removeClass('animated').removeClass('bounceOutUp').addClass('animated bounceInDown');
