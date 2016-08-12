@@ -70,6 +70,8 @@ module BenevolentGaze
                                      "calendar-ruby-quickstart.yaml")
       end
       SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
+
+      # to refactor into config system
       CALENDAR_IDS = {
         'biggie' => 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
         'smalls' => 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
@@ -609,21 +611,24 @@ module BenevolentGaze
         return { success: false, msg: 'enhance your chill.' }.to_json
       end
 
+
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip)
-
-        result = @r.get("slack:#{device_name}")
-        result = @r.get("name:#{device_name}") if result.nil?
+        if device_name != ENV['KIOSK_HOST']
+          result = @r.get("slack:#{device_name}")
+          result = @r.get("name:#{device_name}") if result.nil?
+          from = result.to_s
+          to_id   = lookup_slack_id(to)
+          from_id = lookup_slack_id(from)
+          from = from_id ? from_id.prepend('<@') + '>' : from
+        else
+          from = 'The Front Desk'
+        end
       rescue Resolv::ResolvError => e
         status 404
         return { success: false, msg: "We can't seem to figure out who you are. #{e}" }.to_json
       end
-      from = result.to_s
-
-      to_id   = lookup_slack_id(to)
-      from_id = lookup_slack_id(from)
-      from = from_id ? from_id.prepend('<@') + '>' : from
 
       # no user found!
       unless to_id
@@ -636,9 +641,6 @@ module BenevolentGaze
         status 404
         return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
-      # should be using this: https://api.slack.com/methods/chat.postMessage
-      # post as bot to IM channel
-
 
       res = @slack.chat_postMessage(channel: "@#{to}",
                                     text: "ping from #{from}, responses to me will be posted on the board.",

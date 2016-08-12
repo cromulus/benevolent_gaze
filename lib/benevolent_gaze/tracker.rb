@@ -7,12 +7,11 @@ require 'net/ping'
 
 module BenevolentGaze
   class Tracker
-    @@old_time = Time.now.to_i
-    @r = Redis.new
     def self.run!
       # Run forever
       loop do
         @r ||= Redis.current
+        @dns = Resolv.new
         scan
         # check_time # not sure we need this.
         sleep 1
@@ -26,26 +25,13 @@ module BenevolentGaze
         p = Net::Ping::External.new(host,timeout: 1)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        (res = p.ping?) || p.ping? || p.ping?
+        res = p.ping? or p.ping? or p.ping?
         res
       end
 
-      # def check_time # unused
-      #   # if ((@@old_time + (30*60)) <= Time.now.to_i)
-      #   if @@old_time <= Time.now.to_i
-      #     begin
-      #       # TODO: make sure to change the url to read from an environment variable for the correct company url.
-      #       HTTParty.post((ENV['BG_COMPANY_URL'] || 'http://localhost:3000/register'), query: { ip: `ifconfig | awk '/inet/ {print $2}' | grep -oE "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | grep -v 127.0.0.1 | tail -1`.strip + ":#{ENV['IPORT']}/register" })
-      #       puts 'Just sent localhost address to server.'
-      #     rescue
-      #       puts 'Looks like there is something wrong with the endpoint to identify the localhost.'
-      #     end
-      #     @old_time = Time.now.to_i
-      #   end
-      # end
 
       def scan
-        dns = Resolv.new
+
         device_names_hash = {}
         devices = Set.new # because dupes suck
 
@@ -77,12 +63,13 @@ module BenevolentGaze
         @r.keys('slack:*').map { |k| devices.add k.gsub('slack:', '') }
 
         # ping is low memory and largely io bound.
-        device_array = Parallel.map(devices, in_threads: devices.length) do |name|
+        n = devices.length
+        device_array = Parallel.map(devices, in_threads: n) do |name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
-            ip = dns.getaddress(name)
-          rescue Exception => _e
+            ip = @dns.getaddress(name)
+          rescue Resolv::ResolvError
             next
           end
 
