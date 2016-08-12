@@ -1,34 +1,19 @@
-//= require jquery
-//= require bootstrap
-//= require_tree .
-
 $(function() {
   var es = new EventSource('/feed');
   var new_people = [];
-  $("input[type!='file']").attr("required", true);
-  es.onmessage = function(e) {
-    //console.log( "Got message", e )
-  };
 
   es.addEventListener('message', function(e) {
-    new_people = JSON.parse(e.data);
+    data = JSON.parse(e.data);
+
+    new_people = jQuery.grep( data, function(d){
+      return d.type === 'device'});
+
+    msgs = jQuery.grep( data, function(d){return d.type === 'msg'});
+    msgs.forEach(onmessage);
     add_remove_workers(new_people);
+
     check_last_seen();
-
-
   }, false);
-
-  $.ajax({url:'/is_registered'}).done(function(data){
-    if (data==='true') {
-      $('.left_column').hide();
-      $('.right_column').show();
-      console.log('registered!');
-    }else{
-      $('.left_column').show();
-      $('.right_column').hide();
-      console.log('not registered');
-    }
-  });
 
   es.addEventListener('open', function(e) {
     console.log('Connection was opened.');
@@ -39,6 +24,100 @@ $(function() {
       console.log('closed');
     }
   }, false);
+
+  $.ajax({url:'/is_registered'}).done(function(data){
+    if (data==='true') {
+      $.ajax({url:'/me', dataType: "json"}).done(function(data){
+        if (d['data']['real_name'] === 'Reception') {
+          // do the touchscreen keyboard thing!
+           $(":text").onScreenKeyboard();
+        }
+      }
+      console.log('registered!');
+    }else{
+      if(window.location.href.indexOf('register') === -1){
+        // got a bit loopy here
+        window.location.replace("/register");
+      }
+    }
+  });
+
+  var ping_poll = function(){
+    $.ajax({url:'/ping',dataType:'json',timeout: 500, async: true}).done(function(){
+      $('#ping-status').hide();
+      $('#register').show();
+    }).fail(function(){
+      $('#ping-status').show();
+      $('#register').hide();
+      setTimeout(ping_poll, 350);
+    });
+  }
+
+  // populate our registration fields for registered users
+  if (window.location.href.indexOf('register')!= -1) {
+
+    $.ajax({url:'/me', dataType: "json"}).done(function(d){
+      if (d['success'] === true) {
+        $('input[name=real_name]').val(d['data']['real_name']);
+        $('input[name=slack_name]').val(d['data']['slack_name']);
+        var avatar = d['data']['avatar'];
+        if (avatar.indexOf('http') === -1 && avatar.indexOf('/') > 0) {
+          avatar = "/" + avatar;
+        };
+        $("#img_holder").html('<img src="'+ avatar +'" alt="yourimage" />');
+      }
+    }).fail(function(){
+      console.log('not yet registered');
+    });
+    // don't let people register if they can't be pinged!
+    ping_poll();
+  }
+
+  $("input[type!='file']").attr("required", true);
+
+  var onmessage = function(msg) {
+    console.log(msg);
+
+    slack_name = msg['user'].replace('@','');
+
+    var options = {
+      title: "message from:@"+slack_name,
+      content: msg['msg'],
+      trigger:'manual',
+      placement: 'auto'
+    }
+
+    // this is the thing that hides the popover and resets it.
+    $('.worker').on('shown.bs.popover', function () {
+      console.log('popover shown!');
+      var $pop = $(this);
+      setTimeout(function () {
+        $pop.popover('destroy');
+        // $pop.setContent();
+        // $pop.$tip.addClass($pop.options.placement);
+      }, 6000);
+    });
+
+    $worker = $('[data-slackname='+slack_name+']')
+    $worker.popover('destroy');
+
+    // scrolling so the worker is in the middle
+    var elOffset = $worker.offset().top;
+    var elHeight = $worker.height();
+    var windowHeight = $(window).height();
+    var offset;
+
+    if (elHeight < windowHeight) {
+      offset = elOffset - ((windowHeight / 2) - (elHeight / 2));
+    }
+    else {
+      offset = elOffset;
+    }
+    $('html, body').animate({scrollTop:offset}, 600,'swing');
+    Worker.animate_worker($worker,'bounce')
+    $worker.popover(options).popover('show');
+  }
+
 
 
   var w;
@@ -53,16 +132,18 @@ $(function() {
             Worker.add_to_board(worker_object);
           },
     grab_worker: function(){
-                   w = $('.worker').first().clone().removeClass('hidden');
-                 },
+                  w = $('.worker').first().clone().removeClass('hidden');
+                },
     set_image: function(string){
-      $('img', w).attr('src', string);
-    },
+                $('img', w).attr('src', string);
+              },
     set_name: function(worker_data){
                 $('.tape', w ).text(worker_data.name || sanitize_name(worker_data.device_name));
                 $(w).attr("data-name", (worker_data.name || worker_data.device_name));
                 $(w).attr("data-devicename", worker_data.device_name);
                 $(w).attr("data-slackname", worker_data.slack_name);
+                $(w).data('online', worker_data.online);
+                // $(w).addClass('online-'+worker_data.online); // future
               },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
@@ -82,33 +163,60 @@ $(function() {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
                       Worker.redraw();
 
-                    });
+                    })
                   },
     add_slack: function(){
-      $(w).click(function(){
+      $(w).click(function(e){
         //if me, go to register
         //if slackname, send slack ping
         var to='';
         var worker = $(this);
+        $.ajax({url:'/me', dataType: 'json',}).done(function(d){
+          if (worker.data('name') === d['data']['real_name']) {
+            window.location = '/register';
+            return;
+          }
+        });
+
         if ($(this).data('slackname') === false) {
           to = $(this).data('name');
         }else{
           to = $(this).data('slackname');
         }
+        worker.children('.pin_and_avatar_container').tooltip('destroy');
         $.ajax({
           type: 'POST',
           // make sure you respect the same origin policy with this url:
           // http://en.wikipedia.org/wiki/Same_origin_policy
-          url: '/ping/',
+          url: '/slack_ping/',
           data: {
               'to': to
           }
+        }).done(function() {
+
+          Worker.animate_worker(worker,'swing2');
+
+          worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual', placement: 'auto'}).tooltip('show');
+
+        }).fail(function(data) {
+          d=JSON.parse(data.responseText);
+
+          Worker.animate_worker(worker,'shake');
+          worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
+
+        }).always(function(){
+          $.wait(function(){
+            worker.children('.pin_and_avatar_container').tooltip('destroy');
+          }, 6);
         });
-        $(this).removeClass('animated').removeClass('swing2');
-        $(this).addClass("animated").addClass("swing2");
-        $(this).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-          $(this).removeClass('animated').removeClass('swing2');
-        });
+
+      });
+    },
+    animate_worker: function(el,animation){
+      el.removeClass('animated').removeClass(animation);
+      el.addClass("animated").addClass(animation);
+      el.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+        el.removeClass('animated').removeClass(animation);
       });
     },
     remove_worker: function(k) {
@@ -130,25 +238,33 @@ $(function() {
                 $('.board').removeClass('large med small').addClass('xsmall');
               }
             }
-  };
+  }
 
   var add_remove_workers = function(w){
-
+    // this function need some love.
     w.map(function(worker_data){
       data_attribute = "[data-name='" + (worker_data.name || worker_data.device_name) + "']";
       data_attribute_device = "[data-name='" + worker_data.device_name + "']";
       $element = $(data_attribute);
       if ($element.length > 0) {
+        // the worker was already there, updating
         $element.attr("data-lastseen", $.now());
         change_avatar(worker_data, data_attribute);
+        $element.data('slackname', worker_data.slack_name);
+        $element.data('online', worker_data.online);
+
         data_attribute_worker = "[data-devicename='" + worker_data.device_name + "']";
+
         if ( $(data_attribute_worker).find(".tape").text() !== ( worker_data.name || sanitize_name(worker_data.device_name) ) ) {
-          //console.log("this is the problem");
+          // if the tape (shown name) isn't right, we nuke now to add later
+          // console.log("this is the problem");
           Worker.remove_worker(data_attribute_worker);
         }
       } else {
+        // the worker wasn't there before.
         Worker.setup_and_add(worker_data);
         if (worker_data.name) {
+          // removing the device version if it's there, keeping the name one.
           //console.log("No this is the problem");
           Worker.remove_worker(data_attribute_device);
         }
@@ -165,12 +281,15 @@ $(function() {
         name_change = name_change.replace(/iP.*/, "");
         name_change = name_change.replace(/iM.*/, "");
         name_change = name_change.replace(/\..*/, "");
-        if (name_change === "") {
+        if (name_change == "") {
           name_change = "ANONYMOUS";
         }
-        return name_change;
+        return name_change
   };
 
+  var strip_at_symbol = function(slack_name){
+    return slack_name.replace('@','');
+  };
 
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
@@ -183,12 +302,12 @@ $(function() {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
-    });
-  };
+    })
+  }
 
 
   var change_avatar = function(user_param, data_attribute){
-    var element = $(data_attribute).find('.avatar_container img');
+    var element = $(data_attribute).find('.avatar_container img')
     if (typeof user_param.avatar == "string" && user_param.avatar != element.attr('src')) {
       $(data_attribute).find(".avatar_container img").attr('src',user_param.avatar);
     }
@@ -207,7 +326,11 @@ $(function() {
 
 var filter = function(){
   var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
-  var options={keys:['name','slackname']};
+  var options = {
+    keys:['name','slackname'],
+    distance: 5,
+    threshold: 0.3
+  };
   var f = new Fuse(workers,options);
   var q = $("input").val();
   var found = [];
@@ -219,7 +342,7 @@ var filter = function(){
   }
   worker_redraw();
 }
-
+// searching
 var t = null;
 $("input").keyup(function(){
     if (t) {

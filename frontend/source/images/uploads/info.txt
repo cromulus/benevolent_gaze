@@ -1,1 +1,0 @@
-This is where uploads will be saved if you do not provide AWS creds in your .env file.
