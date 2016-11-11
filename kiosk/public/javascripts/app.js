@@ -29,9 +29,9 @@ $(function() {
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
         if (d['data']['real_name'] === 'Reception') {
-           $(":text").onScreenKeyboard('draggable': true,
+           $(":text").onScreenKeyboard({'draggable': true,
                                        'topPosition': '90%',
-                                       'leftPosition': '5%');
+                                       'leftPosition': '5%'});
         }
       });
       console.log('registered!');

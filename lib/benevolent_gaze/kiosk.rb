@@ -619,7 +619,7 @@ module BenevolentGaze
           result = @r.get("slack:#{device_name}")
           result = @r.get("name:#{device_name}") if result.nil?
           from = result.to_s
-          to_id   = lookup_slack_id(to)
+
           from_id = lookup_slack_id(from)
           from = from_id ? from_id.prepend('<@') + '>' : from
         else
@@ -630,6 +630,7 @@ module BenevolentGaze
         return { success: false, msg: "We can't seem to figure out who you are. #{e}" }.to_json
       end
 
+      to_id   = lookup_slack_id(to)
       # no user found!
       unless to_id
         status 404
