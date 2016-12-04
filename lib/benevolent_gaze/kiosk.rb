@@ -263,11 +263,12 @@ module BenevolentGaze
     end
 
     get '/is_registered' do
+      # do we want to keep this only for registered users?
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip)
 
-        result = @r.exists("name:#{device_name}").to_s
+        result = @r.exists("name:#{device_name}")
       rescue Resolv::ResolvError
         result = false
       end
@@ -621,13 +622,14 @@ module BenevolentGaze
           from = result.to_s
 
           from_id = lookup_slack_id(from)
-          from = from_id ? from_id.prepend('<@') + '>' : from
+          from = from_id ? from_id.prepend('<@') + '>' : "Someone on 150.brl.nyc"
         else
           from = 'The Front Desk'
         end
       rescue Resolv::ResolvError => e
         status 404
-        return { success: false, msg: "We can't seem to figure out who you are. #{e}" }.to_json
+        return {success: false,
+                msg: "We can't seem to figure out who you are. #{e}" }.to_json
       end
 
       to_id   = lookup_slack_id(to)

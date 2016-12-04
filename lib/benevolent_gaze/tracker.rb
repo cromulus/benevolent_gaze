@@ -93,7 +93,7 @@ module BenevolentGaze
         # end
 
         begin
-          HTTParty.post("http://localhost:#{ENV['IPORT']}/information", query: { devices: device_names_hash.to_json })
+          HTTParty.post("http://#{KIOSK_HOST}:#{ENV['IPORT']}/information", query: { devices: device_names_hash.to_json })
         rescue
           puts 'Looks like you might not have the Benevolent Gaze gem running'
         end
