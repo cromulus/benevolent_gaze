@@ -58,12 +58,13 @@ module BenevolentGaze
         # speedy, but occasionally deeply innacurrate.
         # `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each { |d| devices.add(d) }
 
-        # so, we don't want ALL ip on net, just registered ones.
+        # so, we don't want ALL hosts on LAN, just registered ones.
         # this could also be a request to to the web service too...
         @r.keys('slack:*').map { |k| devices.add k.gsub('slack:', '') }
 
         # ping is low memory and largely io bound.
         n = devices.length
+
         device_array = Parallel.map(devices, in_threads: n) do |name|
           begin
             # because if dnsmasq doesn't know about it

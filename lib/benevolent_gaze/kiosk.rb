@@ -30,7 +30,7 @@ module BenevolentGaze
 
 
     set server: 'thin', connections: Set.new
-    set :bind, '0.0.0.0'
+    set :bind, ENV['BIND_IP'] || '0.0.0.0'
     set :app_file, __FILE__
     set :port, ENV['IPORT']
     set :static, true
@@ -69,6 +69,7 @@ module BenevolentGaze
         CREDENTIALS_PATH = File.join(Dir.home, '.credentials',
                                      "calendar-ruby-quickstart.yaml")
       end
+
       SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
 
       # to refactor into config system
@@ -106,6 +107,7 @@ module BenevolentGaze
       def lookup_slack_id(slack_name)
         slack_name.delete!('@')
         res = @r.hget('slack_id2slack_name', slack_name)
+
         return res if res
 
         begin
@@ -162,6 +164,7 @@ module BenevolentGaze
         end
       end
 
+      # this is to access the google calendar. see /calendar below
       def service
         return @service unless @service.nil?
 
