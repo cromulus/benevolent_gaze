@@ -9,9 +9,19 @@ end
 
 module BenevolentGaze
   class Slacker
+
+
     def self.run!
+      puts "starting"
       r = Redis.new
       client = Slack::RealTime::Client.new(websocket_ping: 60)
+
+      client.on :close do |_data|
+        BenevolentGaze::Slacker.run!
+      end
+      client.on :hello do
+        puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
+      end
 
       ###################################################
       # What we want to do:
@@ -110,7 +120,19 @@ Register your devices here: http://150.brl.nyc/"
         end
       end
 
-      client.start!
+      begin
+        puts "starting the bot"
+        client.start_async
+      rescue Exception => e
+        case e.message
+        when 'account_inactive', 'invalid_auth'
+          exit
+        else
+          sleep 10
+          puts "#{e}"
+          BenevolentGaze::Slacker.run!
+        end
+      end
     end
 
     class << self
