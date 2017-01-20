@@ -463,7 +463,7 @@ module BenevolentGaze
     #
     # handle the creation & editing of events.
     post '/calendar' do
-      Time.zone = 'America/New_York'
+      Time.zone = ENV['TIME_ZONE']|| 'America/New_York'
       e_id      = params[:id]
       e_start   = Time.parse(params[:start]).to_datetime.rfc3339
       e_end     = Time.parse(params[:end]).to_datetime.rfc3339
@@ -508,7 +508,7 @@ module BenevolentGaze
         end
       end if event.nil?
 
-      if event
+      if !event.nil?
         logger.info("event exists and not cancelled")
         if old_cal_id
           # we move the event if it was in another calendar
@@ -520,6 +520,7 @@ module BenevolentGaze
         event.start.date_time = e_start
         event.end.date_time = e_end
         event.status = 'confirmed'
+        event.location = calendar
         res = service.update_event(calendar_id, event.id, event)
         logger.info(res)
       else # wholly new event!
