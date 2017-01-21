@@ -626,7 +626,7 @@ module BenevolentGaze
           from = result.to_s
 
           from_id = lookup_slack_id(from)
-          from = from_id ? from_id.prepend('<@') + '>' : "Someone on 150.brl.nyc"
+          from = from_id ? from_id.prepend('<@') + '>' : "Someone at 150 Court"
         else
           from = 'The Front Desk'
         end

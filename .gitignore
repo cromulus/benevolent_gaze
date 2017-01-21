@@ -21,3 +21,4 @@ mkmf.log
 
 client_secret.json
 .credentials
+.env
