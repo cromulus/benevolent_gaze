@@ -94,7 +94,8 @@ module BenevolentGaze
         # end
 
         begin
-          HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information", query: { devices: device_names_hash.to_json })
+          url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
+          HTTParty.post(url, query: { devices: device_names_hash.to_json })
         rescue
           puts 'Looks like you might not have the Benevolent Gaze gem running'
         end
