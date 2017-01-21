@@ -267,15 +267,15 @@ module BenevolentGaze
 
     get '/is_registered' do
       # do we want to keep this only for registered users?
-      begin
-        dns = Resolv.new
-        device_name = dns.getname(get_ip)
+      # begin
+      #   dns = Resolv.new
+      #   device_name = dns.getname(get_ip)
 
-        result = @r.exists("name:#{device_name}")
-      rescue Resolv::ResolvError
-        result = false
-      end
-      return result
+      #   result = @r.exists("name:#{device_name}")
+      # rescue Resolv::ResolvError
+      #   result = false
+      # end
+      return "true"
     end
 
     get '/ip' do

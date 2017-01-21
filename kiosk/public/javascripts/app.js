@@ -25,23 +25,23 @@ $(function() {
     }
   }, false);
 
-  $.ajax({url:'/is_registered'}).done(function(data){
-    if (data==='true') {
-      $.ajax({url:'/me', dataType: "json"}).done(function(d){
-        if (d['data']['real_name'] === 'Reception') {
-           $(":text").onScreenKeyboard({'draggable': true,
-                                       'topPosition': '90%',
-                                       'leftPosition': '5%'});
-        }
-      });
-      console.log('registered!');
-    }else{
-      if(window.location.href.indexOf('register') === -1){
-        // got a bit loopy here
-        window.location.replace("/register");
-      }
-    }
-  });
+  // $.ajax({url:'/is_registered'}).done(function(data){
+  //   if (data==='true') {
+  //     $.ajax({url:'/me', dataType: "json"}).done(function(d){
+  //       if (d['data']['real_name'] === 'Reception') {
+  //          $(":text").onScreenKeyboard({'draggable': true,
+  //                                      'topPosition': '90%',
+  //                                      'leftPosition': '5%'});
+  //       }
+  //     });
+  //     console.log('registered!');
+  //   }else{
+  //     if(window.location.href.indexOf('register') === -1){
+  //       // got a bit loopy here
+  //       window.location.replace("/register");
+  //     }
+  //   }
+  // });
 
   var ping_poll = function(){
     $.ajax({url:'/ping',dataType:'json',timeout: 500, async: true}).done(function(){
