@@ -24,7 +24,7 @@ module BenevolentGaze
 
     desc 'slacker', 'Start up the slackbot'
     def slacker
-      BenevolentGaze::Slacker.run!
+      BenevolentGaze::Slacker.run
     end
 
     desc 'add_user device name image', "Add single user's device name, name, slack username and image"
