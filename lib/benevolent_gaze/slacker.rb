@@ -3,6 +3,10 @@ require 'redis'
 require 'slack-ruby-client'
 require 'celluloid'
 require 'celluloid/io'
+
+# https://github.com/slack-ruby/slack-ruby-bot/blob/master/examples/weather/weatherbot.rb
+
+# use https://github.com/slack-ruby/slack-ruby-bot
 Slack.configure do |config|
   config.token = ENV['SLACK_API_TOKEN']
 end

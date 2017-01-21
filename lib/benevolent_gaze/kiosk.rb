@@ -321,10 +321,11 @@ module BenevolentGaze
     end
 
     get '/env' do
+      res = []
       ENV.each_pair do|k, v|
-        puts "#{k}:#{v} \n"
-        puts '<\br>'
+        res << {k=>v}
       end
+      res.to_json
     end
 
     get '/dns' do
@@ -631,7 +632,7 @@ module BenevolentGaze
           from = 'The Front Desk'
         end
       rescue Resolv::ResolvError => e
-        status 404
+        status 400
         return {success: false,
                 msg: "We can't seem to figure out who you are. #{e}" }.to_json
       end
@@ -639,13 +640,13 @@ module BenevolentGaze
       to_id   = lookup_slack_id(to)
       # no user found!
       unless to_id
-        status 404
+        status 412
         return { success: false,
                  msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
       unless is_slack_user_online(to)
-        status 404
+        status 412
         return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
 
