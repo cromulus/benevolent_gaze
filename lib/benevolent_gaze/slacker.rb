@@ -51,12 +51,6 @@ module BenevolentGaze
   module Commands
     class Default < SlackRubyBot::Commands::Base
 
-      command 'call' do |client, data, match|
-        post_to_kiosk(client,data)
-      end
-      command 'marco' do |client, data, match|
-        post_to_kiosk(client,data)
-      end
 
       command 'ping' do |client, data, match|
         client.say(text: 'pong', channel: data.channel)
@@ -101,10 +95,8 @@ module BenevolentGaze
           end
         end
       end
-
-      private
-
-      def post_to_kiosk(data,client)
+      # unsure about this one.
+      command 'marco','call','' do |client, data, match|
         if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
@@ -115,7 +107,10 @@ module BenevolentGaze
                         query: { msg: slack_msg })
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
+        else
+          client.say(channel: data.channel, text: "Sorry <@#{data.user}>, I don't understand that command!", gif: 'idiot')
         end
+
       end
     end
   end
