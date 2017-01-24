@@ -34,9 +34,13 @@ module BenevolentGaze
     LONGDESC
 
     def add_user(device_name, name, image_url, slack = nil)
-      `redis-cli set "name:#{device_name}" "#{name}"`
-      `redis-cli set "image:#{name}" "#{image_url}"`
-      `redis-cli set "slack:#{device_name}" "#{slack}"` if slack
+      redis = Redis.new
+
+      redis.set "name:#{device_name}", name
+      redis.set "image:#{name}", image_url
+      redis.set "slack:#{device_name}", slack if slack
+      redis.set "all_devices", device_name
+
     end
 
     desc 'assign_users', 'This will prompt you for each current user without an associated name so that you can assign one.'
