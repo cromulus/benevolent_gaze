@@ -9,6 +9,10 @@
   position:fixed;
 }
 
+.search {
+  height: 100vh;
+}
+
 .board
 {
   background-image:url(/images/board@1x-b5fb87e5.png);
