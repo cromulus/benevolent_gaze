@@ -88,7 +88,7 @@ module BenevolentGaze
     def dump_csv(filename)
       require 'redis'
       redis = Redis.new
-      devices = redis.members 'current_devices'
+      devices = redis.smembers 'all_devices'
       CSV.open(filename, 'wb') do |out|
         devices.each do |device|
           name = redis.get "name:#{device}"
