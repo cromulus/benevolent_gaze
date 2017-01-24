@@ -56,6 +56,17 @@ module BenevolentGaze
         client.say(text: 'pong', channel: data.channel)
       end
 
+      command 'invite' do |client,data,users|
+        message = data['message']
+        users = message.scan(/<@([^>]+)>/)
+        users = users.blank? ? data['user'] : users
+        users.each do |user|
+          client.web_client.chat_postMessage(channel: user,
+                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{user} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                             as_user: true)
+        end
+      end
+
       command 'who','list' do |client,data,command|
         names = []
         r = Redis.new
@@ -68,7 +79,7 @@ module BenevolentGaze
         names.uniq!
         client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
         ')}
-        Register your devices here: http://150.brl.nyc/"
+        Register your devices here: http://150.brl.nyc/register/"
       end
 
       scan(/<@([^>]+)>/) do |client,data,users|
@@ -151,6 +162,8 @@ module BenevolentGaze
                                              text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
                                              as_user: true)
           r.sadd('slinvited', data['user'])
+        else
+          #if user has default avatar image, ask them to change it.
         end
       when 'away'
         r.srem('current_slackers', data['user'])

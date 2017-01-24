@@ -25,6 +25,8 @@ $(function() {
     }
   }, false);
 
+  // probably want to use this to launch a modal dialogue box to get people to
+  // register
   // $.ajax({url:'/is_registered'}).done(function(data){
   //   if (data==='true') {
   //     $.ajax({url:'/me', dataType: "json"}).done(function(d){
@@ -141,10 +143,10 @@ $(function() {
     set_name: function(worker_data){
                 $('.tape', w ).text(worker_data.name || sanitize_name(worker_data.device_name));
                 $(w).attr("data-name", (worker_data.name || worker_data.device_name));
+                $(w).attr("data-online",     worker_data.online);
                 $(w).attr("data-devicename", worker_data.device_name);
-                $(w).attr("data-slackname", worker_data.slack_name);
-                $(w).data('online', worker_data.online);
-                // $(w).addClass('online-'+worker_data.online); // future
+                $(w).attr("data-slackname",  worker_data.slack_name);
+                $(w).addClass('online-'+worker_data.online); // future
               },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
@@ -163,7 +165,6 @@ $(function() {
                     $('.newcomer_avatar, .newcomer').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
                       Worker.redraw();
-
                     })
                   },
     add_slack: function(){

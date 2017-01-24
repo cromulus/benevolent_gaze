@@ -366,14 +366,16 @@ module BenevolentGaze
       name = u_data['real_name']  if name.empty?
       name = u_data['profile']['real_name'] if name.empty?
       name = u_data['name'] if name.empty?
+      name = name.empty? ? device_name : name
 
       @r.set("name:#{device_name}", name)
       @r.set("slack:#{device_name}", u_data['name'])
       @r.set("slack_id:#{device_name}", slack_id)
+      @r.sadd('all_devices',device_name)
 
-      name = name.empty? ? false : name
+
       image_url = u_data['profile']['image_512']
-      image_name_key = 'image:' + (name || device_name)
+      image_name_key = "image:#{name}"
       @r.set(image_name_key, image_url)
 
       status 200
@@ -440,6 +442,7 @@ module BenevolentGaze
       end
 
       @r.set("name:#{device_name}", real_name)
+      @r.sadd('all_devices',device_name) # set of all devices
       status 200
       redirect '/'
     end
@@ -611,8 +614,8 @@ module BenevolentGaze
 
     post '/slack_ping/' do
       to = params[:to]
-      # throttle our messages. 1 minute
-      if @r.get("msg_throttle:#{to}")
+      # throttle our messages. 30 second, "to" and IP
+      if @r.get("msg_throttle:#{to}:#{get_ip}")
         status 420 # enhance your chill
         return { success: false, msg: 'enhance your chill.' }.to_json
       end
@@ -654,7 +657,7 @@ module BenevolentGaze
                                     text: "ping from #{from}, responses to me will be posted on the board.",
                                     as_user: true)
       # set throttle
-      @r.setex("msg_throttle:#{to}", 30, true)
+      @r.setex("msg_throttle:#{to}:#{get_ip}", 30, true)
 
       if res['ok'] == true
         status 200

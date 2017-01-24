@@ -80,17 +80,18 @@ module BenevolentGaze
       bg_flair
     end
 
-    desc 'dump_csv [FILENAME]', 'This dumps the current_devices'
+    desc 'dump_csv [FILENAME]', 'This dumps all registered_devices'
     def dump_csv(filename)
       require 'redis'
       redis = Redis.new
-      users = redis.hgetall 'current_devices'
+      devices = redis.members 'current_devices'
       CSV.open(filename, 'wb') do |out|
-        users.each do |device, name|
+        devices.each do |device|
           name = redis.get "name:#{device}"
           image = redis.get "image:#{name}"
           slack = redis.get "slack:#{device}"
-          out << [device, name, slack, image]
+          slack_id = redis.get "slack_id:#{device}"
+          out << [device, name, image, slack, slack_id]
         end
       end
       bg_flair
@@ -99,30 +100,39 @@ module BenevolentGaze
 
     desc 'bulk_assign yourcsv.csv', 'This takes a csv file as an argument formated in the following way. device_name, real_name, image_url'
     def bulk_assign(csv_path)
+      redis = Redis.new
       CSV.foreach(csv_path) do |row|
         puts "Loading device info for #{row[0]} -> #{row[1]}"
         device_name = row[0]
         real_name = row[1]
         image_url = row[2]
         slack_name = row[3]
+        slack_id = row[4]
+
+        redis.sadd('all_devices',device_name)
+
         unless real_name.nil? || real_name.empty?
-          `redis-cli set "name:#{device_name}" "#{real_name}"`
+          redis.set "name:#{device_name}",real_name
         end
 
         unless slack_name.nil? || slack_name.empty?
-          `redis-cli set "slack:#{device_name}" "#{slack_name}"`
+          redis.set "slack:#{device_name}", slack_name
+          redis.set "slack_id:#{device_name}", slack_id
+          redis.hset "slack_id2slack_name",slack_id, slack_name
+          redis.hset "slack_id2slack_name",slack_name, slack_id
         end
 
         unless image_url.nil? || image_url.empty?
-          `redis-cli set "image:#{real_name}" "#{image_url}"`
+          redis.set "image:#{real_name}", image_url
         end
+
       end
       # puts `redis-cli keys "*"`
       puts "#{Thor::Shell::Color::MAGENTA}The CSV has now been added.#{Thor::Shell::Color::CLEAR}"
       bg_flair
     end
 
-    desc 'install wifi_username, wifi_password', 'This commands installs the necessary components in the gem and pulls the assets into a local folder so that you can save to your local file system if you do not want to use s3 and also enables you to customize your kiosk.'
+    desc 'install', 'This commands installs the necessary components in the gem and pulls the assets into a local folder so that you can save to your local file system if you do not want to use s3 and also enables you to customize your kiosk.'
     def install()
       directory '.', 'bg_public'
       env_file = 'bg_public/.env'
