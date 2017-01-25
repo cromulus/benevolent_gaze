@@ -77,8 +77,9 @@ module BenevolentGaze
           names << name
         end
         names.uniq!
-        client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
-        ')}
+        client.message channel: (data['channel']).to_s, text: "Currently in the office:
+        #{names.join("
+        ")}
         Register your devices here: http://150.brl.nyc/register/"
       end
 
@@ -106,6 +107,7 @@ module BenevolentGaze
           end
         end
       end
+
       # unsure about this one.
       command 'marco','call' do |client, data, match|
         if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
@@ -122,6 +124,25 @@ module BenevolentGaze
           client.say(channel: data.channel, text: "Sorry <@#{data.user}>, I don't understand that command!", gif: 'idiot')
         end
       end
+
+      # catchall
+      match(/^(?<bot>\w*)\s(?<expression>.*)$/) do |client, data, match|
+        expression = match['expression'].strip
+        next if expression ==1
+        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+          puts "post '#{data['text']}' to kiosk from #{data['user']}"
+          user = data['user']
+          msg  = data['text']
+          slack_msg = { user: user, msg: msg, data: data }.to_json
+
+          HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
+                      query: { msg: slack_msg })
+
+          client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
+        else
+          # perhaps this is where we conference room?
+        end
+      end
     end
   end
 end
@@ -133,19 +154,10 @@ module BenevolentGaze
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
     end
 
-    on 'message' do |client,data|
-      if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
-        puts "post '#{data['text']}' to kiosk from #{data['user']}"
-        user = data['user']
-        msg  = data['text']
-        slack_msg = { user: user, msg: msg, data: data }.to_json
+    # on 'message' do |client,data|
+    #   if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
 
-        HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                      query: { msg: slack_msg })
-
-        client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
-      end
-    end
+    # end
 
     on 'presence_change' do |client,data|
       r = Redis.new()
