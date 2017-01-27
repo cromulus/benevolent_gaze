@@ -154,10 +154,6 @@ module BenevolentGaze
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
     end
 
-    # on 'message' do |client,data|
-    #   if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
-
-    # end
 
     on 'presence_change' do |client,data|
       r = Redis.new()
