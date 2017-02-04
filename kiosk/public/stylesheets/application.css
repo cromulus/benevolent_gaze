@@ -1,4 +1,37 @@
-﻿.hidden
+
+.controls {
+  height: 100vh;
+  padding: 0;
+}
+
+.controls h1 {
+  font-size: 1.333em;
+  line-height: 1.3em;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+}
+
+.controls ul {
+
+  padding: 1.5em 0 0 1.5em;
+}
+
+.controls li {
+  padding: 0 0 1em 0;
+}
+
+span#wave {
+  font-size: 5em;
+}
+
+.form-group {
+  padding: 0 0 .5em 0;
+}
+
+
+
+.hidden
 {
   display:none!important;
   visibility:hidden!important;
@@ -7,10 +40,6 @@
 .affix
 {
   position:fixed;
-}
-
-.search {
-  height: 100vh;
 }
 
 .board
@@ -23,7 +52,7 @@
 .page_container
 {
   position:relative;
-  padding-bottom:56.25%;
+  padding-bottom: 56.25%;
   height:0;
 }
 
@@ -35,6 +64,7 @@
   width:100%;
   height:100%;
   margin:0;
+  padding: 5em;
 }
 
 .sky
@@ -156,13 +186,13 @@
 
 .avatar_container
 {
-  width:100%;
+  max-width: 10em;
   position:relative;
   overflow:hidden;
   border-radius:100%;
-  border:5px solid #fdf6e1;
-  -webkit-box-shadow:0 0 5px 2px #333;
-  box-shadow:0 0 5px 2px #333;
+  border: 2px solid #fff;
+  -webkit-box-shadow:0 0 5px 1px rgba(0,0,0,0.75);
+  box-shadow:0 0 5px 1px rgba(0,0,0,0.75);
   margin:0 auto;
 }
 
@@ -174,12 +204,11 @@
 
 .tape
 {
-  background:#fdf6e1;
+  font-weight: normal;
   position:relative;
   display:inline-block;
   height:67px;
-  font-size:20px;
-  line-height:67px;
+  font-size:18px;
   padding-left:5px;
   padding-right:5px;
 }
