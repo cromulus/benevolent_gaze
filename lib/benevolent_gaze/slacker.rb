@@ -162,6 +162,18 @@ module BenevolentGaze
       when 'active'
 
         r.sadd('current_slackers', data['user'])
+
+        user_data = client.web_client.users_info(user: data['user'])
+
+        if user_data.title == ""
+          client.web_client.chat_postMessage(channel: data['user'],
+                                             text: "Please update your profile so people know who you are!")
+        end
+
+        #if user_data.image_512.includes("avatars/ava_")
+          # go get the image, if it resolves to *.wp.com it's a broken avatar.
+        #end
+        #
         # if we haven't invited them AND they aren't registered...
         # invite them!
         if !r.sismember('slinvited', data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
