@@ -12,7 +12,7 @@ module BenevolentGaze
       loop do
         @r ||= Redis.current
         @dns = Resolv.new
-        scan
+        do_scan
         # check_time # not sure we need this.
         sleep 1
       end
@@ -30,7 +30,7 @@ module BenevolentGaze
       end
 
 
-      def scan
+      def do_scan
 
         device_names_hash = {}
         devices = Set.new # because dupes suck
