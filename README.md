@@ -35,8 +35,8 @@ Then in the directory where you want your Benevolent Gaze related things to live
 
 ```$ benevolent_gaze install wifi_username wifi_password```
 
-This requires two arguments, your wifi username and password so that guests know how to get on your network and be looked on by the Benevolent Gaze. 
- 
+This requires two arguments, your wifi username and password so that guests know how to get on your network and be looked on by the Benevolent Gaze.
+
 This command creates a folder caled bg_public which contains a Procfile to use with Foreman so that you can start the kiosk and the tracker.  The kiosk is the web UI that lives at localhost:4567.  The tracker is the script that scans your network and reports on who has joined.
 
 ## Get your environment ready.
@@ -66,26 +66,26 @@ And make sure that you've included the class in an initializer:
 ```
 require 'benevolent_gaze/bgapp'
 ```
-  
+
 This works by receiving information from the tracker you have running on your local network.  So when users hit yoursite.com/register they are redirected to where you have the local kiosk running.  Users can now upload a photo, and if they give their same name to all of their devices, they will all be grouped under one avatar.
 
 Animated gifs are supported as well.
 
 ## Now that you are set up. Let's get it up and running!
 
-### Step 1. 
+### Step 1.
 
 Make sure you have Redis running both locally and on the app where you mounted the application. You will need to set your redistogo url in an environment variable called REDISTOGO_URL on heroku (or wherever you have deployed the app where you mounted the registration endpoint).
 
 ```$ heroku config:set REDISTOGO_URL=''```
 
-### Step 2. 
+### Step 2.
 
 Start your local benevolent_gaze instance. Go into your bg_public folder and run:
 
 ```$ foreman start```
 
-### Step 3. 
+### Step 3.
 
 Go to localhost:4567 and check out the interface. You should be able to see people on the right hand side of the screen like the screenshot above!
 
@@ -113,4 +113,16 @@ This will prompt you for the current users on the network, if any of them do not
 
 This expects a csv formatted with the columns device-name, real-name, and image-url.
 #CHANGELOG
+
+1.1.0
+=======
+Adding slack integration, search, and rudimentary calendaring.
+Needs a lot of love. Specifically:
+#TODO:
+0) tests? what are those?
+1) Organizations: so you click on an orgs logo, and everyone is pinged on slack
+2) Config: so installation sets up all of the necessary configs.
+3) choosing calendars on installation
+4) a whole lot more.
+
 This should now accomodate all screens. Optimized for sizes that conform to the aspect ratio targeted (16:9).
