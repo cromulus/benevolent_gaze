@@ -25,8 +25,7 @@ module BenevolentGaze
         p = Net::Ping::External.new(host, timeout: 1)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        (res = p.ping?) || p.ping? || p.ping?
-        res
+        p.ping? or p.ping? or p.ping? # rubocop:disable Style/AndOr
       end
 
       def do_scan
