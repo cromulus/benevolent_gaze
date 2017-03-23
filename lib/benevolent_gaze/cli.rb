@@ -39,8 +39,7 @@ module BenevolentGaze
       redis.set "name:#{device_name}", name
       redis.set "image:#{name}", image_url
       redis.set "slack:#{device_name}", slack if slack
-      redis.set "all_devices", device_name
-
+      redis.set 'all_devices', device_name
     end
 
     desc 'assign_users', 'This will prompt you for each current user without an associated name so that you can assign one.'
@@ -113,23 +112,22 @@ module BenevolentGaze
         slack_name = row[3]
         slack_id = row[4]
 
-        redis.sadd('all_devices',device_name)
+        redis.sadd('all_devices', device_name)
 
         unless real_name.nil? || real_name.empty?
-          redis.set "name:#{device_name}",real_name
+          redis.set "name:#{device_name}", real_name
         end
 
         unless slack_name.nil? || slack_name.empty?
           redis.set "slack:#{device_name}", slack_name
           redis.set "slack_id:#{device_name}", slack_id
-          redis.hset "slack_id2slack_name",slack_id, slack_name
-          redis.hset "slack_id2slack_name",slack_name, slack_id
+          redis.hset 'slack_id2slack_name', slack_id, slack_name
+          redis.hset 'slack_id2slack_name', slack_name, slack_id
         end
 
         unless image_url.nil? || image_url.empty?
           redis.set "image:#{real_name}", image_url
         end
-
       end
       # puts `redis-cli keys "*"`
       puts "#{Thor::Shell::Color::MAGENTA}The CSV has now been added.#{Thor::Shell::Color::CLEAR}"
@@ -137,7 +135,7 @@ module BenevolentGaze
     end
 
     desc 'install', 'This commands installs the necessary components in the gem and pulls the assets into a local folder so that you can save to your local file system if you do not want to use s3 and also enables you to customize your kiosk.'
-    def install()
+    def install
       directory '.', 'bg_public'
       env_file = 'bg_public/.env'
       new_path = File.expand_path('./bg_public')

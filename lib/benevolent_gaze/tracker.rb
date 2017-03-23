@@ -22,16 +22,14 @@ module BenevolentGaze
       private
 
       def ping(host)
-        p = Net::Ping::External.new(host,timeout: 1)
+        p = Net::Ping::External.new(host, timeout: 1)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        res = p.ping? or p.ping? or p.ping?
+        (res = p.ping?) || p.ping? || p.ping?
         res
       end
 
-
       def do_scan
-
         device_names_hash = {}
         devices = Set.new # because dupes suck
 
@@ -82,7 +80,7 @@ module BenevolentGaze
 
         device_array.compact! # remove nils.
 
-        device_array.map do|a|
+        device_array.map do |a|
           device_names_hash[a[0]] = a[1]
         end
 

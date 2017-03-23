@@ -27,8 +27,6 @@ Encoding.default_external = 'utf-8' if defined?(::Encoding)
 
 module BenevolentGaze
   class Kiosk < Sinatra::Application
-
-
     set server: 'thin', connections: Set.new
     set :bind, ENV['BIND_IP'] || '0.0.0.0'
     set :app_file, __FILE__
@@ -41,33 +39,32 @@ module BenevolentGaze
     register Sinatra::CrossOrigin
 
     configure do
-
-      unless ENV['AWS_ACCESS_KEY_ID'].nil? || ENV['AWS_ACCESS_KEY_ID'].empty? || ENV['AWS_SECRET_ACCESS_KEY'].empty? || ENV['AWS_CDN_BUCKET'].empty?
-        USE_AWS = true
-      else
+      if ENV['AWS_ACCESS_KEY_ID'].nil? || ENV['AWS_ACCESS_KEY_ID'].empty? || ENV['AWS_SECRET_ACCESS_KEY'].empty? || ENV['AWS_CDN_BUCKET'].empty?
         USE_AWS = false
+      else
+        USE_AWS = true
       end
 
-      if ENV['IGNORE_HOSTS'].nil?
-        IGNORE_HOSTS = false
-      else
-        IGNORE_HOSTS = ENV['IGNORE_HOSTS'].split(',')
-      end
+      IGNORE_HOSTS = if ENV['IGNORE_HOSTS'].nil?
+                       false
+                     else
+                       ENV['IGNORE_HOSTS'].split(',')
+                     end
 
       Slack.configure do |config|
         config.token = ENV['SLACK_API_TOKEN']
       end
 
-      OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
-      APPLICATION_NAME = 'Blue Ridge Calendaring'
+      OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'.freeze
+      APPLICATION_NAME = 'Blue Ridge Calendaring'.freeze
 
-      if File.exists?('/etc/bg/client_secret.json')
-        CLIENT_SECRETS_PATH = '/etc/bg/client_secret.json'
-        CREDENTIALS_PATH = File.join("/etc/bg/.credentials/calendar-ruby-quickstart.yaml")
+      if File.exist?('/etc/bg/client_secret.json')
+        CLIENT_SECRETS_PATH = '/etc/bg/client_secret.json'.freeze
+        CREDENTIALS_PATH = File.join('/etc/bg/.credentials/calendar-ruby-quickstart.yaml')
       else
-        CLIENT_SECRETS_PATH = 'client_secret.json'
+        CLIENT_SECRETS_PATH = 'client_secret.json'.freeze
         CREDENTIALS_PATH = File.join(Dir.home, '.credentials',
-                                     "calendar-ruby-quickstart.yaml")
+                                     'calendar-ruby-quickstart.yaml')
       end
 
       SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR
@@ -76,13 +73,14 @@ module BenevolentGaze
       CALENDAR_IDS = {
         'biggie' => 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
         'smalls' => 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
-      'tiny' => 'robinhood.org_2d37313337333130363239@resource.calendar.google.com'}
+        'tiny' => 'robinhood.org_2d37313337333130363239@resource.calendar.google.com'
+      }.freeze
     end
 
     before do
       @r = Redis.new
       @slack = Slack::Web::Client.new
-      logger.datetime_format = "%Y/%m/%d @ %H:%M:%S "
+      logger.datetime_format = '%Y/%m/%d @ %H:%M:%S '
       logger.level = Logger::INFO
     end
 
@@ -99,10 +97,9 @@ module BenevolentGaze
         p = Net::Ping::External.new(host)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        res = p.ping? or p.ping? or p.ping?
-        return res
+        (res = p.ping?) || p.ping? || p.ping?
+        res
       end
-
 
       def lookup_slack_id(slack_name)
         slack_name.delete!('@')
@@ -125,10 +122,9 @@ module BenevolentGaze
       def get_slack_info(sname)
         sname.prepend('@') if sname[0] != 'U'
         res = @slack.users_info(user: sname)
-        sname.delete!('@') #wtf.
-        return res
+        sname.delete!('@') # wtf.
+        res
       end
-
 
       def slack_id_to_name(slack_id)
         res = @r.hget('slack_id2slack_name', slack_id)
@@ -171,7 +167,8 @@ module BenevolentGaze
         client_id = Google::Auth::ClientId.from_file(CLIENT_SECRETS_PATH)
         token_store = Google::Auth::Stores::FileTokenStore.new(file: CREDENTIALS_PATH)
         authorizer = Google::Auth::UserAuthorizer.new(
-        client_id, SCOPE, token_store)
+          client_id, SCOPE, token_store
+        )
         user_id = 'bill@robinhood.org'
         credentials = authorizer.get_credentials(user_id)
         @service = Google::Apis::CalendarV3::CalendarService.new
@@ -260,7 +257,6 @@ module BenevolentGaze
       send_file 'public/register.html'
     end
 
-
     get '/calendar' do
       send_file 'public/calendar.html'
     end
@@ -275,7 +271,7 @@ module BenevolentGaze
       # rescue Resolv::ResolvError
       #   result = false
       # end
-      return "true"
+      return true
     end
 
     get '/ip' do
@@ -286,10 +282,10 @@ module BenevolentGaze
       res = ping(get_ip)
       if res
         status 200
-        return {success: true}.to_json
+        return { success: true }.to_json
       else
         status 404
-        return {success:false}.to_json
+        return { success: false }.to_json
       end
     end
 
@@ -307,7 +303,7 @@ module BenevolentGaze
         status 500
         return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
       end
-      name = @r.hget("current_devices", device_name)
+      name = @r.hget('current_devices', device_name)
       name = @r.get("name:#{device_name}") if name.nil?
       name_or_device_name = name ? name : device_name
       data = {
@@ -317,13 +313,13 @@ module BenevolentGaze
       }
 
       status 200
-      return {success:true,data: data }.to_json
+      return { success: true, data: data }.to_json
     end
 
     get '/env' do
       res = []
-      ENV.each_pair do|k, v|
-        res << {k=>v}
+      ENV.each_pair do |k, v|
+        res << { k => v }
       end
       res.to_json
     end
@@ -339,10 +335,9 @@ module BenevolentGaze
     end
 
     get '/slack_me_up/:id' do
-
       unless ping(get_ip)
         status 404
-        return {success:false,msg: 'we cannot ping your device'}.to_json
+        return { success: false, msg: 'we cannot ping your device' }.to_json
       end
 
       dns = Resolv.new
@@ -363,7 +358,7 @@ module BenevolentGaze
 
       # hunting for a name...
       name = u_data['profile']['real_name_normalized']
-      name = u_data['real_name']  if name.empty?
+      name = u_data['real_name'] if name.empty?
       name = u_data['profile']['real_name'] if name.empty?
       name = u_data['name'] if name.empty?
       name = name.empty? ? device_name : name
@@ -371,8 +366,7 @@ module BenevolentGaze
       @r.set("name:#{device_name}", name)
       @r.set("slack:#{device_name}", u_data['name'])
       @r.set("slack_id:#{device_name}", slack_id)
-      @r.sadd('all_devices',device_name)
-
+      @r.sadd('all_devices', device_name)
 
       image_url = u_data['profile']['image_512']
       image_name_key = "image:#{name}"
@@ -410,11 +404,11 @@ module BenevolentGaze
 
       real_name = nil
 
-      unless params[:real_name].empty?
-        real_name = params[:real_name].to_s.strip
-      else
+      if params[:real_name].empty?
         status 401
         return "Please tell us your name! <a href'http://150.brl.nyc/register'>go back and try again.</a>"
+      else
+        real_name = params[:real_name].to_s.strip
       end
 
       image_name_key = "image:#{real_name}"
@@ -442,7 +436,7 @@ module BenevolentGaze
       end
 
       @r.set("name:#{device_name}", real_name)
-      @r.sadd('all_devices',device_name) # set of all devices
+      @r.sadd('all_devices', device_name) # set of all devices
       status 200
       redirect '/'
     end
@@ -454,10 +448,10 @@ module BenevolentGaze
       begin
         service.delete_event(calendar_id, e_id)
         status 200
-        return {success:true}.to_json
+        return { success: true }.to_json
       rescue Google::Apis::ClientError => e
         status 410
-        return {success:false, msg: e}.to_json
+        return { success: false, msg: e }.to_json
       end
     end
 
@@ -467,14 +461,13 @@ module BenevolentGaze
     #
     # handle the creation & editing of events.
     post '/calendar' do
-      Time.zone = ENV['TIME_ZONE']|| 'America/New_York'
+      Time.zone = ENV['TIME_ZONE'] || 'America/New_York'
       e_id      = params[:id]
       e_start   = Time.parse(params[:start]).to_datetime.rfc3339
       e_end     = Time.parse(params[:end]).to_datetime.rfc3339
       calendar  = params[:calendar]
       title     = params[:title]
       sequence  = 1 # must update sequence if event exists.
-
 
       calendar_id = calendar_name_to_id(calendar)
       event = nil
@@ -483,9 +476,9 @@ module BenevolentGaze
         # event found in this calendar.
         event = service.get_event(calendar_id, e_id)
         if event.status == 'cancelled'
-          logger.info("event is cancelled")
+          logger.info('event is cancelled')
           event = nil
-          #e_id = gen_cal_id # we need a whole new event here.
+          # e_id = gen_cal_id # we need a whole new event here.
         end
       rescue Google::Apis::ClientError
         logger.info("#{title} not in #{calendar} or new")
@@ -497,23 +490,25 @@ module BenevolentGaze
       other_calendars = CALENDAR_IDS.values
       other_calendars.delete(calendar_id)
 
-      other_calendars.each do |cal_id|
-        begin
-          event = service.get_event(cal_id, e_id)
-          if event && event.status != 'cancelled'
-            logger.info('event is in another calendar and not cancelled')
-            old_cal_id = cal_id
-          else
-            logger.info('event is either cancelled or not in the calendar')
-            event = nil
-          end
-        rescue Google::Apis::ClientError
+      if event.nil?
+        other_calendars.each do |cal_id|
+          begin
+            event = service.get_event(cal_id, e_id)
+            if event && event.status != 'cancelled'
+              logger.info('event is in another calendar and not cancelled')
+              old_cal_id = cal_id
+            else
+              logger.info('event is either cancelled or not in the calendar')
+              event = nil
+            end
+          rescue Google::Apis::ClientError
 
+          end
         end
-      end if event.nil?
+      end
 
       if !event.nil?
-        logger.info("event exists and not cancelled")
+        logger.info('event exists and not cancelled')
         if old_cal_id
           # we move the event if it was in another calendar
           logger.info('moving event!')
@@ -536,7 +531,8 @@ module BenevolentGaze
           location: calendar,
           description: title,
           start: { date_time: e_start },
-          end: { date_time: e_end } }
+          end: { date_time: e_end }
+        }
 
         event = Google::Apis::CalendarV3::Event.new(options)
         service.insert_event(calendar_id, event)
@@ -602,8 +598,7 @@ module BenevolentGaze
                       online: online,
                       slack_name: slack,
                       last_seen: (Time.now.to_f * 1000).to_i,
-                      avatar: image_url
-                      }
+                      avatar: image_url }
           end
 
           out << "data: #{data.to_json}\n\n"
@@ -620,7 +615,6 @@ module BenevolentGaze
         return { success: false, msg: 'enhance your chill.' }.to_json
       end
 
-
       begin
         dns = Resolv.new
         device_name = dns.getname(get_ip)
@@ -630,17 +624,17 @@ module BenevolentGaze
           from = result.to_s
 
           from_id = lookup_slack_id(from)
-          from = from_id ? from_id.prepend('<@') + '>' : "Someone at 150 Court"
+          from = from_id ? from_id.prepend('<@') + '>' : 'Someone at 150 Court'
         else
           from = 'The Front Desk'
         end
       rescue Resolv::ResolvError => e
         status 400
-        return {success: false,
-                msg: "We can't seem to figure out who you are. #{e}" }.to_json
+        return { success: false,
+                 msg: "We can't seem to figure out who you are. #{e}" }.to_json
       end
 
-      to_id   = lookup_slack_id(to)
+      to_id = lookup_slack_id(to)
       # no user found!
       unless to_id
         status 412
@@ -669,7 +663,6 @@ module BenevolentGaze
     end
 
     post '/msg' do
-
       m = JSON.parse(params[:msg])
       slack_name = slack_id_to_name(m['user'])
       if slack_name != false
