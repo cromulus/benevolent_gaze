@@ -31,6 +31,7 @@ module BenevolentGaze
     set :bind, ENV['BIND_IP'] || '0.0.0.0'
     set :app_file, __FILE__
     set :port, ENV['IPORT']
+    set :admin_email, ENV['ADMIN_EMAIL'] || "admin@#{ENV['SERVER_HOST']}"
     set :static, true
     set :logging, true
     set :public_folder, ENV['PUBLIC_FOLDER'] || 'public'
@@ -80,11 +81,32 @@ module BenevolentGaze
     before do
       @r = Redis.new
       @slack = Slack::Web::Client.new
+      @dns = Resolv.new
       logger.datetime_format = '%Y/%m/%d @ %H:%M:%S '
       logger.level = Logger::INFO
     end
 
     helpers do
+      def get_user_info
+        # returns a hash with all the user info we have given an IP address
+        begin
+          device_name = @dns.getname(get_ip)
+          return false unless @r.exists("name:#{device_name}")
+        rescue Resolv::ResolvError
+          return false
+        end
+        name = @r.hget('current_devices', device_name)
+        name = @r.get("name:#{device_name}") if name.nil?
+        name_or_device_name = name ? name : device_name
+        slack_name = @r.get("slack:#{device_name}")
+        slack_id = @r.hget('slack_id2slack_name',slack_name)
+        { real_name: name,
+          slack_name: slack_name,
+          slack_id: slack_id,
+          device_name: device_name,
+          avatar: @r.get("image:#{name_or_device_name}") }
+      end
+
       def get_ip
         if request.ip == '127.0.0.1'
           env['HTTP_X_REAL_IP'] || env['HTTP_X_FORWARDED_FOR']
@@ -97,8 +119,7 @@ module BenevolentGaze
         p = Net::Ping::External.new(host)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        (res = p.ping?) || p.ping? || p.ping?
-        res
+        p.ping? or p.ping? or p.ping? # rubocop:disable Style/AndOr
       end
 
       def lookup_slack_id(slack_name)
@@ -290,30 +311,14 @@ module BenevolentGaze
     end
 
     get '/me' do
-      begin
-        dns = Resolv.new
-        device_name = dns.getname(get_ip)
-
-        connected = @r.exists("name:#{device_name}")
-        unless connected
-          status 404
-          return { success: false, msg: "we don't seem to have your info" }.to_json
-        end
-      rescue Resolv::ResolvError => e
-        status 500
-        return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
+      data = get_user_info
+      if data
+        status 200
+        return { success: true, data: data }.to_json
+      else
+        status 400
+        return {success: false}.to_json
       end
-      name = @r.hget('current_devices', device_name)
-      name = @r.get("name:#{device_name}") if name.nil?
-      name_or_device_name = name ? name : device_name
-      data = {
-        real_name: name,
-        slack_name: @r.get("slack:#{device_name}"),
-        avatar: @r.get("image:#{name_or_device_name}")
-      }
-
-      status 200
-      return { success: true, data: data }.to_json
     end
 
     get '/env' do
@@ -325,11 +330,11 @@ module BenevolentGaze
     end
 
     get '/dns' do
-      dns = Resolv.new
+
       begin
-        return dns.getname(get_ip)
+        return @dns.getname(get_ip)
       rescue Resolv::ResolvError
-        status = 404
+        status 404
         return false
       end
     end
@@ -340,9 +345,9 @@ module BenevolentGaze
         return { success: false, msg: 'we cannot ping your device' }.to_json
       end
 
-      dns = Resolv.new
+
       begin
-        device_name = dns.getname(get_ip)
+        device_name = @dns.getname(get_ip)
       rescue Resolv::ResolvError
         status 500
         return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
@@ -367,7 +372,7 @@ module BenevolentGaze
       @r.set("slack:#{device_name}", u_data['name'])
       @r.set("slack_id:#{device_name}", slack_id)
       @r.sadd('all_devices', device_name)
-
+      @r.set("email:#{device_name}", u_data['email'])
       image_url = u_data['profile']['image_512']
       image_name_key = "image:#{name}"
       @r.set(image_name_key, image_url)
@@ -394,9 +399,9 @@ module BenevolentGaze
         return { success: false, msg: 'we cannot ping your device' }.to_json
       end
 
-      dns = Resolv.new
+
       begin
-        device_name = dns.getname(get_ip)
+        device_name = @dns.getname(get_ip)
       rescue Resolv::ResolvError
         status 500
         return { success: false, msg: 'we cannot seem to find your IP address' }.to_json
@@ -424,6 +429,7 @@ module BenevolentGaze
           @r.set("slack_id:#{device_name}", slack_id)
           res = get_slack_info(slack_id)
           @r.set(image_name_key, res['user']['profile']['image_512'])
+          @r.set("email:#{device_name}", res['user']['profile']['email'] || "")
         else
           status 401
           return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
@@ -461,6 +467,8 @@ module BenevolentGaze
     #
     # handle the creation & editing of events.
     post '/calendar' do
+      user = get_user_info
+
       Time.zone = ENV['TIME_ZONE'] || 'America/New_York'
       e_id      = params[:id]
       e_start   = Time.parse(params[:start]).to_datetime.rfc3339
@@ -520,6 +528,8 @@ module BenevolentGaze
         event.end.date_time = e_end
         event.status = 'confirmed'
         event.location = calendar
+        event.creator.displayName = user[:name]
+        event.creator.email = user[:email] unless user[:email].nil?
         res = service.update_event(calendar_id, event.id, event)
         logger.info(res)
       else # wholly new event!
@@ -530,37 +540,21 @@ module BenevolentGaze
           summary: title,
           location: calendar,
           description: title,
+          creator: {
+            displayName: user[:name] || "unknown",
+            email: user[:email] || "blueridgelabs@robinhood.org"
+          },
           start: { date_time: e_start },
           end: { date_time: e_end }
         }
-
         event = Google::Apis::CalendarV3::Event.new(options)
         service.insert_event(calendar_id, event)
-
       end
 
       status 200
       return { success: true }.to_json
     end
 
-    # get '/msgs', provides: 'text/event-stream' do
-    #   cross_origin
-    #   response.headers['X-Accel-Buffering'] = 'no'
-    #   stream :keep_open do |out|
-    #     loop do
-    #       break if out.closed?
-    #       r = Redis.connect
-    #       r.subscribe('slackback') do |on|
-    #         on.message do |_channel, message|
-    #           m = JSON.parse(message)
-    #           slack_name = slack_id_to_name(m['user'])
-    #           data = { msg: m['msg'], user: slack_name.delete('@') }.to_json
-    #           out << "data: #{data}\n\n"
-    #         end
-    #       end
-    #     end
-    #   end
-    # end
 
     get '/feed', provides: 'text/event-stream' do
       cross_origin
@@ -574,6 +568,7 @@ module BenevolentGaze
 
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
+            email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}") || false
             slack_id = @r.get("slack_id:#{k}")
             next unless slack # if you're not setup, we don't want to see you.
@@ -587,10 +582,13 @@ module BenevolentGaze
             end
             image_url = @r.get("image:#{name_or_device_name}")
 
-            unless image_url # force people to use their slack images...
+            if image_url.nil? || email.nil?
+              # update missing info from slack
               res = get_slack_info(slack_id)
               @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
+              @r.set("email:#{k}",res['user']['profile']['email'])
             end
+
 
             data << { type: 'device',
                       device_name: k,
@@ -616,8 +614,8 @@ module BenevolentGaze
       end
 
       begin
-        dns = Resolv.new
-        device_name = dns.getname(get_ip)
+
+        device_name = @dns.getname(get_ip)
         if device_name != ENV['KIOSK_HOST']
           result = @r.get("slack:#{device_name}")
           result = @r.get("name:#{device_name}") if result.nil?
