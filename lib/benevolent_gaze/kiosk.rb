@@ -336,9 +336,10 @@ module BenevolentGaze
       end
     end
 
-    get '/slack_id_search/' do
+    get '/slack_names.json' do
       #search for slack ids based on user input. do a typeahead thing.
-      @slack.users_search(user: params[:q]).members.map(&:name).to_json
+
+      @slack.users_list.members.map(&:name).to_json
     end
 
     post '/send_slack_invite' do

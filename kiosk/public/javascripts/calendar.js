@@ -285,16 +285,40 @@ $(document).ready(function() {
     });
   }
 
-  // slack register
-  $('#slack_name').typeahead({
-    highlight: true,
-  },{
+  var all_slack_names = new Bloodhound({
+    datumTokenizer: Bloodhound.tokenizers.whitespace,
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    // url points to a json file that contains an array of country names, see
+    // https://github.com/twitter/typeahead.js/blob/gh-pages/data/countries.json
+    prefetch: '/slack_names.json'
+  });
+
+  // passing in `null` for the `options` arguments will result in the default
+  // options being used
+  $('#slack_name').typeahead(null, {
     name: 'slack_name',
-    display: 'name',
-    source: function(query, syncResults, asyncResults) {
-      $.get('/slack_id_search/?q=' + query, function(data) {
-        asyncResults(data);
-      });
-    }
-  })
+    source: all_slack_names
+  });
+
+  var me_poll = function(){
+    $.ajax({url:'/me',dataType:'json',timeout: 500, async: true}).done(function(){
+      $('body').loadingOverlay('remove');
+    }).fail(function(){
+      setTimeout(me_poll, 350);
+    });
+  }
+
+  $('#slackFormSubmit').click(function(e){
+    e.preventDefault();
+    $.ajax({url: '/send_slack_invite',
+            data: {'slack_name':$('#slack_name').val()},
+            type: 'POST',
+            success: function(e){
+              $('#registerModal').modal('hide');
+              $('body').loadingOverlay();
+              me_poll();
+            }
+          });
+  });
+
 });

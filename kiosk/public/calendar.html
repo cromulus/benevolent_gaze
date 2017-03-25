@@ -72,12 +72,13 @@
         <h4 id="modalTitle" class="modal-title">Register</h4>
       </div>
       <div id="modalBody" class="modal-body">
-        <h3>Magic Invite link via slack:</h3>
-        <form action="/send_slack_invite" url="/send_slack_invite" id="myForm" method="post">
-          <input type="text" class='typeahead' name='slack_name' id="slack_name">
+        <h3><a href='/register'>Register here</a></h3>
+        <h3>Or get a "Magic Invite Link" via slack:</h3>
+        <form action="/send_slack_invite" url="/send_slack_invite" id="slackForm" method="post">
+          <input type="text" class='typeahead' name='slack_name' id="slack_name" placeholder='Your Slack ID'>
           <button id="slackFormSubmit" type="submit">Submit</button>
         </form>
-        <h3> or go to the <a href='/register/'>registration page</a></h3>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
