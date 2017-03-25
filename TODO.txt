@@ -1,0 +1,37 @@
+organizations:
+by default, no user has an organization.
+
+data-organization=false
+
+Users can add an organization on their registration page.
+
+You type into an autocomplete field and select. If organization is not found, then you are given the option to add a new one with an image.
+
+Data Structure:
+key: organization:#{ name } => organization
+key: image:#{organization} => image url
+set: slack_members:#{organization} => slack_ids
+
+in the feed, we add organization to worker
+
+with each new worker, we check to see if the organization is on the page, and if yes, we append slack_id to a data-members array and update lastseen.
+
+if no, we query for organization image and display organization.
+
+
+SlackBot Calendaring Howto:
+@bot rooms
+  returns rooms and availability
+  biggie: free untill 1pm.
+  Smalls: booked until 1:30. next booking 2:00pm.
+  tiny: Free untill tomorrow at 11:00am.
+  see more: http://website.com/calendar
+
+@bot book tiny
+  booking tiny for @username now untill 1pm.
+@bot book smalls
+  Sorry, smalls is booked untill 1:30,
+
+
+ruby face detection: free from google up to 1k
+https://gist.github.com/afeld/655e6e02bf085feb02193f468516fca5
