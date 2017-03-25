@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'mini_magick'
   spec.add_dependency 'thor'
   spec.add_dependency 'parallel'
+  spec.add_dependency 'picky'
   spec.add_dependency 'slack-ruby-client'
   spec.add_dependency 'slack-ruby-bot'
   spec.add_dependency 'eventmachine'

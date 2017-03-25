@@ -13,6 +13,7 @@ require 'securerandom'
 require 'mini_magick'
 require 'httparty'
 require 'net/ping'
+require 'picky'
 require 'slack-ruby-client'
 require 'google/apis/calendar_v3'
 require 'googleauth'
@@ -129,7 +130,7 @@ module BenevolentGaze
       end
 
       def lookup_slack_id(slack_name)
-        s = slack_name.dup.delete!('@')
+        s = slack_name.dup.delete('@')
         res = @r.hget('slack_id2slack_name', s)
         return res if res
         begin
@@ -330,6 +331,26 @@ module BenevolentGaze
       begin
         return @dns.getname(find_ip)
       rescue Resolv::ResolvError
+        status 404
+        return false
+      end
+    end
+
+    get '/slack_id_search/' do
+      #search for slack ids based on user input. do a typeahead thing.
+      @slack.users_search(user: params[:q]).members.map(&:name).to_json
+    end
+
+    post '/send_slack_invite' do
+      # send invitation to slack user
+      slack_id = lookup_slack_id(params[:slack_name])
+      if slack_id
+        @slack.chat_postMessage(channel: slack_id,
+                                            text: "Hi! Welcome! To get setup, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{slack_id} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                            as_user: true)
+        status 200
+        return true
+      else
         status 404
         return false
       end

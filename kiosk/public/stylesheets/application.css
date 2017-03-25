@@ -13,13 +13,6 @@
   height: 100vh;
 }
 
-.board
-{
-  background-image:url(/images/board@1x-b5fb87e5.png);
-  background-size:100%;
-  background-position:center;
-}
-
 .page_container
 {
   position:relative;
@@ -36,17 +29,6 @@
   height:100%;
   margin:0;
 }
-
-.sky
-{
-  background-image:url(/images/sky@1x-47babe39.png);
-  background-position:center;
-  background-size:100%;
-  width:100%;
-  height:100%;
-  position:relative;
-}
-
 
 .logo
 {
