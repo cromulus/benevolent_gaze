@@ -1,22 +1,21 @@
 organizations:
-by default, no user has an organization.
+  by default, no user has an organization.
+  - data-organization=false
 
-data-organization=false
+  Users can add an organization on their registration page.
 
-Users can add an organization on their registration page.
+  You type into an autocomplete field and select. If organization is not found, then you are given the option to add a new one with an image.
 
-You type into an autocomplete field and select. If organization is not found, then you are given the option to add a new one with an image.
+  Data Structure:
+    key: organization:#{ name } => organization
+    key: image:#{organization} => image url
+    set: slack_members:#{organization} => slack_ids
 
-Data Structure:
-key: organization:#{ name } => organization
-key: image:#{organization} => image url
-set: slack_members:#{organization} => slack_ids
+  in the feed, we add organization to worker
 
-in the feed, we add organization to worker
+  with each new worker, we check to see if the organization is on the page, and if yes, we append slack_id to a data-members array and update lastseen.
 
-with each new worker, we check to see if the organization is on the page, and if yes, we append slack_id to a data-members array and update lastseen.
-
-if no, we query for organization image and display organization.
+  if no, we query for organization image and display organization.
 
 
 SlackBot Calendaring Howto:
@@ -34,4 +33,5 @@ SlackBot Calendaring Howto:
 
 
 ruby face detection: free from google up to 1k
-https://gist.github.com/afeld/655e6e02bf085feb02193f468516fca5
+  https://gist.github.com/afeld/655e6e02bf085feb02193f468516fca5
+  Pester users if they have default slack image.
