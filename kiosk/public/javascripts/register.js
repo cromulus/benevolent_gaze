@@ -14,7 +14,7 @@ $(document).ready(function() {
     source: all_slack_names
   }).bind('change blur', validateSelection);
 
-  function validateSelection() {
+  function validateSelection(el) {
     if(all_slack_names.get($(this).val())[0] === undefined) { $(this).val('') }
   }
 
@@ -36,7 +36,8 @@ $(document).ready(function() {
 
   $('#slackFormSubmit').click(function(e){
     e.preventDefault();
-    $.ajax({url:'/ping',
+    if (all_slack_names.get($('#magic_slack').val())[0] != undefined) {
+      $.ajax({url:'/ping',
             dataType:'json',
             timeout: 500
           }).done(function(){
@@ -55,6 +56,9 @@ $(document).ready(function() {
                 }
               });
           }).fail(function(){alert("We don't see you on the network...")})
+    }else{
+      alert('not a slack ID. try again');
+    }
   });
 
   var ping_poll = function(){
