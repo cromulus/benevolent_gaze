@@ -26,7 +26,7 @@
     <script src='/javascripts/moment-timezone-with-data-2010-2020.js'></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
+    <script src='/javascripts/slack-invite.js'></script>
     <script src='/javascripts/calendar.js'></script>
   </head>
   <body>
@@ -64,29 +64,7 @@
     </div>
   </div>
 </div>
-<!--  register with magic link -->
-<div id="registerModal" class="modal fade">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 id="modalTitle" class="modal-title">Register</h4>
-      </div>
-      <div id="modalBody" class="modal-body">
-        <h3><a href='/register'>Register here</a></h3>
-        <h3>Or get a "Magic Invite Link" via slack:</h3>
-        <form action="/send_slack_invite" url="/send_slack_invite" id="slackForm" method="post">
-          <input type="text" class='typeahead' name='slack_name' id="slack_name" placeholder='Your Slack ID'>
-          <button id="slackFormSubmit" type="submit">Submit</button>
-        </form>
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button id='modalDelete' class="btn btn-danger">Delete</button>
-      </div>
-    </div>
-  </div>
-</div>
 <div id='loading'></div>
 </body>
 </html>

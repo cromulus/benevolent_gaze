@@ -22,11 +22,13 @@ $(function() {
   es.addEventListener('error', function(e) {
     if (e.readyState == EventSource.CLOSED) {
       console.log('closed');
+    }else{
+      window.location.href='/'; // reload page on error
     }
   }, false);
 
-  // probably want to use this to launch a modal dialogue box to get people to
-  // register
+  // sends the user to register if unregistered,
+  // otherwise, sets up the reception kiosk keyboard
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
@@ -39,46 +41,12 @@ $(function() {
       console.log('registered!');
     }else{
       if(window.location.href.indexOf('register') === -1){
-        // got a bit loopy here
-        // show modal registration with link to register page.
-        //$('#registerModal').modal();
+        console.log('send to register');
+        //window.location.href='/register'
       }
     }
   });
-
-  var ping_poll = function(){
-    $.ajax({url:'/ping',dataType:'json',timeout: 500, async: true}).done(function(){
-      $('#ping-status').hide();
-      $('#register').show();
-    }).fail(function(){
-      $('#ping-status').show();
-      $('#register').hide();
-      setTimeout(ping_poll, 350);
-    });
-  }
-
-  // populate our registration fields for registered users
-  if (window.location.href.indexOf('register')!= -1) {
-
-    $.ajax({url:'/me', dataType: "json"}).done(function(d){
-      if (d['success'] === true) {
-        $('input[name=real_name]').val(d['data']['real_name']);
-        $('input[name=slack_name]').val(d['data']['slack_name']);
-        var avatar = d['data']['avatar'];
-        if (avatar.indexOf('http') === -1 && avatar.indexOf('/') > 0) {
-          avatar = "/" + avatar;
-        };
-        $("#img_holder").html('<img src="'+ avatar +'" alt="yourimage" />');
-      }
-    }).fail(function(){
-      console.log('not yet registered');
-    });
-    // don't let people register if they can't be pinged!
-    ping_poll();
-  }
-
-  $("input[type!='file']").attr("required", true);
-
+  // handles inbounx messages
   var onmessage = function(msg) {
     console.log(msg);
 
@@ -122,7 +90,7 @@ $(function() {
     $worker.popover(options).popover('show');
   }
 
-
+// the main worker management code is below.
 
   var w;
 
@@ -176,7 +144,8 @@ $(function() {
         var worker = $(this);
         $.ajax({url:'/me', dataType: 'json',}).done(function(d){
           if (worker.data('name') === d['data']['real_name']) {
-            window.location = '/register';
+            e.preventDefault;
+            window.location.href = '/register';
             return;
           }
         });
