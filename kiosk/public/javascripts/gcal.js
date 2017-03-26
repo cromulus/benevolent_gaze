@@ -1,9 +1,9 @@
 /*!
- * <%= title %> v<%= version %> Google Calendar Plugin
- * Docs & License: <%= homepage %>
- * (c) <%= copyright %>
+ * <%= meta.title %> v<%= meta.version %> Google Calendar Plugin
+ * Docs & License: <%= meta.homepage %>
+ * (c) <%= meta.copyright %>
  */
- 
+
 (function(factory) {
 	if (typeof define === 'function' && define.amd) {
 		define([ 'jquery' ], factory);
@@ -150,7 +150,8 @@ function transformOptions(sourceOptions, start, end, timezone, calendar) {
 						end: entry.end.dateTime || entry.end.date, // same
 						url: url,
 						location: entry.location,
-						description: entry.description
+						description: entry.description,
+						resourceId: sourceOptions.resourceId
 					});
 				});
 
