@@ -4,8 +4,17 @@ $(document).ready(function() {
     // get the events from google every 15 seconds
     $('#calendar').fullCalendar('refetchEvents')
   }, 15000);
-  // zero out the modal on hide
 
+  window.setInterval(function(){
+    // every hour refresh the page
+    // for the reception kiosk
+    window.location.href = window.location.href;
+  },1000 * 60 * 60);
+
+  // should probably use
+  // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
+
+  // zero out the modal on hide
   $("#fullCalModal").on('hidden.bs.modal', function() {
     $(this).data('bs.modal', null);
   });
