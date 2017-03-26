@@ -12,18 +12,26 @@ $(document).ready(function() {
   $('.slack_name').typeahead(null, {
     name: 'slack_name',
     source: all_slack_names
-  });
+  }).bind('change blur', validateSelection);
+
+  function validateSelection() {
+    if(all_slack_names.get($(this).val())[0] === undefined) { $(this).val('') }
+  }
 
   var me_poll = function(){
-    $.ajax({url:'/me',dataType:'json',timeout: 500, async: true}).done(function(){
-      $('body').loadingOverlay('remove');
-      // if we are on the registration page, send new user home
-      if(window.location.href.indexOf('register') != -1){
-        window.location.href = '/';
-      }
-    }).fail(function(){
-      setTimeout(me_poll, 250);
-    });
+    $.ajax({url:'/me',
+            dataType:'json',
+            timeout: 500,
+            async: true})
+        .done(function(){
+          $('body').loadingOverlay('remove');
+          // if we are on the registration page, send new user home
+          if(window.location.href.indexOf('register') != -1){
+            window.location.href = '/';
+          }
+        }).fail(function(){
+          setTimeout(me_poll, 350);
+        });
   }
 
   $('#slackFormSubmit').click(function(e){
@@ -33,13 +41,17 @@ $(document).ready(function() {
             timeout: 500
           }).done(function(){
               $.ajax({url: '/send_slack_invite',
-                data: {'slack_name':$('#slack_name').val()},
+                data: {'slack_name':$('#magic_slack').val()},
                 type: 'POST',
                 success: function(e){
                   $('#registerModal').modal('hide');
                   $('body').loadingOverlay();
                   alert('click the link in your slack client to get setup!');
                   me_poll();
+                },
+                error: function(e){
+                  alert("That isn't your slack ID...");
+                  $('#magic_slack').val('');
                 }
               });
           }).fail(function(){alert("We don't see you on the network...")})
