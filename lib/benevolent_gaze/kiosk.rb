@@ -108,6 +108,10 @@ module BenevolentGaze
           avatar: @r.get("image:#{name_or_device_name}") }
       end
 
+      def door_auth?
+        !ENV['KISI_DOOR_URL'].nil? && get_user_info != false
+      end
+
       def find_ip
         if request.ip == '127.0.0.1'
           env['HTTP_X_REAL_IP'] || env['HTTP_X_FORWARDED_FOR']
@@ -281,17 +285,41 @@ module BenevolentGaze
       send_file 'public/calendar.html'
     end
 
+    # checks for the front end if we can door.
+    get '/can_door' do
+      door_auth?
+    end
+
+    # How you door
+    get '/downstairs_door' do
+      if !door_auth?
+        status 404
+        return ""
+      elsif @r.exists("door_throttle:#{find_ip}")
+        status 420 # enhance your chill
+        return { success: false, msg: 'enhance your chill.' }.to_json
+      else
+        @r.setex("door_throttle:#{find_ip}", 15, true)
+        url = ENV['KISI_DOOR_URL']
+        res = HTTParty.get(url)
+        if res.code == 200
+          return { success: true, data: res }.to_json
+        else
+          status 400
+          return {success: false, data: res.code}.to_json
+        end
+      end
+    end
+
     get '/is_registered' do
       # do we want to keep this only for registered users?
-      # begin
-      #   dns = Resolv.new
-      #   device_name = dns.getname(find_ip)
-
-      #   result = @r.exists("name:#{device_name}")
-      # rescue Resolv::ResolvError
-      #   result = false
-      # end
-      return true
+      begin
+        dns = Resolv.new
+        device_name = dns.getname(find_ip)
+        return @r.exists("name:#{device_name}")
+      rescue Resolv::ResolvError
+        return false
+      end
     end
 
     get '/ip' do
@@ -319,13 +347,14 @@ module BenevolentGaze
       end
     end
 
-    get '/env' do
-      res = []
-      ENV.each_pair do |k, v|
-        res << { k => v }
-      end
-      res.to_json
-    end
+    # usefull for debugging...
+    # get '/env' do
+    #   res = []
+    #   ENV.each_pair do |k, v|
+    #     res << { k => v }
+    #   end
+    #   res.to_json
+    # end
 
     get '/dns' do
       begin
@@ -338,7 +367,6 @@ module BenevolentGaze
 
     get '/slack_names.json' do
       # search for slack ids based on user input. do a typeahead thing.
-
       @slack.users_list.members.map(&:name).to_json
     end
 
@@ -394,16 +422,17 @@ module BenevolentGaze
       end
     end
 
-    post 'search' do
-      if params[:slack]
-        devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
-        # if device exists, return true, else false
-        return !devices.detect { |d| @r.hexists('current_devices', d) }.nil?
-      elsif params[:name]
-        names = @r.keys('name:*').select { |k| @r.get(k) == params[:name] }
-        return !names.detect { |d| @r.hexists('current_devices', d) }.nil?
-      end
-    end
+    # currently unused. all searching is now frontend.
+    # post 'search' do
+    #   if params[:slack]
+    #     devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
+    #     # if device exists, return true, else false
+    #     return !devices.detect { |d| @r.hexists('current_devices', d) }.nil?
+    #   elsif params[:name]
+    #     names = @r.keys('name:*').select { |k| @r.get(k) == params[:name] }
+    #     return !names.detect { |d| @r.hexists('current_devices', d) }.nil?
+    #   end
+    # end
 
     post '/register' do
       # no registration for un-pingable devices
@@ -442,6 +471,7 @@ module BenevolentGaze
           @r.set(image_name_key, res['user']['profile']['image_512'])
           @r.set("email:#{device_name}", res['user']['profile']['email'] || '')
         else
+          # this shouldn't happen, we finlter on the front end.
           status 401
           return "slack name not found, <a href='/register'>go back and try again.</a>"
         end
@@ -473,7 +503,7 @@ module BenevolentGaze
     end
 
     # event is in the calendar we think it is, update.
-    # event is in another calendar, move and then update
+    # event is in another calendar,find it, move it, and then update
     # event isn't in any calendar, it's new! create it!
     #
     # handle the creation & editing of events.
@@ -499,9 +529,9 @@ module BenevolentGaze
           event = nil
           # e_id = gen_cal_id # we need a whole new event here.
         end
-      rescue Google::Apis::ClientError
+      rescue Google::Apis::ClientError => e
         logger.info("#{title} not in #{calendar} or new")
-
+        logger.info(e)
         # event doesn't exist in this calendar.
         # find in others?
       end
@@ -520,8 +550,8 @@ module BenevolentGaze
               logger.info('event is either cancelled or not in the calendar')
               event = nil
             end
-          rescue Google::Apis::ClientError
-
+          rescue Google::Apis::ClientError => e
+            logger.info(e)
           end
         end
       end
@@ -539,6 +569,7 @@ module BenevolentGaze
         event.end.date_time = e_end
         event.status = 'confirmed'
         event.location = calendar
+        event.sequence += 1
         event.creator.displayName = user[:name]
         event.creator.email = user[:email] unless user[:email].nil?
         res = service.update_event(calendar_id, event.id, event)
@@ -550,6 +581,7 @@ module BenevolentGaze
           id: e_id,
           summary: title,
           location: calendar,
+          sequence: sequence, # unclear if we need this
           description: title,
           creator: {
             displayName: user[:name] || 'unknown',

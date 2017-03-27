@@ -11,7 +11,7 @@ module BenevolentGaze
       # Run forever
       loop do
         @r ||= Redis.current
-        @dns = Resolv.new
+        @dns ||= Resolv.new
         do_scan
         # check_time # not sure we need this.
         sleep 1
