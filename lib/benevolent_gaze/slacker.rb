@@ -77,7 +77,7 @@ module BenevolentGaze
         client.message channel: (data['channel']).to_s, text: "Currently in the office:
         #{names.join("
         ")}
-        Register your devices here: http://150.brl.nyc/register/"
+        Register your devices here: http://#{ENV['SERVER_HOST']}/register/"
       end
 
       scan(/<@([^>]+)>/) do |client, data, users|
@@ -98,7 +98,7 @@ module BenevolentGaze
           if online
             client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
           elsif unknown
-            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://150.brl.nyc/"
+            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/"
           else
             client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
           end
@@ -172,7 +172,7 @@ module BenevolentGaze
         if !r.sismember('slinvited', data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
           puts "inviting #{data['user']}"
           client.web_client.chat_postMessage(channel: data['user'],
-                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
                                              as_user: true)
           r.sadd('slinvited', data['user'])
         end

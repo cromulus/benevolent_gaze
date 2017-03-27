@@ -337,7 +337,7 @@ module BenevolentGaze
     end
 
     get '/slack_names.json' do
-      #search for slack ids based on user input. do a typeahead thing.
+      # search for slack ids based on user input. do a typeahead thing.
 
       @slack.users_list.members.map(&:name).to_json
     end
@@ -347,8 +347,8 @@ module BenevolentGaze
       slack_id = lookup_slack_id(params[:slack_name])
       if slack_id
         @slack.chat_postMessage(channel: slack_id,
-                                            text: "Hi! Welcome! To get setup, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{slack_id} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
-                                            as_user: true)
+                                text: "Hi! Welcome! To get setup, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{slack_id} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                as_user: true)
         status 200
         return true
       else
@@ -422,7 +422,7 @@ module BenevolentGaze
 
       if params[:real_name].empty?
         status 401
-        return "Please tell us your name! <a href'http://150.brl.nyc/register'>go back and try again.</a>"
+        return "Please tell us your name! <a href='/register'>go back and try again.</a>"
       else
         real_name = params[:real_name].to_s.strip
       end
@@ -443,7 +443,7 @@ module BenevolentGaze
           @r.set("email:#{device_name}", res['user']['profile']['email'] || '')
         else
           status 401
-          return "slack name not found, <a href'http://150.brl.nyc/register'>go back and try again.</a>"
+          return "slack name not found, <a href='/register'>go back and try again.</a>"
         end
       end
 

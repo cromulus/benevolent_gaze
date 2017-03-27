@@ -1,7 +1,4 @@
-﻿body{
-  height:100%;
-}
-.hidden
+﻿.hidden
 {
   display:none!important;
   visibility:hidden!important;
@@ -19,8 +16,9 @@
 .page_container
 {
   position:relative;
-  padding-bottom:56.25%;
+  /*padding-bottom:56.25%;*/
   height:0;
+  margin:30px;
 }
 
 .page_container .app_container
@@ -71,56 +69,6 @@
   max-width:256px;
   border:5px solid #fdf6e1;
   margin:0 auto;
-}
-
-.sun
-{
-  position:absolute;
-  top:370px;
-  left:0;
-  right:0;
-}
-
-.town
-{
-  position:absolute;
-  bottom:0;
-  right:0;
-  left:0;
-}
-
-.wifi
-{
-  position:absolute;
-  bottom:0;
-  height:150px;
-}
-
-.wifi .register_url
-{
-  text-align:center;
-  margin-left:-35px;
-}
-
-.wifi h3::before
-{
-  content:"";
-  height:39px;
-  width:39px;
-  position:absolute;
-  top:-5px;
-  left:-45px;
-}
-
-.wifi .uname::before
-{
-  background:url(/images/icon_wifi@1x-e92e9c20.png);
-}
-
-.wifi .pword::before
-{
-  background:url(/images/icon_password@1x-fb34b974.png);
-  height:38px;
 }
 
 .pin_rope
