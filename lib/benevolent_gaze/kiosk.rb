@@ -516,7 +516,6 @@ module BenevolentGaze
       e_end     = Time.parse(params[:end]).to_datetime.rfc3339
       calendar  = params[:calendar]
       title     = params[:title]
-      sequence  = 1 # must update sequence if event exists.
 
       calendar_id = calendar_name_to_id(calendar)
       event = nil
@@ -569,7 +568,6 @@ module BenevolentGaze
         event.end.date_time = e_end
         event.status = 'confirmed'
         event.location = calendar
-        event.sequence += 1
         event.creator.displayName = user[:name]
         event.creator.email = user[:email] unless user[:email].nil?
         res = service.update_event(calendar_id, event.id, event)
@@ -581,7 +579,7 @@ module BenevolentGaze
           id: e_id,
           summary: title,
           location: calendar,
-          sequence: sequence, # unclear if we need this
+          sequence: 1, # unclear if we need this
           description: title,
           creator: {
             displayName: user[:name] || 'unknown',
@@ -728,14 +726,17 @@ module BenevolentGaze
       if IGNORE_HOSTS != false
         devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
       end
+
+      # deletes devices not in new batch
       old_set = @r.hkeys('current_devices')
       new_set = devices_on_network.keys
       diff_set = old_set - new_set
-
       diff_set.each do |d|
         @r.hdel('current_devices', d)
       end
 
+      # adds devices in new batch in.
+      # there will be some overwrites. OK: updates with new data
       devices_on_network.each do |k, _v|
         @r.hmset('current_devices', k, @r.get("name:#{k}"))
       end
