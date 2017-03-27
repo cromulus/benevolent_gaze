@@ -9,18 +9,25 @@ $(function() {
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 
   var es = new EventSource('/feed');
-  var new_people = [];
+  var people = [];
 
   es.addEventListener('message', function(e) {
-    data = JSON.parse(e.data);
-
-    new_people = jQuery.grep( data, function(d){
+    data = JSON.parse(e.data); //
+    // evveryone from the feed
+    people = jQuery.grep( data, function(d){
       return d.type === 'device'});
 
+    // any messages we might have received
     msgs = jQuery.grep( data, function(d){return d.type === 'msg'});
-    msgs.forEach(onmessage);
-    add_remove_workers(new_people);
 
+    // loop through messages and send them to workers.
+    msgs.forEach(onmessage);
+
+    // add new workers to the board.
+    add_remove_workers(people);
+
+    // check to see if any are stale
+    // stale == not in feed for a little while.
     check_last_seen();
   }, false);
 
@@ -30,14 +37,19 @@ $(function() {
 
   es.addEventListener('error', function(e) {
     if (e.readyState == EventSource.CLOSED) {
-      console.log('closed');
+      console.log('closed'); // not sure what to do here.
+      // maybe refresh the page anyway?
+      window.location.href='/'; // reload page on error
     }else{
+      console.log(e.readyState);
       window.location.href='/'; // reload page on error
     }
   }, false);
 
   // sends the user to register if unregistered,
   // otherwise, sets up the reception kiosk keyboard
+  // should probably be a standalone "user" script/object
+  // duplicates alof of the functionality of the ""
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
@@ -91,10 +103,12 @@ $(function() {
     $worker.popover(options).popover('show');
   }
 
-// the main worker management code is below.
 
-  var w; // stores the worker we are currently operating on.
+  // stores the worker we are currently operating on.
+  var w; // I don't like it. seems like it could be prone to race conditions.
+  // how do we deal with this?
 
+  // the main worker management code is below.
   var Worker = {
     setup_and_add: function(worker_object) {
             var klass = worker_object.device_name.replace(/\./g, "");
@@ -139,7 +153,7 @@ $(function() {
                },
     add_to_board: function(worker_data){
                     Worker.add_slack();
-                    Welcome.move_logo_and_welcomes();
+                    //Welcome.move_logo_and_welcomes();
                     $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
                     $('.workers.row').append( w );
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
@@ -254,7 +268,7 @@ $(function() {
     });
   };
 
-
+  // how much of the below should be in Worker?
   var sanitize_name = function(name){
     var name_change = name.replace(/(s\-).*/, "");
         name_change = name_change.replace(/\-.*/, "");
@@ -274,16 +288,12 @@ $(function() {
 
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
-      // console.log("not inside if yet");
-      // console.log(wk);
-      // console.log($(wk).attr('data-lastseen'));
-      // console.log($.now() - 5000);
-      worker_redraw();
       if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 900000) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
     })
+    Worker.redraw();
   }
 
 
@@ -294,57 +304,60 @@ $(function() {
     }
   };
 
-  var Welcome = {
-    move_logo_and_welcomes: function() {
-                   $('.logo').addClass("animated rubberBand");
-                   $('.welcomes').addClass("animated tada");
-                   $('.welcomes, .logo').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-                      $(this).removeClass('animated').removeClass('tada').removeClass('rubberBand');
-                    });
-                 }
+  // // is welcome a thing still?
+  // var Welcome = {
+  //   move_logo_and_welcomes: function() {
+  //                  $('.logo').addClass("animated rubberBand");
+  //                  $('.welcomes').addClass("animated tada");
+  //                  $('.welcomes, .logo').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
+  //                     $(this).removeClass('animated').removeClass('tada').removeClass('rubberBand');
+  //                   });
+  //                }
 
-  };
+  // };
 
-var filter = function(){
-  var workers=$('.worker[data-name]').map(function(d){$(this).hide();return {device_name:$(this).data('devicename'),name:$(this).data('name'),class:$(this).data('devicename').split('.').join(""),obj:$(this)}})
-  var options = {
-    keys:['name','slackname'],
-    distance: 5,
-    threshold: 0.3
-  };
-  var f = new Fuse(workers,options);
-  var q = $("input").val();
-  var found = [];
-  if (q.length>0) {
-    found = f.search($("input").val());
-    $(found).each(function(i,v){$(v.obj).show();});
-  }else{
-    $('.worker[data-name]').each(function(i,v){$(v).show();});
-  }
-  worker_redraw();
-}
-// searching
-var t = null;
-$("input").keyup(function(){
-    if (t) {
-        clearTimeout(t);
+  // searches for workers. simple Fuse search.
+  var filter = function(){
+    // map through each worker, hide it, and return a searchable obj.
+    var searchable_workers = $('.worker').map(function(d){
+      $(this).hide(); // hide em all.
+       return { device_name: $(this).data('devicename'),
+                name: $(this).data('name'),
+                slack_name: $(this).data('slackname'),
+                class: $(this).data('devicename').split('.').join(""),
+                obj: $(this)}
+        })
+
+    // we search only name, could possibly search slackname or device...
+    // should be "fuzzy" enough to be usefull
+    var options = {
+      keys:['name'],
+      distance: 5,
+      threshold: 0.3
+    };
+
+    var fuse = new Fuse(searchable_workers,options);
+    var query = $("input").val();
+    var found = [];
+    if (query.length>0) {
+      found = fuse.search(query);
+      // show only found workers.
+      $(found).each(function(i,v){$(v.obj).show();});
+    }else{
+      // show all of the workers, didn't find anything
+      $('.worker').each(function(i,v){$(v).show();});
     }
-    t = setTimeout(filter(), 200);
-});
-
-
-var worker_redraw = function(){
-  var w = $('.worker').length;
-  if ( w <= 6 ) {
-    $('.board').removeClass('med small xsmall').addClass('large');
-  } else if ( w <= 12 ) {
-    $('.board').removeClass('small xsmall large').addClass('med');
-  } else if ( w <= 24 ) {
-    $('.board').removeClass('xsmall large med').addClass('small');
-  } else {
-    $('.board').removeClass('large med small').addClass('xsmall');
   }
-}
+  // should we think about a typeahead +filter here? for ease of use?
+  // similar to register.js for slack ids, would need to ajax.
+  // searching, simple debounce
+  var t = null;
+  $("input").keyup(function(){
+      if (t) {
+          clearTimeout(t);
+      }
+      t = setTimeout(filter(), 200);
+  });
 
 });
 
