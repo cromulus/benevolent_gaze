@@ -41,6 +41,7 @@ $(function() {
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
+        window.me = d['data']; // ugly hack.
         if (d['data']['real_name'] === 'Reception') {
            $(":text").onScreenKeyboard({'draggable': true,
                                        'topPosition': '90%',
@@ -55,7 +56,9 @@ $(function() {
       }
     }
   });
-  // handles inbounx messages
+
+  // handles inbound messages
+  // should refactor most of this into Worker class
   var onmessage = function(msg) {
     console.log(msg);
 
@@ -67,17 +70,6 @@ $(function() {
       trigger:'manual',
       placement: 'auto'
     }
-
-    // this is the thing that hides the popover and resets it.
-    $('.worker').on('shown.bs.popover', function () {
-      console.log('popover shown!');
-      var $pop = $(this);
-      setTimeout(function () {
-        $pop.popover('destroy');
-        // $pop.setContent();
-        // $pop.$tip.addClass($pop.options.placement);
-      }, 6000);
-    });
 
     $worker = $('[data-slackname='+slack_name+']')
     $worker.popover('destroy');
@@ -101,7 +93,7 @@ $(function() {
 
 // the main worker management code is below.
 
-  var w;
+  var w; // stores the worker we are currently operating on.
 
   var Worker = {
     setup_and_add: function(worker_object) {
@@ -111,6 +103,7 @@ $(function() {
             Worker.set_name(worker_object);
             Worker.add_class("."+klass);
             Worker.add_to_board(worker_object);
+            Worker.set_popover_timeout();
           },
     grab_worker: function(){
                   w = $('.worker').first().clone().removeClass('hidden');
@@ -128,6 +121,18 @@ $(function() {
               },
     set_avatar: function(avatar_url){
                   $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
+                },
+    set_popover_timeout: function(){
+                  // this is the thing that hides the popover and resets it.
+                  $(w).on('shown.bs.popover', function () {
+                    console.log('popover shown!');
+                    var $pop = $(this);
+                    setTimeout(function () {
+                      $pop.popover('destroy');
+                      // $pop.setContent();
+                      // $pop.$tip.addClass($pop.options.placement);
+                    }, 6000);
+                  });
                 },
     add_class: function(device_name){
                  w.addClass(device_name.replace(/\./g, ""));
@@ -151,14 +156,6 @@ $(function() {
         //if slackname, send slack ping
         var to='';
         var worker = $(this);
-        $.ajax({url:'/me', dataType: 'json',}).done(function(d){
-          if (worker.data('name') === d['data']['real_name']) {
-            e.preventDefault;
-            window.location.href = '/register';
-            return;
-          }
-        });
-
         if ($(this).data('slackname') === false) {
           to = $(this).data('name');
         }else{
@@ -221,9 +218,12 @@ $(function() {
             }
   }
 
+
   var add_remove_workers = function(w){
     // this function need some love.
     w.map(function(worker_data){
+      // if worker_data == window.me, then skip adding
+
       data_attribute = "[data-name='" + (worker_data.name || worker_data.device_name) + "']";
       data_attribute_device = "[data-name='" + worker_data.device_name + "']";
       $element = $(data_attribute);

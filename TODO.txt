@@ -35,3 +35,9 @@ SlackBot Calendaring Howto:
 ruby face detection: free from google up to 1k
   https://gist.github.com/afeld/655e6e02bf085feb02193f468516fca5
   Pester users if they have default slack image.
+
+UI updates:
+ - use placeholder for search instructions,
+ - hide the user, they don't need to seem themselves
+ - show gear underneath calendar button
+ - jquery UI/Bootstrap theme for calendar?

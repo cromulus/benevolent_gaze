@@ -84,8 +84,11 @@ $(document).ready(function() {
         window.location.href = '/'
       }
 
+      // prepopulate some things.
       $('input[name=real_name]').val(d['data']['real_name']);
       $('input[name=slack_name]').val(d['data']['slack_name']);
+      $('#magic_slack').val(d['data']['slack_name']);
+
       var avatar = d['data']['avatar'];
 
       if (avatar.indexOf('http') === -1 && avatar.indexOf('/') > 0) {
