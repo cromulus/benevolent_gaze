@@ -319,13 +319,9 @@ $(function() {
   // searches for workers. simple Fuse search.
   var filter = function(){
     // map through each worker, hide it, and return a searchable obj.
-    var searchable_workers = $('.worker').map(function(d){
-      $(this).hide(); // hide em all.
-       return { device_name: $(this).data('devicename'),
-                name: $(this).data('name'),
-                slack_name: $(this).data('slackname'),
-                class: $(this).data('devicename').split('.').join(""),
-                obj: $(this)}
+    var searchable_workers = $('.worker').map(function(){
+          $(this).hide(); // hide em all.
+          return { name: $(this).data('name'), obj: $(this)}
         })
 
     // we search only name, could possibly search slackname or device...

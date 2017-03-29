@@ -700,6 +700,7 @@ module BenevolentGaze
     end
 
     post '/msg' do
+      return false unless params[:msg_token] == ENV['MSG_TOKEN']
       m = JSON.parse(params[:msg])
       slack_name = slack_id_to_name(m['user'])
       if slack_name != false

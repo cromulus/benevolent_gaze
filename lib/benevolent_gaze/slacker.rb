@@ -113,8 +113,9 @@ module BenevolentGaze
           msg  = data['text']
           slack_msg = { user: user, msg: msg, data: data }.to_json
 
+          # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg })
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN']})
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         else
@@ -132,8 +133,9 @@ module BenevolentGaze
           msg  = data['text']
           slack_msg = { user: user, msg: msg, data: data }.to_json
 
+          # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg })
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN']})
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         end
