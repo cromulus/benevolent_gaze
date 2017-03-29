@@ -294,7 +294,7 @@ module BenevolentGaze
     get '/downstairs_door' do
       if !door_auth?
         status 404
-        return ""
+        return ''
       elsif @r.exists("door_throttle:#{find_ip}")
         status 420 # enhance your chill
         return { success: false, msg: 'enhance your chill.' }.to_json
@@ -306,7 +306,7 @@ module BenevolentGaze
           return { success: true, data: res }.to_json
         else
           status 400
-          return {success: false, data: res.code}.to_json
+          return { success: false, data: res.code }.to_json
         end
       end
     end

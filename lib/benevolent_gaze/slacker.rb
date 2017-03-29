@@ -115,7 +115,7 @@ module BenevolentGaze
 
           # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN']})
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         else
@@ -135,7 +135,7 @@ module BenevolentGaze
 
           # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN']})
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         end
