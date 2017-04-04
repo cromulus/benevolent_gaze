@@ -623,30 +623,33 @@ module BenevolentGaze
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
             email = @r.get("email:#{k}")
-            slack = @r.get("slack:#{k}") || false
+            slack = @r.get("slack:#{k}")
             slack_id = @r.get("slack_id:#{k}")
-            next unless slack # if you're not setup, we don't want to see you.
 
-            online = false
-            # if we have a slack, remove the @. if not, set to false
-            if slack
-              slack.delete!('@')
-              slack_id = lookup_slack_id(slack)
-              online = @r.sismember('current_slackers', slack_id) || false
-              if image_url.nil? || email.nil?
-                # update missing info from slack
-                res = get_slack_info(slack_id)
-                @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
-                @r.set("email:#{k}", res['user']['profile']['email'])
-              end
-            end
+            # if you're not setup, we don't want to see you.
+            next unless slack && slack_id
+
             image_url = @r.get("image:#{name_or_device_name}")
+            online = @r.sismember('current_slackers', slack_id) || false
+
+            # nice idea, but fraught with peril
+
+            # if image_url.nil? || email.nil?
+            #   # update missing info from slack
+            #   res = get_slack_info(slack)
+            #   image_url  = res['user']['profile']['image_512'] if image_url.nil?
+            #   @r.set("image:#{name_or_device_name}", image_url) if image_url.nil?
+            #   email = res['user']['profile']['email'] if email.nil?
+            #   @r.set("email:#{k}", email) if email.nil?
+            # end
 
             data << { type: 'device',
                       device_name: k,
                       name: v,
                       online: online,
+                      email: email,
                       slack_name: slack,
+                      slack_id: slack_id,
                       last_seen: (Time.now.to_f * 1000).to_i,
                       avatar: image_url }
           end
