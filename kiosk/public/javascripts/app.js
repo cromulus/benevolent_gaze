@@ -39,10 +39,9 @@ $(function() {
     if (e.readyState == EventSource.CLOSED) {
       console.log('closed'); // not sure what to do here.
       // maybe refresh the page anyway?
-      window.location.href='/'; // reload page on error
+      setTimeout(window.location.href='/', 500);; // reload page on error
     }else{
-      console.log(e.readyState);
-      window.location.href='/'; // reload page on error
+      setTimeout(window.location.href='/', 500);; // reload page on error
     }
   }, false);
 
@@ -63,8 +62,7 @@ $(function() {
       console.log('registered!');
     }else{
       if(window.location.href.indexOf('register') === -1){
-        console.log('send to register');
-        //window.location.href='/register'
+        window.location.href='/register'
       }
     }
   });
@@ -352,7 +350,7 @@ $(function() {
       if (t) {
           clearTimeout(t);
       }
-      t = setTimeout(filter(), 200);
+      t = setTimeout(filter(), 100);
   });
 
 });

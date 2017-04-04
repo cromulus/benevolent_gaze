@@ -314,12 +314,12 @@ module BenevolentGaze
     get '/is_registered' do
       # do we want to keep this only for registered users?
       begin
-        dns = Resolv.new
-        device_name = dns.getname(find_ip)
-        return @r.exists("name:#{device_name}")
+        res = @r.exists("name:#{@dns.getname(find_ip)}") ? true : false
       rescue Resolv::ResolvError
-        return false
+        res = false
       end
+      status(res ? 200 : 400)
+      return res.to_s
     end
 
     get '/ip' do
@@ -392,7 +392,9 @@ module BenevolentGaze
       end
 
       device_name = find_devicename
-      slack_info = get_slack_info(params['id'])
+      slack_id = params[:id]
+      slack_name = slack_id_to_name(slack_id)
+      slack_info = get_slack_info(slack_name)
 
       if device_name && slack_info
         u_data = slack_info['user']
@@ -459,8 +461,7 @@ module BenevolentGaze
       image_name_key = "image:#{real_name}"
 
       if params[:slack_name]
-        slack_name = params[:slack_name].to_s.strip
-        slack_name.delete!('@')
+        slack_name = params[:slack_name].to_s.strip.delete('@')
         slack_id = lookup_slack_id(slack_name)
 
         if slack_id
@@ -621,6 +622,9 @@ module BenevolentGaze
           @r = Redis.connect
 
           @r.hgetall('current_devices').each do |k, v|
+
+            next if k == find_devicename # skip the viewer
+
             name_or_device_name = @r.get("name:#{k}") || k
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")
