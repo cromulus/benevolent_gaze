@@ -67,6 +67,7 @@ $(document).ready(function() {
     slotDuration: '00:15:00',
     minTime: '08:00:00',
     eventClick: function(event, jsEvent, view) {
+
       $('#modalEventId').val(event.id);
       $('#modalTitle').html(event.title);
       $('#modalStart').html(event.start.format("dd, Do h:mm a"));
@@ -75,6 +76,12 @@ $(document).ready(function() {
       $('#eventUrl').attr('href', event.url);
       $('#modalDelete').data('event_id', event.id);
       $('#modalDelete').data('calendar', event.resourceId);
+      // going to get the event creator
+      $.ajax({url:'/event?id='+event.id+'&calendar='+event.resourceId,dataType:'json'}).done(function(data){
+        if (data['event']['creator'] !== 'undefined') {
+          $('#modalCreator').html(data['event']['creator']['email']);
+        }
+      });
       $('#fullCalModal').modal();
 
       jsEvent.preventDefault();

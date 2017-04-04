@@ -64,7 +64,7 @@ module BenevolentGaze
         CLIENT_SECRETS_PATH = '/etc/bg/client_secret.json'.freeze
         CREDENTIALS_PATH = File.join('/etc/bg/.credentials/calendar-ruby-quickstart.yaml')
       else
-        CLIENT_SECRETS_PATH = 'client_secret.json'.freeze
+        CLIENT_SECRETS_PATH = '../client_secret.json'.freeze
         CREDENTIALS_PATH = File.join(Dir.home, '.credentials',
                                      'calendar-ruby-quickstart.yaml')
       end
@@ -488,12 +488,22 @@ module BenevolentGaze
       redirect '/'
     end
 
-    delete '/calendar' do
-      e_id = params[:id]
-      calendar = params[:calendar]
-      calendar_id = calendar_name_to_id(calendar)
+    get '/event' do
       begin
-        service.delete_event(calendar_id, e_id)
+        calendar_id = calendar_name_to_id(params[:calendar])
+        event = service.get_event(calendar_id, params[:id])
+        status 200
+        return { success: true, event: event }.to_json
+      rescue Google::Apis::ClientError => e
+        status 410
+        return { success: false, msg: e }.to_json
+      end
+    end
+
+    delete '/calendar' do
+      calendar_id = calendar_name_to_id(params[:calendar])
+      begin
+        service.delete_event(calendar_id, params[:id])
         status 200
         return { success: true }.to_json
       rescue Google::Apis::ClientError => e
@@ -509,6 +519,10 @@ module BenevolentGaze
     # handle the creation & editing of events.
     post '/calendar' do
       user = get_user_info
+      if user == false
+        status 410
+        return { success: false }.to_json
+      end
 
       Time.zone = ENV['TIME_ZONE'] || 'America/New_York'
       e_id      = params[:id]
