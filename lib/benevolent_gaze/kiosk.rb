@@ -633,15 +633,14 @@ module BenevolentGaze
               slack.delete!('@')
               slack_id = lookup_slack_id(slack)
               online = @r.sismember('current_slackers', slack_id) || false
+              if image_url.nil? || email.nil?
+                # update missing info from slack
+                res = get_slack_info(slack_id)
+                @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
+                @r.set("email:#{k}", res['user']['profile']['email'])
+              end
             end
             image_url = @r.get("image:#{name_or_device_name}")
-
-            if image_url.nil? || email.nil?
-              # update missing info from slack
-              res = get_slack_info(slack_id)
-              @r.set("image:#{name_or_device_name}", res['user']['profile']['image_512'])
-              @r.set("email:#{k}", res['user']['profile']['email'])
-            end
 
             data << { type: 'device',
                       device_name: k,
