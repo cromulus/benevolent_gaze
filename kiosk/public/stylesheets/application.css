@@ -10,7 +10,8 @@
 }
 
 .search {
-  height: 100vh;
+  /* breaks mobile view */
+  /*height: 100vh;*/
 }
 
 .page_container

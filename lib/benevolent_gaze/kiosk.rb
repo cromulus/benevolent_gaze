@@ -96,15 +96,16 @@ module BenevolentGaze
         rescue Resolv::ResolvError
           return false
         end
-        name = @r.hget('current_devices', device_name)
-        name = @r.get("name:#{device_name}") if name.nil?
-        name_or_device_name = name ? name : device_name
+        real_name = @r.hget('current_devices', device_name)
+        real_name = @r.get("name:#{device_name}") if real_name.nil?
+        name_or_device_name = real_name ? real_name : device_name
         slack_name = @r.get("slack:#{device_name}")
-        slack_id = @r.hget('slack_id2slack_name', slack_name)
-        { real_name: name,
+
+        { real_name: real_name,
           slack_name: slack_name,
-          slack_id: slack_id,
+          slack_id: @r.hget('slack_id2slack_name', slack_name),
           device_name: device_name,
+          email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
 
@@ -614,6 +615,9 @@ module BenevolentGaze
     get '/feed', provides: 'text/event-stream' do
       cross_origin
       response.headers['X-Accel-Buffering'] = 'no'
+
+      current_user = get_user_info
+
       stream :keep_open do |out|
         loop do
           break if out.closed?
@@ -622,10 +626,11 @@ module BenevolentGaze
           @r = Redis.connect
 
           @r.hgetall('current_devices').each do |k, v|
-
-            next if k == find_devicename # skip the viewer
-
             name_or_device_name = @r.get("name:#{k}") || k
+
+            next if k == current_user[:device_name]
+            next if name_or_device_name == current_user[:real_name]
+
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")
             slack_id = @r.get("slack_id:#{k}")
