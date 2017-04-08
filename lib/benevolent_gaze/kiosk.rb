@@ -150,8 +150,16 @@ module BenevolentGaze
       end
 
       def get_slack_info(sname)
-        s = sname.dup.prepend('@') if sname[0] != 'U'
-        @slack.users_info(user: s)
+        if sname[0] != 'U' && sname[0] != '@'
+          s = sname.dup.prepend('@')
+        else
+          s = sname
+        end
+        begin
+          @slack.users_info(user: s)
+        rescue ExceSlack::Web::Api::Error
+          false
+        end
       end
 
       def slack_id_to_name(slack_id)
@@ -464,12 +472,12 @@ module BenevolentGaze
       if params[:slack_name]
         slack_name = params[:slack_name].to_s.strip.delete('@')
         slack_id = lookup_slack_id(slack_name)
-
-        if slack_id
+        res = get_slack_info(slack_name)
+        if slack_id && res
           # no @ in data-slackname! breaks jquery
           @r.set("slack:#{device_name}", slack_name)
           @r.set("slack_id:#{device_name}", slack_id)
-          res = get_slack_info(slack_id)
+
           @r.set(image_name_key, res['user']['profile']['image_512'])
           @r.set("email:#{device_name}", res['user']['profile']['email'] || '')
         else
