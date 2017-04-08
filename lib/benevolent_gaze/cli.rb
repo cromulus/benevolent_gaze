@@ -39,7 +39,7 @@ module BenevolentGaze
       redis.set "name:#{device_name}", name
       redis.set "image:#{name}", image_url
       redis.set "slack:#{device_name}", slack if slack
-      redis.set 'all_devices', device_name
+      redis.sadd 'all_devices', device_name
     end
 
     desc 'assign_users', 'This will prompt you for each current user without an associated name so that you can assign one.'

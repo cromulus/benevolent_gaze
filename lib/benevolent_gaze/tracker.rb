@@ -22,10 +22,11 @@ module BenevolentGaze
       private
 
       def ping(host)
-        p = Net::Ping::External.new(host, timeout: 1)
+        p = Net::Ping::External.new
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        p.ping? or p.ping? or p.ping? # rubocop:disable Style/AndOr
+        # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
+        p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) or p.ping(host, 3, 0.2, 0.1) # rubocop:disable Style/AndOr Metrics/LineLength
       end
 
       def do_scan
@@ -41,9 +42,9 @@ module BenevolentGaze
         #   nmapping = `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n")
         #   Parallel.each(nmapping) do |d|
         #     begin
-        #       name = dns.getname(d)
+        #       name = @dns.getname(d)
         #       devices.add(name)
-        #     rescue Exception
+        #     rescue Resolv::ResolvError
         #       # can't look it up, router doesn't know it. Static IP.
         #       # moving on.
         #       next
@@ -51,8 +52,8 @@ module BenevolentGaze
         #   end
         # end
 
-        # arp, for where nmap mysteriously fails or isn't installed (why not?)
-        # speedy, but occasionally deeply innacurrate.
+        # # arp, for where nmap mysteriously fails or isn't installed (why not?)
+        # # speedy, but occasionally deeply innacurrate.
         # `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each { |d| devices.add(d) }
 
         # so, we don't want ALL hosts on LAN, just registered ones.

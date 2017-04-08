@@ -1,4 +1,5 @@
 # coding: utf-8
+
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'benevolent_gaze/version'
@@ -29,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'thin'
   spec.add_dependency 'json'
   spec.add_dependency 'httparty'
+  spec.add_dependency 'rest_client'
   spec.add_dependency 'sinatra-cross_origin'
   spec.add_dependency 'aws-s3'
   spec.add_dependency 'mini_magick'

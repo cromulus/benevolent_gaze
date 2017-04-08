@@ -12,6 +12,7 @@ require 'aws/s3'
 require 'securerandom'
 require 'mini_magick'
 require 'httparty'
+require 'rest_client' # wtf kisi?
 require 'net/ping'
 require 'picky'
 require 'slack-ruby-client'
@@ -46,7 +47,7 @@ module BenevolentGaze
       else
         USE_AWS = true
       end
-
+      KISI_TOKEN = ENV['KISI_TOKEN']
       IGNORE_HOSTS = if ENV['IGNORE_HOSTS'].nil?
                        false
                      else
@@ -110,7 +111,7 @@ module BenevolentGaze
       end
 
       def door_auth?
-        !ENV['KISI_DOOR_URL'].nil? && get_user_info != false
+        !KISI_TOKEN.nil? && get_user_info != false && KISI_TOKEN != ''
       end
 
       def find_ip
@@ -150,11 +151,11 @@ module BenevolentGaze
       end
 
       def get_slack_info(sname)
-        if sname[0] != 'U' && sname[0] != '@'
-          s = sname.dup.prepend('@')
-        else
-          s = sname
-        end
+        s = if sname[0] != 'U' && sname[0] != '@'
+              sname.dup.prepend('@')
+            else
+              sname
+            end
         begin
           @slack.users_info(user: s)
         rescue ExceSlack::Web::Api::Error
@@ -309,13 +310,20 @@ module BenevolentGaze
         return { success: false, msg: 'enhance your chill.' }.to_json
       else
         @r.setex("door_throttle:#{find_ip}", 15, true)
-        url = ENV['KISI_DOOR_URL']
-        res = HTTParty.get(url)
+        headers = {
+          content_type: 'application/json',
+          accept: 'application/json',
+          x_authentication_token: ENV['KISI_TOKEN']
+        }
+
+        url = 'https://api.getkisi.com/locks/2998/unlock'
+        res = RestClient.post url, '', headers
+
         if res.code == 200
-          return { success: true, data: res }.to_json
+          return { success: true }.to_json
         else
           status 400
-          return { success: false, data: res.code }.to_json
+          return { success: false, data: res['message'] }.to_json
         end
       end
     end
@@ -685,7 +693,6 @@ module BenevolentGaze
       end
 
       begin
-
         device_name = @dns.getname(find_ip)
         if device_name != ENV['KIOSK_HOST']
           result = @r.get("slack:#{device_name}")
