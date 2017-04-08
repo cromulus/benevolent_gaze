@@ -79,7 +79,7 @@ $(document).ready(function() {
       // going to get the event creator
       $.ajax({url:'/event?id='+event.id+'&calendar='+event.resourceId,dataType:'json'}).done(function(data){
         if (data['event']['creator'] !== 'undefined') {
-          $('#modalCreator').html(data['event']['creator']['email']);
+          $('#modalCreator').html(data['event']['creator']['displayName']);
         }
       });
       $('#fullCalModal').modal();

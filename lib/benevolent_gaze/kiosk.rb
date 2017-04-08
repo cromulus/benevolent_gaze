@@ -585,7 +585,7 @@ module BenevolentGaze
         event.status = 'confirmed'
         event.location = calendar
         event.creator.displayName = user[:name]
-        event.creator.email = user[:email] unless user[:email].nil?
+
         res = service.update_event(calendar_id, event.id, event)
         logger.info(res)
       else # wholly new event!
@@ -598,8 +598,7 @@ module BenevolentGaze
           sequence: 1, # unclear if we need this
           description: title,
           creator: {
-            displayName: user[:name] || 'unknown',
-            email: user[:email] || 'blueridgelabs@robinhood.org'
+            displayName: user[:name] || 'unknown'
           },
           start: { date_time: e_start },
           end: { date_time: e_end }

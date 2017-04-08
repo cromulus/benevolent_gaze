@@ -1,3 +1,9 @@
+1) fix upload
+2) fix thoma creating an event with calendar
+3) timeout for tooltip and ensuring that rapid messages are received
+4) multiple tooltips at once
+5) drop email
+
 organizations:
   by default, no user has an organization.
   - data-organization=false
