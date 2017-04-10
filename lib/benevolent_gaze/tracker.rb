@@ -22,7 +22,7 @@ module BenevolentGaze
     class << self
       private
 
-      def ping(host)
+      def timeout_ping(host)
         p = Net::Ping::External.new
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
@@ -86,7 +86,7 @@ module BenevolentGaze
           end
 
           # next if ping fails
-          next unless ping(ip)
+          next unless timeout_ping(ip)
 
           [name, ip]
         end
