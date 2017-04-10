@@ -8,8 +8,44 @@ $(function() {
   // should probably use
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 
+
+
+
+  // sends the user to register if unregistered,
+  // otherwise, sets up the reception kiosk keyboard
+  // should probably be a standalone "user" script/object
+  // duplicates alof of the functionality of the ""
+  $.ajax({url:'/is_registered'}).done(function(data){
+    if (data==='true') {
+      $.ajax({url:'/me', dataType: "json"}).done(function(d){
+        window.me = d['data']; // ugly hack.
+        if (d['data']['real_name'] === 'Reception') {
+           $(":text").onScreenKeyboard({'draggable': true,
+                                       'topPosition': '90%',
+                                       'leftPosition': '5%'});
+        }
+      });
+      console.log('registered!');
+    }else{
+      if(window.location.href.indexOf('register') === -1){
+        window.location.href='/register'
+      }
+    }
+  });
+
+
   var es = new EventSource('/feed');
   var people = [];
+
+  es.addEventListener('error', function(e) {
+    if (e.readyState == EventSource.CLOSED) {
+      console.log('closed'); // not sure what to do here.
+      // maybe refresh the page anyway?
+      setTimeout(window.location.href='/', 500);; // reload page on error
+    }else{
+      setTimeout(window.location.href='/', 500);; // reload page on error
+    }
+  }, false);
 
   es.addEventListener('message', function(e) {
     data = JSON.parse(e.data); //
@@ -34,38 +70,6 @@ $(function() {
   es.addEventListener('open', function(e) {
     console.log('Connection was opened.');
   }, false);
-
-  es.addEventListener('error', function(e) {
-    if (e.readyState == EventSource.CLOSED) {
-      console.log('closed'); // not sure what to do here.
-      // maybe refresh the page anyway?
-      setTimeout(window.location.href='/', 500);; // reload page on error
-    }else{
-      setTimeout(window.location.href='/', 500);; // reload page on error
-    }
-  }, false);
-
-  // sends the user to register if unregistered,
-  // otherwise, sets up the reception kiosk keyboard
-  // should probably be a standalone "user" script/object
-  // duplicates alof of the functionality of the ""
-  $.ajax({url:'/is_registered'}).done(function(data){
-    if (data==='true') {
-      $.ajax({url:'/me', dataType: "json"}).done(function(d){
-        window.me = d['data']; // ugly hack.
-        if (d['data']['real_name'] === 'Reception') {
-           $(":text").onScreenKeyboard({'draggable': true,
-                                       'topPosition': '90%',
-                                       'leftPosition': '5%'});
-        }
-      });
-      console.log('registered!');
-    }else{
-      if(window.location.href.indexOf('register') === -1){
-        window.location.href='/register'
-      }
-    }
-  });
 
   // handles inbound messages
   // should refactor most of this into Worker class
@@ -286,7 +290,8 @@ $(function() {
 
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
-      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 900000) && $(wk).find('.tape').text() !== "Ted" ) {
+      // if we haven't seen the worker in the feed for 15 seconds, drop it.
+      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 1000 * 15) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
@@ -302,17 +307,6 @@ $(function() {
     }
   };
 
-  // // is welcome a thing still?
-  // var Welcome = {
-  //   move_logo_and_welcomes: function() {
-  //                  $('.logo').addClass("animated rubberBand");
-  //                  $('.welcomes').addClass("animated tada");
-  //                  $('.welcomes, .logo').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
-  //                     $(this).removeClass('animated').removeClass('tada').removeClass('rubberBand');
-  //                   });
-  //                }
-
-  // };
 
   // searches for workers. simple Fuse search.
   var filter = function(){

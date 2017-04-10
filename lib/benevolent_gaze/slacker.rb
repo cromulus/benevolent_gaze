@@ -77,7 +77,7 @@ module BenevolentGaze
         client.message channel: (data['channel']).to_s, text: "Currently in the office:
         #{names.join("
         ")}
-        Register your devices here: http://#{ENV['SERVER_HOST']}/register/"
+        Register your devices here: http://#{ENV['SERVER_HOST']}/register"
       end
 
       scan(/<@([^>]+)>/) do |client, data, users|
@@ -98,7 +98,7 @@ module BenevolentGaze
           if online
             client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
           elsif unknown
-            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/"
+            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/register"
           else
             client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
           end
