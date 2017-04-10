@@ -43,7 +43,7 @@ $(function() {
       // maybe refresh the page anyway?
       setTimeout(window.location.href='/', 500);; // reload page on error
     }else{
-      setTimeout(window.location.href='/', 500);; // reload page on error
+      setTimeout(window.location.href='/register', 500);; // reload page on error
     }
   }, false);
 

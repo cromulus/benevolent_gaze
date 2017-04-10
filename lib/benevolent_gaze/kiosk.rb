@@ -643,8 +643,8 @@ module BenevolentGaze
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
 
-            next if k == current_user[:device_name]
-            next if name_or_device_name == current_user[:real_name]
+            # next if k == current_user[:device_name]
+            # next if name_or_device_name == current_user[:real_name]
 
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")

@@ -4,6 +4,7 @@ require 'httparty'
 require 'parallel'
 require 'set'
 require 'net/ping'
+require 'timeout'
 
 module BenevolentGaze
   class Tracker
@@ -26,12 +27,22 @@ module BenevolentGaze
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
         # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
-        p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) or p.ping(host, 3, 0.2, 0.1) # rubocop:disable Style/AndOr Metrics/LineLength
+        begin
+          Timeout::timeout(2) do
+            # pinging a host shouldn't take more than a second or two
+            p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) or p.ping(host, 3, 0.2, 0.1) # rubocop:disable Style/AndOr Metrics/LineLength
+          end
+        rescue Timeout::Error
+          false
+        end
       end
 
       def do_scan
         device_names_hash = {}
-        devices = Set.new # because dupes suck
+        # so, we don't want ALL hosts on LAN, just registered ones.
+        # this could also be a request to to the web service too...
+        devices = Set.new # no dupes.
+        @r.smembers('all_devices').map{|d| devices.add(d) }
 
         #### sooo....
         #### we used to want all hosts on the net. Turns out, we only
@@ -56,13 +67,15 @@ module BenevolentGaze
         # # speedy, but occasionally deeply innacurrate.
         # `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each { |d| devices.add(d) }
 
-        # so, we don't want ALL hosts on LAN, just registered ones.
-        # this could also be a request to to the web service too...
-        @r.keys('slack:*').map { |k| devices.add k.gsub('slack:', '') }
+        # device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
+        # device_names_arr.each do |d|
+        #   unless d.match(/Wireless|EPSON/)
+        #     device_names_hash[d] = nil
+        #   end
+        # end
 
         # ping is low memory and largely io bound.
         n = devices.length
-
         device_array = Parallel.map(devices, in_threads: n) do |name|
           begin
             # because if dnsmasq doesn't know about it
@@ -83,13 +96,6 @@ module BenevolentGaze
         device_array.map do |a|
           device_names_hash[a[0]] = a[1]
         end
-
-        # device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
-        # device_names_arr.each do |d|
-        #   unless d.match(/Wireless|EPSON/)
-        #     device_names_hash[d] = nil
-        #   end
-        # end
 
         begin
           url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
