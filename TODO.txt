@@ -1,8 +1,10 @@
-1) fix upload
 2) fix thoma creating an event with calendar
 3) timeout for tooltip and ensuring that rapid messages are received
 4) multiple tooltips at once
 5) drop email
+6) OHM for models of things
+7) move tracker to suckerpunch, store "last_seen:#{device_name}" -> timestamp
+    generate current_devices from last_seen
 
 organizations:
   by default, no user has an organization.

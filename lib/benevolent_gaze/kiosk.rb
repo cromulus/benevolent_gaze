@@ -97,9 +97,9 @@ module BenevolentGaze
         rescue Resolv::ResolvError
           return false
         end
-        real_name = @r.hget('current_devices', device_name)
-        real_name = @r.get("name:#{device_name}") if real_name.nil?
-        name_or_device_name = real_name ? real_name : device_name
+        # real_name = @r.hget('current_devices', device_name)
+        real_name = @r.get("name:#{device_name}")
+        name_or_device_name = real_name.nil? ? device_name : real_name
         slack_name = @r.get("slack:#{device_name}")
 
         { real_name: real_name,

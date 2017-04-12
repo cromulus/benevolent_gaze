@@ -1,10 +1,12 @@
 require 'resolv'
 require 'redis'
+require 'hiredis'
 require 'httparty'
 require 'parallel'
 require 'set'
 require 'net/ping'
 require 'timeout'
+require 'net/fping'
 
 module BenevolentGaze
   class Tracker
@@ -22,19 +24,19 @@ module BenevolentGaze
     class << self
       private
 
-      def timeout_ping(host)
+      def ping(host)
         p = Net::Ping::External.new
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
         # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
-        begin
-          Timeout::timeout(2) do
-            # pinging a host shouldn't take more than a second or two
-            p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) or p.ping(host, 3, 0.2, 0.1) # rubocop:disable Style/AndOr Metrics/LineLength
-          end
-        rescue Timeout::Error
-          false
-        end
+
+
+        # pinging a host shouldn't take more than a second or two
+        p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) # rubocop:disable Style/AndOr
+      end
+
+      def fping(hosts)
+        Net::Fping.alive(hosts)
       end
 
       def do_scan
@@ -42,6 +44,7 @@ module BenevolentGaze
         # so, we don't want ALL hosts on LAN, just registered ones.
         # this could also be a request to to the web service too...
         devices = Set.new # no dupes.
+
         @r.smembers('all_devices').map{|d| devices.add(d) }
 
         #### sooo....
@@ -86,7 +89,7 @@ module BenevolentGaze
           end
 
           # next if ping fails
-          next unless timeout_ping(ip)
+          next unless ping(ip)
 
           [name, ip]
         end
