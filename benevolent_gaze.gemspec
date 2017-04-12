@@ -45,7 +45,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'celluloid-io'
   spec.add_dependency 'dotenv'
   spec.add_dependency 'net-ping'
-  spec.add_dependency 'net/fping'
   spec.add_dependency 'google-api-client'
   spec.add_dependency 'activesupport'
 

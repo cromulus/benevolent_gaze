@@ -5,15 +5,15 @@ require 'httparty'
 require 'parallel'
 require 'set'
 require 'net/ping'
-require 'timeout'
-require 'net/fping'
+
+# must run as root!
 
 module BenevolentGaze
   class Tracker
     def self.run!
       # Run forever
       loop do
-        @r ||= Redis.current
+        @r ||= Redis.current # right? we've got redis right here.
         @dns ||= Resolv.new # not sure if we want to re-init resolve.
         do_scan
         # check_time # not sure we need this.
@@ -25,18 +25,15 @@ module BenevolentGaze
       private
 
       def ping(host)
-        p = Net::Ping::External.new
+        p = Net::Ping::ICMP.new # must run as root!
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
 
+        # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
+        # ^^ for ping external
 
         # pinging a host shouldn't take more than a second or two
-        p.ping(host, 1, 0.2, 0.1) or p.ping(host, 2, 0.2, 0.1) # rubocop:disable Style/AndOr
-      end
-
-      def fping(hosts)
-        Net::Fping.alive(hosts)
+        p.ping(host) or p.ping(host) # rubocop:disable Style/AndOr
       end
 
       def do_scan
@@ -95,11 +92,12 @@ module BenevolentGaze
         end
 
         device_array.compact! # remove nils.
-
+        # this is uneeded.
         device_array.map do |a|
           device_names_hash[a[0]] = a[1]
         end
 
+        # why not communicate directly with redis?
         begin
           url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
           HTTParty.post(url, query: { devices: device_names_hash.to_json })
