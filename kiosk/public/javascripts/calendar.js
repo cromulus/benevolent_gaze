@@ -74,6 +74,7 @@ $(document).ready(function() {
       $('#modalEnd').html(event.end.format("dd, Do h:mm a"));
       $('#modalCalendar').val(event.resourceId);
       $('#eventUrl').attr('href', event.url);
+      $('#modalCreator').html(event.creator.email);
       $('#modalDelete').data('event_id', event.id);
       $('#modalDelete').data('calendar', event.resourceId);
       // going to get the event creator

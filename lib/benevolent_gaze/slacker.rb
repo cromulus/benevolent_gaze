@@ -80,30 +80,30 @@ module BenevolentGaze
         Register your devices here: http://#{ENV['SERVER_HOST']}/register"
       end
 
-      scan(/<@([^>]+)>/) do |client, data, users|
-        online = false
-        unknown = true
-        if users[1] # the second user is the one we're looking for
-          user = users[1][0]
+      # scan(/<@([^>]+)>/) do |client, data, users|
+      #   online = false
+      #   unknown = true
+      #   if users[1] # the second user is the one we're looking for
+      #     user = users[1][0]
 
-          r = Redis.new
-          r.keys('slack_id:*').each do |device|
-            next if online == true
-            if r.get(device) == user
-              unknown = false
-              online = r.hexists('current_devices', device.split(':').last)
-            end
-          end
+      #     r = Redis.new
+      #     r.keys('slack_id:*').each do |device|
+      #       next if online == true
+      #       if r.get(device) == user
+      #         unknown = false
+      #         online = r.hexists('current_devices', device.split(':').last)
+      #       end
+      #     end
 
-          if online
-            client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
-          elsif unknown
-            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/register"
-          else
-            client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
-          end
-        end
-      end
+      #     if online
+      #       client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
+      #     elsif unknown
+      #       client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/register"
+      #     else
+      #       client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
+      #     end
+      #   end
+      # end
 
       # unsure about this one.
       command 'marco', 'call' do |client, data, _match|

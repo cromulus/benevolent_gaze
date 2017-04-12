@@ -81,9 +81,9 @@ module BenevolentGaze
     end
 
     before do
-      @r = Redis.new
-      @slack = Slack::Web::Client.new
-      @dns = Resolv.new
+      @r ||= Redis.current
+      @slack ||= Slack::Web::Client.new
+      @dns ||= Resolv.new
       logger.datetime_format = '%Y/%m/%d @ %H:%M:%S '
       logger.level = Logger::INFO
     end
@@ -507,8 +507,8 @@ module BenevolentGaze
     end
 
     get '/event' do
+      calendar_id = calendar_name_to_id(params[:calendar])
       begin
-        calendar_id = calendar_name_to_id(params[:calendar])
         event = service.get_event(calendar_id, params[:id])
         status 200
         return { success: true, event: event }.to_json
@@ -558,7 +558,7 @@ module BenevolentGaze
         if event.status == 'cancelled'
           logger.info('event is cancelled')
           event = nil
-          # e_id = gen_cal_id # we need a whole new event here.
+          e_id = gen_cal_id # we need a whole new event here.
         end
       rescue Google::Apis::ClientError => e
         logger.info("#{title} not in #{calendar} or new")
@@ -574,17 +574,19 @@ module BenevolentGaze
         other_calendars.each do |cal_id|
           begin
             event = service.get_event(cal_id, e_id)
-            if event && event.status != 'cancelled'
-              logger.info('event is in another calendar and not cancelled')
-              old_cal_id = cal_id
-            else
-              logger.info('event is either cancelled or not in the calendar')
-              event = nil
-            end
           rescue Google::Apis::ClientError => e
+            logger.info('failed to find event in other calendars')
             logger.info(e)
           end
         end
+      end
+
+      if event && event.status != 'cancelled'
+        logger.info('event is in another calendar and not cancelled')
+        old_cal_id = cal_id
+      else # event doesn't exist or status == cancelled
+        logger.info('event is either cancelled or not in the calendar')
+        event = nil
       end
 
       if !event.nil?
@@ -638,7 +640,7 @@ module BenevolentGaze
           break if out.closed?
           settings.connections << out # so we can use this stream elsewhere
           data = []
-          @r = Redis.connect
+          @r = Redis.current
 
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
