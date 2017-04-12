@@ -67,25 +67,30 @@ $(document).ready(function() {
     slotDuration: '00:15:00',
     minTime: '08:00:00',
     eventClick: function(event, jsEvent, view) {
-
+      jsEvent.preventDefault();
       $('#modalEventId').val(event.id);
       $('#modalTitle').html(event.title);
       $('#modalStart').html(event.start.format("dd, Do h:mm a"));
       $('#modalEnd').html(event.end.format("dd, Do h:mm a"));
       $('#modalCalendar').val(event.resourceId);
       $('#eventUrl').attr('href', event.url);
-      $('#modalCreator').html(event.creator.email);
+
       $('#modalDelete').data('event_id', event.id);
       $('#modalDelete').data('calendar', event.resourceId);
       // going to get the event creator
       $.ajax({url:'/event?id='+event.id+'&calendar='+event.resourceId,dataType:'json'}).done(function(data){
+        // ugly
         if (data['event']['creator'] !== 'undefined') {
-          $('#modalCreator').html(data['event']['creator']['displayName']);
+          if (data['event']['creator']['displayName'] !== 'undefined'){
+            $('#modalCreatorName').html(data['event']['creator']['displayName']);
+          }
+          if (data['event']['creator']['email'] !== 'undefined'){
+            $('#modalCreatorEmail').html(data['event']['creator']['email']);
+          }
         }
+
       });
       $('#fullCalModal').modal();
-
-      jsEvent.preventDefault();
 
       $('#modalDelete').one('click', function(el) {
         var $el = $(this);
@@ -109,6 +114,7 @@ $(document).ready(function() {
           alert('error:' + d.msg);
         });
       })
+      jsEvent.preventDefault();
     },
     // user selects times on the calendar for a new event
     select: function(start, end, event, view, res) {
