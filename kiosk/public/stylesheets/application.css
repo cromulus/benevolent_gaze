@@ -357,3 +357,7 @@ tt-suggestion:hover {
   font-family: "demo";
 }
 
+/* line breaks FTW */
+.popover {
+    white-space: pre-wrap;
+}

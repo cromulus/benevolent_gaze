@@ -76,17 +76,25 @@ $(function() {
   var onmessage = function(msg) {
     console.log(msg);
 
-    slack_name = msg['user'].replace('@','');
+    var slack_name = msg['user'].replace('@','');
+    var old_content = '';
+    $worker = $('[data-slackname='+slack_name+']')
+    if ($worker.data('bs.popover') !== 'undefined') {
+      old_content = $worker.data('bs.popover').options.content + "<br>";
 
-    var options = {
-      title: "message from:@"+slack_name,
-      content: msg['msg'],
-      trigger:'manual',
-      placement: 'auto'
     }
 
-    $worker = $('[data-slackname='+slack_name+']')
     $worker.popover('destroy');
+
+    var options = {
+      title : "<span class='text-info'><strong>Message</strong></span>"+
+                '<button type="button" class="close" >&times;</button>',
+      content: old_content + msg['msg'],
+      trigger: 'manual',
+      placement: 'auto',
+      html: true
+    }
+
 
     // scrolling so the worker is in the middle
     var elOffset = $worker.offset().top;
@@ -103,6 +111,9 @@ $(function() {
     $('html, body').animate({scrollTop:offset}, 600,'swing');
     Worker.animate_worker($worker,'bounce')
     $worker.popover(options).popover('show');
+    $worker.find('button.close').on('click',function(e){
+      $worker.popover('destroy');
+    });
   }
 
 
@@ -141,13 +152,16 @@ $(function() {
     set_popover_timeout: function(){
                   // this is the thing that hides the popover and resets it.
                   $(w).on('shown.bs.popover', function () {
+
                     console.log('popover shown!');
                     var $pop = $(this);
+                    $(this).next('.popover').find('button.cancel').click(function (e) {
+                      $pop.popover('destroy');
+                    });
+
                     setTimeout(function () {
                       $pop.popover('destroy');
-                      // $pop.setContent();
-                      // $pop.$tip.addClass($pop.options.placement);
-                    }, 6000);
+                    }, 1000 * 7); // seven second timeout
                   });
                 },
     add_class: function(device_name){
