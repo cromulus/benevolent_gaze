@@ -1,3 +1,87 @@
+/* --- new layout: START ----*/
+
+.nav {
+  box-shadow: 0 1px 5px rgba(0,0,0,.5);
+  position: fixed;
+  width: 100%;
+  z-index: 99;
+  background-color: #0c314d;
+  padding: .5em 0;
+  margin: 0;
+}
+
+.nav p {
+  display: inline-block;
+  padding: .2em 1em 0 1em;
+  font-size: 1.333em;
+  margin: 0;
+  font-weight: 600;
+  color: #b0e61d;
+}
+
+.nav button {
+  margin: 0 0 0 1em;
+  padding: 10px 28px;
+  border: 0;
+  border-radius: 3px;
+  text-transform: uppercase;
+  background-color: #b0e61d;
+  color: #0a233c;
+  font-weight: 600;
+  float: right;
+}
+
+
+.nav .form-group {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
+.nav input {
+  max-width: 18em;
+}
+
+.nav ul {
+  list-style: none;
+  display: inline;
+  padding: 0 1em 0 0;
+  margin: 0;
+
+}
+.nav li {
+  display: inline-block;
+  padding: 1em;
+
+}
+.nav li a {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.body_apex {
+  padding: 8em 0 4em;
+}
+
+@media screen and (max-width: 1095px){
+  .body_apex {
+    padding: 4em 0;
+  }
+  .nav {
+    position: relative;
+  }
+  .nav_right {
+    margin: 1em 0 0 0;
+    float: none;
+    border-top: 1px solid #ccc;
+  }
+  .nav_left p {
+    display: inline-block;
+    padding: .3em 1em 0 1em;
+    font-size: 1.333em;
+  }
+}
+
+/* ---------- END */
 
 .controls {
   height: 100vh;
