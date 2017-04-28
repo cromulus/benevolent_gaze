@@ -1,65 +1,62 @@
 <!DOCTYPE html>
-<html>
-  <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-  <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-  <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-  <!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
-  <head>
-    <meta charset='utf-8'>
-    <meta content='IE=edge' http-equiv='X-UA-Compatible'>
+<!-- saved from url=(0019)http://150.brl.nyc/ -->
+<html class="no-js"><!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]--><!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]--><!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]--><!--[if gt IE 8]><!--><!--<![endif]--><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <title></title>
-    <meta content='Gonna blow your mind. Get ready.' name='description'>
-    <meta content='width=device-width' initial-scale='1' name='viewport'>
-    <script src='//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+    <meta content="Gonna blow your mind. Get ready." name="description">
+    <meta content="width=device-width" initial-scale="1" name="viewport">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    <link href="/stylesheets/application.css" rel="stylesheet" type="text/css" />
-    <link href="/stylesheets/animate.css" rel="stylesheet" type="text/css" />
-    <link href="/stylesheets/onScreenKeyboard.css" rel="stylesheet" type="text/css" />
+    <link href="/stylesheets/application.css" rel="stylesheet" type="text/css">
+    <link href="/stylesheets/animate.css" rel="stylesheet" type="text/css">
+    <link href="/stylesheets/onScreenKeyboard.css" rel="stylesheet" type="text/css">
     <script src="/javascripts/libs.js" type="text/javascript"></script>
-    <script src="/javascripts/typeahead.bundle.min.js" type="text/javascript"></script>
     <script src="/javascripts/jquery.onScreenKeyboard.min.js" type="text/javascript"></script>
     <script src="/javascripts/app.js" type="text/javascript"></script>
   </head>
-  <body>
-    <!--[if lt IE 7]>
-    <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-    <![endif]-->
-    <div class='container-fluid page_container'>
-      <div class='row app_container'>
-        <div class='workers row board'>
-          <div class='search col-md-2'>
-            <div class='form-group'>
-              <input id='namesearch'
-                     class='form-control'
-                     name='name' type='text'
-                     placeholder='Search By Name'>
-            </div>
-            <h4 class='pull-left'>Click on someone to ping them on Slack</h4>
-            <a href='/calendar'>
-              <button class="btn btn-primary" type="button">
-              Conference Room Calendar
-              </button>
-            </a>
-            </br>
-            <a href='/register'>
-              <button class="btn btn-secondary" type="button">
-              Edit Your Profile
-              </button>
-            </a>
+<body >
+  <!--[if lt IE 7]>
+  <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+  <![endif]-->
+
+
+  <div class="nav">
+    <div class="container">
+      <p>
+        Click to ping someone on Slack
+      </p>
+      <div class="form-group">
+        <input id="namesearch" class="form-control" name="name" placeholder="Search by name" type="text" required="required">
+      </div>
+
+      <ul>
+        <li>
+          <a href="/calendar">Conference Room Calendar</a>
+        </li>
+        <li>
+          <a href="/register">Edit your profile</a>
+        </li>
+      </ul>
+      <button id='front-door'>Open Front Door</button>
+    </div>
+  </div>
+
+
+  <div class="body_apex">
+    <div class="container">
+      <div class="worker text-center hidden col-md-2 col-sm-6 col-xs-6">
+        <div class="pin_and_avatar_container">
+          <div class="pin_rope">
           </div>
-          <div class='worker text-center hidden col-md-2 col-sm-6 col-xs-6'>
-            <div class='pin_and_avatar_container'>
-              <div class='pin_rope'>
-              </div>
-              <div class='avatar_container text-center'>
-                <img src="images/visitor_art@1x-21d82dcb.png" />
-              </div>
-            </div>
-            <h3 class='tape'>Ted</h3>
+          <div class="avatar_container text-center">
+            <img src="/images/visitor_art@1x-21d82dcb.png">
           </div>
         </div>
+        <h3 class="tape">Ted</h3>
       </div>
     </div>
-  </body>
+  </div>
+</body>
 </html>

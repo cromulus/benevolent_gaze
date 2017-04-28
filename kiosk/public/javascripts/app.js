@@ -9,6 +9,21 @@ $(function() {
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 
 
+  $('#front-door').on('click',function(e){
+    $.ajax({url:'/downstairs_door'}).done(function(data){
+      $('#front-door').text('Opened!')
+      setTimeout(function() {
+        $('#front-door').text('Open Front Door');
+      }, 1000);
+    }).fail(function(data){
+      d = JSON.parse(data.responseText);
+      $('#front-door').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
+      setTimeout(function() {
+        $('#front-door').tooltip('hide');
+      }, 2000);
+
+    })
+  })
 
 
   // sends the user to register if unregistered,
