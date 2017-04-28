@@ -79,9 +79,8 @@ $(function() {
     var slack_name = msg['user'].replace('@','');
     var old_content = '';
     $worker = $('[data-slackname='+slack_name+']')
-    if ($worker.data('bs.popover') !== 'undefined') {
+    if ($worker.data('bs.popover') !== undefined && $worker.data('bs.popover').options !== undefined) {
       old_content = $worker.data('bs.popover').options.content + "<br>";
-
     }
 
     $worker.popover('destroy');

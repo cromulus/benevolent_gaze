@@ -3,8 +3,25 @@
 4) multiple tooltips at once
 5) drop email
 6) OHM for models of things
-7) move tracker to suckerpunch, store "last_seen:#{device_name}" -> timestamp
-    generate current_devices from last_seen
+7) Slacker + Joan == awesome
+
+models:
+  worker
+    name
+    slackid
+    slack name
+    image
+    list of orgs
+    has many organizations
+
+  devices
+    device name
+    -> worker
+
+  organizations
+    name
+    image
+    has many workers
 
 organizations:
   by default, no user has an organization.
@@ -27,6 +44,10 @@ organizations:
 
 
 SlackBot Calendaring Howto:
+https://portal.getjoan.com/api/docs/
+https://github.com/mojombo/chronic
+https://github.com/iainbeeston/nickel/
+
 @bot rooms
   returns rooms and availability
   biggie: free untill 1pm.
@@ -43,6 +64,9 @@ SlackBot Calendaring Howto:
 ruby face detection: free from google up to 1k
   https://gist.github.com/afeld/655e6e02bf085feb02193f468516fca5
   Pester users if they have default slack image.
+  when user goes online, get image url.
+  Check if resolved image has been checked for face
+  if no, check with google
 
 UI updates:
  - use placeholder for search instructions,
