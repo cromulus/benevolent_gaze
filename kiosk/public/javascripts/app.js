@@ -65,6 +65,7 @@ $(function() {
   es.addEventListener('message', function(e) {
     data = JSON.parse(e.data); //
     // evveryone from the feed
+
     people = jQuery.grep( data, function(d){
       return d.type === 'device'});
 
@@ -139,6 +140,7 @@ $(function() {
   var Worker = {
     setup_and_add: function(worker_object) {
             var klass = worker_object.device_name.replace(/\./g, "");
+
             Worker.grab_worker();
             Worker.set_avatar(worker_object.avatar);
             Worker.set_name(worker_object);
