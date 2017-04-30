@@ -645,8 +645,9 @@ module BenevolentGaze
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
 
-            # next if k == current_user[:device_name]
-            # next if name_or_device_name == current_user[:real_name]
+            # don't need to show self
+            next if k == current_user[:device_name]
+            next if name_or_device_name == current_user[:real_name]
 
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")
@@ -657,17 +658,6 @@ module BenevolentGaze
 
             image_url = @r.get("image:#{name_or_device_name}")
             online = @r.sismember('current_slackers', slack_id) || false
-
-            # nice idea, but fraught with peril
-
-            # if image_url.nil? || email.nil?
-            #   # update missing info from slack
-            #   res = get_slack_info(slack)
-            #   image_url  = res['user']['profile']['image_512'] if image_url.nil?
-            #   @r.set("image:#{name_or_device_name}", image_url) if image_url.nil?
-            #   email = res['user']['profile']['email'] if email.nil?
-            #   @r.set("email:#{k}", email) if email.nil?
-            # end
 
             data << { type: 'device',
                       device_name: k,

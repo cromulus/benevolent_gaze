@@ -1,9 +1,13 @@
-2) fix thoma creating an event with calendar
-3) timeout for tooltip and ensuring that rapid messages are received
-4) multiple tooltips at once
-5) drop email
-6) OHM for models of things
-7) Slacker + Joan == awesome
+- [ ] admin interface for adding workers
+- [ ] OHM for models of things
+- [ ] Slacker + Joan == awesome
+- [ ] probably use wit.ai for joan and all marco related activities
+- [ ] change the bot name to "officebot"
+- [ ] add "office management", 150_court_user_adder
+- [ ] change ping from private message to public channel
+- [ ] all messages from public channel posted
+
+
 
 models:
   worker
@@ -67,9 +71,3 @@ ruby face detection: free from google up to 1k
   when user goes online, get image url.
   Check if resolved image has been checked for face
   if no, check with google
-
-UI updates:
- - use placeholder for search instructions,
- - hide the user, they don't need to seem themselves
- - show gear underneath calendar button
- - jquery UI/Bootstrap theme for calendar?
