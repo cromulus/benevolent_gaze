@@ -45,6 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dotenv'
   spec.add_dependency 'net-ping'
   spec.add_dependency 'google-api-client'
+  spec.add_dependency 'google-cloud-vision'
   spec.add_dependency 'activesupport'
 
   spec.add_development_dependency 'bundler', '~> 1.7'

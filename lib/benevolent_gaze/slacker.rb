@@ -4,6 +4,7 @@ require 'slack-ruby-bot'
 require 'httparty'
 require 'celluloid'
 require 'celluloid/io'
+require "google/cloud/vision"
 
 # https://github.com/slack-ruby/slack-ruby-bot/blob/master/examples/weather/weatherbot.rb
 
@@ -11,6 +12,7 @@ require 'celluloid/io'
 Slack.configure do |config|
   config.token = ENV['SLACK_API_TOKEN']
 end
+
 
 ###################################################
 # What we want to do:
@@ -151,21 +153,44 @@ module BenevolentGaze
     end
 
     on 'presence_change' do |client, data|
-      r = Redis.new
+      @r ||= Redis.current
+
+
+
       puts "user #{data['user']} is #{data['presence']}"
       case data['presence']
       when 'active'
-
         r.sadd('current_slackers', data['user'])
-
         user_data = client.web_client.users_info(user: data['user'])
 
-        if user_data.title == ''
-          client.web_client.chat_postMessage(channel: data['user'],
+        if user_data.title == '' || user_data.title.nil?
+          if @r.get("profile_remind:#{data['user']}").nil?
+            client.web_client.chat_postMessage(channel: data['user'],
                                              text: 'Please update your profile so people know who you are!')
+            # slightly less than once a day
+            @r.setex("profile_remind:#{data['user']}",true, 60 * 59 * 24)
+          end
         end
 
-        # if user_data.image_512.includes("avatars/ava_")
+        facecheck = @r.get("face:#{data['user']}")
+        if facecheck.nil? && !ENV['GOOGLE_PROJECT_ID'].nil?
+          one_day = (60 * 60 * 24 )
+          @vision ||= Google::Cloud::Vision.new project: ENV['GOOGLE_PROJECT_ID']
+          image = vision.image user_data.image_512
+          if image.faces.size == 1
+            # don't check for a month. we have max 1k per month free
+            @r.setex("face:#{data['user']}", true, one_day * 30 )
+          else
+            # they changed it or wait one day check again. 1 day
+            @r.setex("face:#{data['user']}", true, one_day)
+            if @r.get("face_remind:#{data['user']}").nil?
+              client.web_client.chat_postMessage(channel: data['user'],
+                                             text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!')
+
+              @r.setex("face_remind:#{data['user']}", true, one_day - 60)
+            end
+        end
+        # if .includes("avatars/ava_")
         # go get the image, if it resolves to *.wp.com it's a broken avatar.
         # end
         #
