@@ -4,7 +4,7 @@ require 'slack-ruby-bot'
 require 'httparty'
 require 'celluloid'
 require 'celluloid/io'
-require "google/cloud/vision"
+require 'google/cloud/vision'
 
 # https://github.com/slack-ruby/slack-ruby-bot/blob/master/examples/weather/weatherbot.rb
 
@@ -155,8 +155,6 @@ module BenevolentGaze
     on 'presence_change' do |client, data|
       @r ||= Redis.current
 
-
-
       puts "user #{data['user']} is #{data['presence']}"
       case data['presence']
       when 'active'
@@ -189,6 +187,7 @@ module BenevolentGaze
 
               @r.setex("face_remind:#{data['user']}", true, one_day - 60)
             end
+          end
         end
         # if .includes("avatars/ava_")
         # go get the image, if it resolves to *.wp.com it's a broken avatar.
