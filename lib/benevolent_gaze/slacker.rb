@@ -163,7 +163,7 @@ module BenevolentGaze
         r.sadd('current_slackers', data['user'])
         user_data = client.web_client.users_info(user: data['user'])
 
-        if user_data.title == ''
+        if user_data.title == '' || user_data.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
             client.web_client.chat_postMessage(channel: data['user'],
                                              text: 'Please update your profile so people know who you are!')
@@ -174,19 +174,20 @@ module BenevolentGaze
 
         facecheck = @r.get("face:#{data['user']}")
         if facecheck.nil? && !ENV['GOOGLE_PROJECT_ID'].nil?
+          one_day = (60 * 60 * 24 )
           @vision ||= Google::Cloud::Vision.new project: ENV['GOOGLE_PROJECT_ID']
           image = vision.image user_data.image_512
           if image.faces.size == 1
-            # don't check for a week. we have max 1k per month free
-            @r.setex("face:#{data['user']}", true, 60 * 60 * 24 * 7 )
+            # don't check for a month. we have max 1k per month free
+            @r.setex("face:#{data['user']}", true, one_day * 30 )
           else
-            @r.del("face:#{data['user']}") # they changed it!
+            # they changed it or wait one day check again. 1 day
+            @r.setex("face:#{data['user']}", true, one_day)
             if @r.get("face_remind:#{data['user']}").nil?
               client.web_client.chat_postMessage(channel: data['user'],
                                              text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!')
 
-              macro_week = (60 * 60 * 24 * 7) + (60 * 60)
-              @r.setex("face_remind:#{data['user']}", true, macro_week)
+              @r.setex("face_remind:#{data['user']}", true, one_day - 60)
             end
         end
         # if .includes("avatars/ava_")
