@@ -309,7 +309,7 @@ module BenevolentGaze
         status 420 # enhance your chill
         return { success: false, msg: 'enhance your chill.' }.to_json
       else
-        @r.setex("door_throttle:#{find_ip}", 15, true)
+        @r.setex("door_throttle:#{find_ip}", 3, true)
         headers = {
           content_type: 'application/json',
           accept: 'application/json',
