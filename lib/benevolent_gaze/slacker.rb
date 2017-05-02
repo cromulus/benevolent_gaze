@@ -188,12 +188,14 @@ module BenevolentGaze
           image = @vision.image user_data.profile.image_512
           if image.faces.size == 1
             # don't check for a month. we have max 1k per month free
-            @r.setex("face:#{data['user']}", one_day * 30 ,true)
+            @r.setex("face:#{data['user']}", one_day * 30, true)
           else
+            puts "no face!: #{data['user']}"
             # they changed it or wait one day check again. 1 day
-            @r.setex("face:#{data['user']}", true, one_day)
+            @r.setex("face:#{data['user']}", one_day, true)
+
             if @r.get("face_remind:#{data['user']}").nil?
-              puts "no face: #{data['user']}"
+              puts "reminding #{data['user']} to add profile portrait"
               client.web_client.chat_postMessage(channel: data['user'],
                                                  text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!',
                                                  as_user: true)

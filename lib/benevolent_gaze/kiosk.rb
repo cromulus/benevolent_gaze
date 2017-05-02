@@ -194,6 +194,33 @@ module BenevolentGaze
         end
       end
 
+      def slackem(slack_id, device_name)
+        slack_name = slack_id_to_name(slack_id)
+        slack_info = get_slack_info(slack_name)
+
+        if device_name && slack_info
+          u_data = slack_info['user']
+
+          # hunting for a name...
+          name = u_data['profile']['real_name_normalized']
+          name = u_data['real_name'] if name.empty?
+          name = u_data['profile']['real_name'] if name.empty?
+          name = u_data['name'] if name.empty?
+          name = name.empty? ? device_name : name
+
+          @r.set("name:#{device_name}", name)
+          @r.set("slack:#{device_name}", u_data['name'])
+          @r.set("slack_id:#{device_name}", slack_id)
+          @r.sadd('all_devices', device_name)
+          @r.set("email:#{device_name}", u_data['email'])
+          image_url = u_data['profile']['image_512']
+          image_name_key = "image:#{name}"
+          @r.set(image_name_key, image_url)
+          return true
+        else
+          false
+        end
+      end
       # this is to access the google calendar. see /calendar below
       def service
         return @service unless @service.nil?
@@ -410,33 +437,13 @@ module BenevolentGaze
 
       device_name = find_devicename
       slack_id = params[:id]
-      slack_name = slack_id_to_name(slack_id)
-      slack_info = get_slack_info(slack_name)
 
-      if device_name && slack_info
-        u_data = slack_info['user']
-
-        # hunting for a name...
-        name = u_data['profile']['real_name_normalized']
-        name = u_data['real_name'] if name.empty?
-        name = u_data['profile']['real_name'] if name.empty?
-        name = u_data['name'] if name.empty?
-        name = name.empty? ? device_name : name
-
-        @r.set("name:#{device_name}", name)
-        @r.set("slack:#{device_name}", u_data['name'])
-        @r.set("slack_id:#{device_name}", slack_id)
-        @r.sadd('all_devices', device_name)
-        @r.set("email:#{device_name}", u_data['email'])
-        image_url = u_data['profile']['image_512']
-        image_name_key = "image:#{name}"
-        @r.set(image_name_key, image_url)
-
+      if slackem(slack_id, device_name)
         status 200
         redirect '/'
       else
         status 402
-        msg = "slack:#{slack_info ? 'true' : 'false'} device:#{device_name ? 'true' : 'false'}"
+        msg = "Could not setup user"
         return { success: false, msg: msg }.to_json
       end
     end
@@ -562,7 +569,6 @@ module BenevolentGaze
         end
       rescue Google::Apis::ClientError => e
         logger.info("#{title} not in #{calendar} or new")
-        logger.info(e)
         # event doesn't exist in this calendar.
         # find in others?
       end
@@ -576,7 +582,6 @@ module BenevolentGaze
             event = service.get_event(cal_id, e_id)
           rescue Google::Apis::ClientError => e
             logger.info('failed to find event in other calendars')
-            logger.info(e)
           end
         end
       end
