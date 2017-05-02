@@ -76,10 +76,10 @@ module BenevolentGaze
           names << name
         end
         names.uniq!
-        client.message channel: (data['channel']).to_s, text: "Currently in the office:
+        client.message(channel: (data['channel']).to_s, text: "Currently in the office:
         #{names.join("
         ")}
-        Register your devices here: http://#{ENV['SERVER_HOST']}/register"
+        Register your devices here: http://#{ENV['SERVER_HOST']}/register")
       end
 
       # scan(/<@([^>]+)>/) do |client, data, users|
@@ -119,9 +119,12 @@ module BenevolentGaze
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
                         query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
 
-          client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
+          client.message(channel: (data['channel']).to_s,
+                         text: "sent '#{msg}' to the kiosk")
         else
-          client.say(channel: data.channel, text: "Sorry <@#{data.user}>, I don't understand that command!", gif: 'idiot')
+          client.message(channel: data.channel,
+                         text: "Sorry <@#{data.user}>, I don't understand that command!",
+                         gif: 'idiot')
         end
       end
 
@@ -137,9 +140,11 @@ module BenevolentGaze
 
           # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
+                        query: { msg: slack_msg,
+                          msg_token: ENV['MSG_TOKEN'] })
 
-          client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
+          client.message(channel: (data['channel']).to_s,
+                         text: "sent '#{msg}' to the kiosk")
         end
       end
     end
@@ -153,23 +158,24 @@ module BenevolentGaze
     end
 
     on 'presence_change' do |client, data|
-      puts "is bot? #{pp data}"
+
 
       @r ||= Redis.current
-      puts "#{data['user']}: is #{data['presence']}. Bot? #{data['is_bot']}"
+      puts "#{data['user']}: is #{data['presence']}."
       case data['presence']
       when 'active'
         @r.sadd('current_slackers', data['user'])
-        data = client.web_client.users_info(user: data['user'])
-        user_data = data.user
 
-
+        info = client.web_client.users_info(user: data['user'])
+        user_data = info.user
+        next if user_data.is_bot
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
             puts "no profile: #{data['user']}"
             client.web_client.chat_postMessage(channel: data['user'],
-                                             text: 'Please update your profile so people know who you are!')
+                                               text: 'Please update your profile so people know who you are!',
+                                               as_user: true)
             # slightly less than once a day
             @r.setex("profile_remind:#{data['user']}", 60 * 59 * 24, true)
           end
@@ -188,8 +194,9 @@ module BenevolentGaze
             @r.setex("face:#{data['user']}", true, one_day)
             if @r.get("face_remind:#{data['user']}").nil?
               puts "no face: #{data['user']}"
-              client.chat_postMessage(channel: data['user'],
-                                             text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!')
+              client.web_client.chat_postMessage(channel: data['user'],
+                                                 text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!',
+                                                 as_user: true)
 
               @r.setex("face_remind:#{data['user']}", one_day - 60, true)
             end
@@ -204,9 +211,9 @@ module BenevolentGaze
         if !@r.sismember('slinvited', data['user']) && @r.hget('slack_id2slack_name', data['user']).nil?
           puts "inviting #{data['user']}"
           client.web_client.chat_postMessage(channel: data['user'],
-                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+            text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
                                              as_user: true)
-          r.sadd('slinvited', data['user'])
+          @r.sadd('slinvited', data['user'])
         end
       when 'away'
         @r.srem('current_slackers', data['user'])
