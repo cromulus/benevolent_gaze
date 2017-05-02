@@ -153,15 +153,19 @@ module BenevolentGaze
     end
 
     on 'presence_change' do |client, data|
-      @r ||= Redis.current
+      puts "is bot? #{pp data}"
 
-      puts "user #{data['user']} is #{data['presence']}"
+      @r ||= Redis.current
+      puts "#{data['user']}: is #{data['presence']}. Bot? #{data['is_bot']}"
       case data['presence']
       when 'active'
         @r.sadd('current_slackers', data['user'])
-        user_data = client.web_client.users_info(user: data['user'])
+        data = client.web_client.users_info(user: data['user'])
+        user_data = data.user
 
-        if user_data.title == '' || user_data.title.nil?
+
+
+        if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
             puts "no profile: #{data['user']}"
             client.web_client.chat_postMessage(channel: data['user'],
@@ -175,7 +179,7 @@ module BenevolentGaze
         if facecheck.nil? && !ENV['GOOGLE_PROJECT_ID'].nil?
           one_day = (60 * 60 * 24 )
           @vision ||= Google::Cloud::Vision.new project: ENV['GOOGLE_PROJECT_ID']
-          image = vision.image user_data.image_512
+          image = @vision.image user_data.profile.image_512
           if image.faces.size == 1
             # don't check for a month. we have max 1k per month free
             @r.setex("face:#{data['user']}", one_day * 30 ,true)
@@ -184,7 +188,7 @@ module BenevolentGaze
             @r.setex("face:#{data['user']}", true, one_day)
             if @r.get("face_remind:#{data['user']}").nil?
               puts "no face: #{data['user']}"
-              client.web_client.chat_postMessage(channel: data['user'],
+              client.chat_postMessage(channel: data['user'],
                                              text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!')
 
               @r.setex("face_remind:#{data['user']}", one_day - 60, true)
