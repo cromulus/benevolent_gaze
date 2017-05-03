@@ -1,3 +1,4 @@
+
 ﻿/* --- new layout: START ----*/
 
 .nav {
@@ -28,6 +29,22 @@
   background-color: #b0e61d;
   color: #0a233c;
   font-weight: 600;
+  float: right;
+}
+
+
+
+/* --- new layout ----*/
+
+.nav {
+  box-shadow: 0 1px 5px rgba(0,0,0,.5);
+}
+
+.nav .nav_left {
+  display: inline-block;
+}
+.nav .nav_right {
+  display: inline-block;
   float: right;
 }
 
@@ -81,7 +98,8 @@
   }
 }
 
-/* ---------- END */
+
+
 
 .controls {
   height: 100vh;
