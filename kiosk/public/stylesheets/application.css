@@ -1,14 +1,16 @@
-
-﻿/* --- new layout: START ----*/
-
+/* --- people: navbar ---*/
 .nav {
-  box-shadow: 0 1px 5px rgba(0,0,0,.5);
+  box-shadow: 0 1px 5px rgba(0,0,0,.3);
   position: fixed;
   width: 100%;
   z-index: 99;
   background-color: #0c314d;
   padding: .5em 0;
   margin: 0;
+}
+
+.nav .container {
+  width: 87%;
 }
 
 .nav p {
@@ -31,23 +33,6 @@
   font-weight: 600;
   float: right;
 }
-
-
-
-/* --- new layout ----*/
-
-.nav {
-  box-shadow: 0 1px 5px rgba(0,0,0,.5);
-}
-
-.nav .nav_left {
-  display: inline-block;
-}
-.nav .nav_right {
-  display: inline-block;
-  float: right;
-}
-
 
 .nav .form-group {
   display: inline-block;
@@ -75,28 +60,28 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+@media screen and (max-width: 1095px){
+  .nav {
+    position: relative;
+  }
+}
+
+/* --- people:body --- */
 .body_apex {
   padding: 8em 0 4em;
 }
+
+.body_apex .container {
+  width: 87%;
+}
+
 
 @media screen and (max-width: 1095px){
   .body_apex {
     padding: 4em 0;
   }
-  .nav {
-    position: relative;
-  }
-  .nav_right {
-    margin: 1em 0 0 0;
-    float: none;
-    border-top: 1px solid #ccc;
-  }
-  .nav_left p {
-    display: inline-block;
-    padding: .3em 1em 0 1em;
-    font-size: 1.333em;
-  }
 }
+
 
 
 
