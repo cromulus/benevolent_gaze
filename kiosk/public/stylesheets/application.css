@@ -32,22 +32,6 @@
 }
 
 
-
-/* --- new layout ----*/
-
-.nav {
-  box-shadow: 0 1px 5px rgba(0,0,0,.5);
-}
-
-.nav .nav_left {
-  display: inline-block;
-}
-.nav .nav_right {
-  display: inline-block;
-  float: right;
-}
-
-
 .nav .form-group {
   display: inline-block;
   margin: 0;
@@ -97,8 +81,7 @@
   }
 }
 
-
-
+/* ---------- END */
 
 .controls {
   height: 100vh;
