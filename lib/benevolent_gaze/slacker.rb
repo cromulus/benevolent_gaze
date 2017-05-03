@@ -26,7 +26,7 @@ SlackRubyBot::Client.logger.level = Logger::WARN
 module BenevolentGaze
   class Slacker < SlackRubyBot::Bot
     def initialize
-      @redis = Redis.new()
+      @redis = Redis.new
       @r = @redis
     end
 
@@ -40,23 +40,20 @@ module BenevolentGaze
 
       command '@username?' do
         desc 'Tells you if @username is in the office.'
-        long_desc "thats about it"
+        long_desc 'thats about it'
       end
     end
-
   end
 end
 
 module BenevolentGaze
   module Commands
     class Default < SlackRubyBot::Commands::Base
-
-
-      command 'ping' do |client, data, match|
+      command 'ping' do |client, data, _match|
         client.say(text: 'pong', channel: data.channel)
       end
 
-      command 'invite' do |client,data,users|
+      command 'invite' do |client, data, users|
         message = data['message']
         users = message.scan(/<@([^>]+)>/)
         users = users.blank? ? data['user'] : users
@@ -67,7 +64,7 @@ module BenevolentGaze
         end
       end
 
-      command 'who','list' do |client,data,command|
+      command 'who', 'list' do |client, data, _command|
         names = []
         r = Redis.new
         r.hgetall('current_devices').each do |device, real_name|
@@ -77,49 +74,70 @@ module BenevolentGaze
           names << name
         end
         names.uniq!
-        client.message channel: (data['channel']).to_s, text: "Currently in the office: #{names.join('
-        ')}
-        Register your devices here: http://150.brl.nyc/register/"
+        client.message channel: (data['channel']).to_s, text: "Currently in the office:
+        #{names.join("
+        ")}
+        Register your devices here: http://#{ENV['SERVER_HOST']}/register"
       end
 
-      scan(/<@([^>]+)>/) do |client,data,users|
-        online = false
-        unknown = true
-        if users[1] # the second user is the one we're looking for
-          user = users[1][0]
+      # scan(/<@([^>]+)>/) do |client, data, users|
+      #   online = false
+      #   unknown = true
+      #   if users[1] # the second user is the one we're looking for
+      #     user = users[1][0]
 
-          r = Redis.new
-          r.keys('slack_id:*').each do |device|
-            next if online == true
-            if r.get(device) == user
-              unknown = false
-              online = r.hexists('current_devices', device.split(':').last)
-            end
-          end
+      #     r = Redis.new
+      #     r.keys('slack_id:*').each do |device|
+      #       next if online == true
+      #       if r.get(device) == user
+      #         unknown = false
+      #         online = r.hexists('current_devices', device.split(':').last)
+      #       end
+      #     end
 
-          if online
-            client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
-          elsif unknown
-            client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://150.brl.nyc/"
-          else
-            client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
-          end
-        end
-      end
+      #     if online
+      #       client.message channel: (data['channel']).to_s, text: "Polo (<@#{user}> is in the office, I think)"
+      #     elsif unknown
+      #       client.message channel: (data['channel']).to_s, text: "I don't know who you are talking about. Ask <@#{user}> to register here: http://#{ENV['SERVER_HOST']}/register"
+      #     else
+      #       client.message channel: (data['channel']).to_s, text: 'Not Here... Womp-whaaaaa.....'
+      #     end
+      #   end
+      # end
+
       # unsure about this one.
-      command 'marco','call' do |client, data, match|
+      command 'marco', 'call' do |client, data, _match|
         if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
           slack_msg = { user: user, msg: msg, data: data }.to_json
 
+          # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                        query: { msg: slack_msg })
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
 
           client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         else
           client.say(channel: data.channel, text: "Sorry <@#{data.user}>, I don't understand that command!", gif: 'idiot')
+        end
+      end
+
+      # catchall
+      match(/^(?<bot>\w*)\s(?<expression>.*)$/) do |client, data, match|
+        expression = match['expression'].strip
+        next if expression == 1
+        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+          puts "post '#{data['text']}' to kiosk from #{data['user']}"
+          user = data['user']
+          msg  = data['text']
+          slack_msg = { user: user, msg: msg, data: data }.to_json
+
+          # this should be over a redis pubsub, but I can't get it to work.
+          HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
+                        query: { msg: slack_msg, msg_token: ENV['MSG_TOKEN'] })
+
+          client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
         end
       end
     end
@@ -128,42 +146,37 @@ end
 
 module BenevolentGaze
   class Server < SlackRubyBot::Server
-
-    on 'hello' do |client, data|
+    on 'hello' do |client, _data|
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
     end
 
-    on 'message' do |client,data|
-      if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
-        puts "post '#{data['text']}' to kiosk from #{data['user']}"
-        user = data['user']
-        msg  = data['text']
-        slack_msg = { user: user, msg: msg, data: data }.to_json
-
-        HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
-                      query: { msg: slack_msg })
-
-        client.message channel: (data['channel']).to_s, text: "sent '#{msg}' to the kiosk"
-      end
-    end
-
-    on 'presence_change' do |client,data|
-      r = Redis.new()
+    on 'presence_change' do |client, data|
+      r = Redis.new
       puts "user #{data['user']} is #{data['presence']}"
       case data['presence']
       when 'active'
 
         r.sadd('current_slackers', data['user'])
+
+        user_data = client.web_client.users_info(user: data['user'])
+
+        if user_data.title == ''
+          client.web_client.chat_postMessage(channel: data['user'],
+                                             text: 'Please update your profile so people know who you are!')
+        end
+
+        # if user_data.image_512.includes("avatars/ava_")
+        # go get the image, if it resolves to *.wp.com it's a broken avatar.
+        # end
+        #
         # if we haven't invited them AND they aren't registered...
         # invite them!
         if !r.sismember('slinvited', data['user']) && r.hget('slack_id2slack_name', data['user']).nil?
           puts "inviting #{data['user']}"
           client.web_client.chat_postMessage(channel: data['user'],
-                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://150.brl.nyc/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
                                              as_user: true)
           r.sadd('slinvited', data['user'])
-        else
-          #if user has default avatar image, ask them to change it.
         end
       when 'away'
         r.srem('current_slackers', data['user'])

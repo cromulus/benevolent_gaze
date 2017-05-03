@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 /* --- new layout: START ----*/
+=======
+
+﻿/* --- new layout: START ----*/
+>>>>>>> development
 
 .nav {
   box-shadow: 0 1px 5px rgba(0,0,0,.5);
@@ -32,6 +37,25 @@
 }
 
 
+<<<<<<< HEAD
+=======
+
+/* --- new layout ----*/
+
+.nav {
+  box-shadow: 0 1px 5px rgba(0,0,0,.5);
+}
+
+.nav .nav_left {
+  display: inline-block;
+}
+.nav .nav_right {
+  display: inline-block;
+  float: right;
+}
+
+
+>>>>>>> development
 .nav .form-group {
   display: inline-block;
   margin: 0;
@@ -81,7 +105,12 @@
   }
 }
 
+<<<<<<< HEAD
 /* ---------- END */
+=======
+
+
+>>>>>>> development
 
 .controls {
   height: 100vh;
