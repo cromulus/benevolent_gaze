@@ -160,6 +160,7 @@ $(function() {
                 $(w).attr("data-online",     worker_data.online);
                 $(w).attr("data-devicename", worker_data.device_name);
                 $(w).attr("data-slackname",  worker_data.slack_name);
+                $(w).attr("data-title",  worker_data.title);
                 $(w).addClass('online-'+worker_data.online); // future
               },
     set_avatar: function(avatar_url){
@@ -320,8 +321,8 @@ $(function() {
 
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
-      // if we haven't seen the worker in the feed for 15 seconds, drop it.
-      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 1000 * 15) && $(wk).find('.tape').text() !== "Ted" ) {
+      // if we haven't seen the worker in the feed for 60 seconds, drop it.
+      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 1000 * 60) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
@@ -343,14 +344,14 @@ $(function() {
     // map through each worker, hide it, and return a searchable obj.
     var searchable_workers = $('.worker').map(function(){
           $(this).hide(); // hide em all.
-          return { name: $(this).data('name'), obj: $(this)}
+          return { name: $(this).data('name'), title:$(this).data('title'), obj: $(this)}
         })
 
     // we search only name, could possibly search slackname or device...
     // should be "fuzzy" enough to be usefull
     var options = {
-      keys:['name'],
-      distance: 5,
+      keys:['name','title'],
+      distance: 30,
       threshold: 0.3
     };
 

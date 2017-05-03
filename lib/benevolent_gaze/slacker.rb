@@ -155,6 +155,10 @@ module BenevolentGaze
   class Server < SlackRubyBot::Server
     on 'hello' do |client, _data|
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
+
+      # should update all current slackers here
+      # @r.del('current_slackers')
+      # client.users.map{|u| u}
     end
 
     on 'presence_change' do |client, data|

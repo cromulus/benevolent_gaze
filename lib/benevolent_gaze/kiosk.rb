@@ -101,11 +101,13 @@ module BenevolentGaze
         real_name = @r.get("name:#{device_name}")
         name_or_device_name = real_name.nil? ? device_name : real_name
         slack_name = @r.get("slack:#{device_name}")
-
+        slack_id = @r.hget('slack_id2slack_name', slack_name)
+        slack_title = get_slack_title(slack_id)
         { real_name: real_name,
           slack_name: slack_name,
-          slack_id: @r.hget('slack_id2slack_name', slack_name),
+          slack_id: slack_id,
           device_name: device_name,
+          slack_title:  slack_title,
           email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
@@ -148,6 +150,19 @@ module BenevolentGaze
           # throws an exception if user not found.
           return false
         end
+      end
+
+      def get_slack_title(slack_id)
+        title = @r.hget('slack_title', slack_id)
+        if title.nil? || title == ''
+          begin
+            title = @slack.users_info(user: slack_id).user.profile.title || ''
+            @r.hset('slack_title', slack_id, title)
+          rescue ExceSlack::Web::Api::Error
+            title = ""
+          end
+        end
+        title
       end
 
       def get_slack_info(sname)
@@ -657,7 +672,7 @@ module BenevolentGaze
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")
             slack_id = @r.get("slack_id:#{k}")
-
+            slack_title = get_slack_title(slack_id)
             # if you're not setup, we don't want to see you.
             next unless slack && slack_id
 
@@ -670,6 +685,7 @@ module BenevolentGaze
                       online: online,
                       email: email,
                       slack_name: slack,
+                      title: slack_title,
                       slack_id: slack_id,
                       last_seen: (Time.now.to_f * 1000).to_i,
                       avatar: image_url }
