@@ -322,7 +322,7 @@ $(function() {
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
       // if we haven't seen the worker in the feed for 60 seconds, drop it.
-      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 1000 * 60) && $(wk).find('.tape').text() !== "Ted" ) {
+      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - (1000 * 60) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }

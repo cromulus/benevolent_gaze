@@ -659,7 +659,7 @@ module BenevolentGaze
         loop do
           break if out.closed?
           settings.connections << out # so we can use this stream elsewhere
-          data = []
+          raw_data = []
           @r = Redis.current
 
           @r.hgetall('current_devices').each do |k, v|
@@ -679,7 +679,7 @@ module BenevolentGaze
             image_url = @r.get("image:#{name_or_device_name}")
             online = @r.sismember('current_slackers', slack_id) || false
 
-            data << { type: 'device',
+            raw_data << { type: 'device',
                       device_name: k,
                       name: v,
                       online: online,
@@ -690,6 +690,8 @@ module BenevolentGaze
                       last_seen: (Time.now.to_f * 1000).to_i,
                       avatar: image_url }
           end
+
+          data = raw_data.sort_by { |k| k[:name] }
 
           out << "data: #{data.to_json}\n\n"
           sleep 1
