@@ -691,7 +691,7 @@ module BenevolentGaze
                       avatar: image_url }
           end
 
-          data = raw_data.sort_by { |k| k[:name] }
+          data = raw_data.sort_by { |k| k[:name].downcase }
 
           out << "data: #{data.to_json}\n\n"
           sleep 1
