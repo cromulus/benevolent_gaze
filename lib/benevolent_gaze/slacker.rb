@@ -181,7 +181,8 @@ module BenevolentGaze
           if @r.get("profile_remind:#{data['user']}").nil?
             puts "no profile: #{data['user']}"
             client.web_client.chat_postMessage(channel: data['user'],
-                                               text: 'Please update your profile so people know who you are!',
+                                               text: "Please update your user profile on slack so people know who you are!
+                                               Edit it here: https://150court.slack.com/team/#{user_data.name}",
                                                as_user: true)
             # slightly less than once a day
             @r.setex("profile_remind:#{data['user']}", 60 * 59 * 24, true)
@@ -207,7 +208,8 @@ module BenevolentGaze
             if @r.get("face_remind:#{data['user']}").nil?
               puts "reminding #{data['user']} to add profile portrait"
               client.web_client.chat_postMessage(channel: data['user'],
-                                                 text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!',
+                                                 text: "Please update your Slack profile picture with a photo of your face so people can put a face to the name!
+                                                 Upload here: https://150court.slack.com/team/#{user_data.name}",
                                                  as_user: true)
 
               @r.setex("face_remind:#{data['user']}", one_day - 60, true)
