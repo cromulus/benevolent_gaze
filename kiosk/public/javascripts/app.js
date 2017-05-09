@@ -27,17 +27,12 @@ $(function() {
 
 
   // sends the user to register if unregistered,
-  // otherwise, sets up the reception kiosk keyboard
-  // should probably be a standalone "user" script/object
-  // duplicates alof of the functionality of the ""
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
         window.me = d['data']; // ugly hack.
         if (d['data']['real_name'] === 'Reception') {
-           $(":text").onScreenKeyboard({'draggable': true,
-                                       'topPosition': '90%',
-                                       'leftPosition': '5%'});
+          $('#register').hide(); // hide registration
         }
       });
       console.log('registered!');
