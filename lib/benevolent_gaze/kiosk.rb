@@ -666,8 +666,8 @@ module BenevolentGaze
             name_or_device_name = @r.get("name:#{k}") || k
 
             # don't need to show self
-            next if k == current_user[:device_name]
-            next if name_or_device_name == current_user[:real_name]
+            # next if k == current_user[:device_name]
+            # next if name_or_device_name == current_user[:real_name]
 
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")

@@ -335,9 +335,34 @@ $(function() {
 
   // clear search on blur
   $('input').on('blur',function(){
-    $('.worker').each(function(i,v){$(v).show();});
-    $('input').val('');
+
+
   })
+
+
+  var keepFocus = false;
+
+  function showWorkers(){
+    if(!keepFocus){
+      $('.worker').each(function(i,v){$(v).show();});
+      $('input').val('');
+    }
+  }
+
+  $('input').blur(function() {
+      keepFocus = false;
+      window.setTimeout(showWorkers, 2000);
+  }).focus(function(){
+      keepFocus = true;
+  });
+
+
+  $('.worker').blur(function() {
+      keepFocus = false;
+      window.setTimeout(showWorkers, 2000);
+  }).focus(function(){
+      keepFocus = true;
+  });
 
   // searches for workers. simple Fuse search.
   var filter = function(){
