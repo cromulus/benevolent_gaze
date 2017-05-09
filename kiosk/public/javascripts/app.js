@@ -27,17 +27,12 @@ $(function() {
 
 
   // sends the user to register if unregistered,
-  // otherwise, sets up the reception kiosk keyboard
-  // should probably be a standalone "user" script/object
-  // duplicates alof of the functionality of the ""
   $.ajax({url:'/is_registered'}).done(function(data){
     if (data==='true') {
       $.ajax({url:'/me', dataType: "json"}).done(function(d){
         window.me = d['data']; // ugly hack.
         if (d['data']['real_name'] === 'Reception') {
-           $(":text").onScreenKeyboard({'draggable': true,
-                                       'topPosition': '90%',
-                                       'leftPosition': '5%'});
+          $('#register').hide(); // hide registration
         }
       });
       console.log('registered!');
@@ -322,7 +317,7 @@ $(function() {
   var check_last_seen = function() {
     $('.worker').each(function(num, wk){
       // if we haven't seen the worker in the feed for 60 seconds, drop it.
-      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 1000 * 60) && $(wk).find('.tape').text() !== "Ted" ) {
+      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 60000) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
@@ -338,6 +333,36 @@ $(function() {
     }
   };
 
+  // clear search on blur
+  $('input').on('blur',function(){
+
+
+  })
+
+
+  var keepFocus = false;
+
+  function showWorkers(){
+    if(!keepFocus){
+      $('.worker').each(function(i,v){$(v).show();});
+      $('input').val('');
+    }
+  }
+
+  $('input').blur(function() {
+      keepFocus = false;
+      window.setTimeout(showWorkers, 2000);
+  }).focus(function(){
+      keepFocus = true;
+  });
+
+
+  $('.worker').blur(function() {
+      keepFocus = false;
+      window.setTimeout(showWorkers, 2000);
+  }).focus(function(){
+      keepFocus = true;
+  });
 
   // searches for workers. simple Fuse search.
   var filter = function(){

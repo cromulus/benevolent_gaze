@@ -50,7 +50,7 @@ module BenevolentGaze
 
         # nmap for the win. slow, but awesome.
         # if `which nmap`
-        #   nmapping = `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n")
+        # `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").map{|n| begin; devices.add @dns.getname(n); rescue; end}
         #   Parallel.each(nmapping) do |d|
         #     begin
         #       name = @dns.getname(d)

@@ -659,15 +659,15 @@ module BenevolentGaze
         loop do
           break if out.closed?
           settings.connections << out # so we can use this stream elsewhere
-          data = []
+          raw_data = []
           @r = Redis.current
 
           @r.hgetall('current_devices').each do |k, v|
             name_or_device_name = @r.get("name:#{k}") || k
 
             # don't need to show self
-            next if k == current_user[:device_name]
-            next if name_or_device_name == current_user[:real_name]
+            # next if k == current_user[:device_name]
+            # next if name_or_device_name == current_user[:real_name]
 
             email = @r.get("email:#{k}")
             slack = @r.get("slack:#{k}")
@@ -679,7 +679,7 @@ module BenevolentGaze
             image_url = @r.get("image:#{name_or_device_name}")
             online = @r.sismember('current_slackers', slack_id) || false
 
-            data << { type: 'device',
+            raw_data << { type: 'device',
                       device_name: k,
                       name: v,
                       online: online,
@@ -690,6 +690,8 @@ module BenevolentGaze
                       last_seen: (Time.now.to_f * 1000).to_i,
                       avatar: image_url }
           end
+
+          data = raw_data.sort_by { |k| k[:name].downcase }
 
           out << "data: #{data.to_json}\n\n"
           sleep 1

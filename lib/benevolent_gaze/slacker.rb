@@ -5,7 +5,8 @@ require 'httparty'
 require 'celluloid'
 require 'celluloid/io'
 require 'google/cloud/vision'
-
+require 'dotenv'
+Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 # https://github.com/slack-ruby/slack-ruby-bot/blob/master/examples/weather/weatherbot.rb
 
 # use https://github.com/slack-ruby/slack-ruby-bot
@@ -157,13 +158,14 @@ module BenevolentGaze
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
 
       # should update all current slackers here
-      # @r.del('current_slackers')
-      # client.users.map{|u| u}
+      @r.del('current_slackers')
+      client.users.each do |sid, u|
+        @r.sadd('current_slackers', sid) if u.presence == 'active'
+      end
+      puts "#{@r.scard('current_slackers')} slackers online"
     end
 
     on 'presence_change' do |client, data|
-
-
       @r ||= Redis.current
       puts "#{data['user']}: is #{data['presence']}."
       case data['presence']
@@ -174,15 +176,19 @@ module BenevolentGaze
         user_data = info.user
         next if user_data.is_bot
 
+
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
             puts "no profile: #{data['user']}"
             client.web_client.chat_postMessage(channel: data['user'],
-                                               text: 'Please update your profile so people know who you are!',
+                                               text: "Please update your user profile on slack so people know who you are!
+                                               Edit it here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
                                                as_user: true)
             # slightly less than once a day
             @r.setex("profile_remind:#{data['user']}", 60 * 59 * 24, true)
           end
+        else
+          @r.hset('slack_title', data['user'], user_data.profile.title)
         end
 
         facecheck = @r.get("face:#{data['user']}")
@@ -193,6 +199,7 @@ module BenevolentGaze
           if image.faces.size == 1
             # don't check for a month. we have max 1k per month free
             @r.setex("face:#{data['user']}", one_day * 30, true)
+
           else
             puts "no face!: #{data['user']}"
             # they changed it or wait one day check again. 1 day
@@ -201,7 +208,8 @@ module BenevolentGaze
             if @r.get("face_remind:#{data['user']}").nil?
               puts "reminding #{data['user']} to add profile portrait"
               client.web_client.chat_postMessage(channel: data['user'],
-                                                 text: 'Please update your Slack profile picture with a photo of your face so people can put a face to the name!',
+                                                 text: "Please update your Slack profile picture with a photo of your face so people can put a face to the name!
+                                                 Upload here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
                                                  as_user: true)
 
               @r.setex("face_remind:#{data['user']}", one_day - 60, true)
