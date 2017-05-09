@@ -338,6 +338,11 @@ $(function() {
     }
   };
 
+  // clear search on blur
+  $('input').on('blur',function(){
+    $('.worker').each(function(i,v){$(v).show();});
+    $('input').val('');
+  })
 
   // searches for workers. simple Fuse search.
   var filter = function(){
