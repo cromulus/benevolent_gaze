@@ -90,7 +90,7 @@ $(function() {
     var slack_name = msg['user'].replace('@','');
     var old_content = '';
     $worker = $('[data-slackname='+slack_name+']')
-    if ($worker.data('bs.popover') !== undefined && $worker.data('bs.popover').options !== undefined) {
+    if ($worker.data('bs.popover') != undefined && $worker.data('bs.popover').options != undefined) {
       old_content = $worker.data('bs.popover').options.content + "<br>";
     }
 
@@ -98,7 +98,7 @@ $(function() {
 
     var options = {
       title : "<span class='text-info'><strong>Message</strong></span>"+
-                '<button type="button" class="close" >&times;</button>',
+                '<button type="button" class="popover_close" >&times;</button>',
       content: old_content + msg['msg'],
       trigger: 'manual',
       placement: 'auto',
@@ -121,8 +121,8 @@ $(function() {
     $('html, body').animate({scrollTop:offset}, 600,'swing');
     Worker.animate_worker($worker,'bounce')
     $worker.popover(options).popover('show');
-    $worker.find('button.close').on('click',function(e){
-      $worker.popover('destroy');
+    $worker.find('.popover_close').on('click',function(e){
+      $(this).popover('destroy');
     });
   }
 
@@ -332,13 +332,6 @@ $(function() {
       $(data_attribute).find(".avatar_container img").attr('src',user_param.avatar);
     }
   };
-
-  // clear search on blur
-  $('input').on('blur',function(){
-
-
-  })
-
 
   var keepFocus = false;
 
