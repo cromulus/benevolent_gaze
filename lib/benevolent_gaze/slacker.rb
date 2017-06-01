@@ -158,6 +158,7 @@ module BenevolentGaze
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
 
       # should update all current slackers here
+      @r ||= Redis.current
       @r.del('current_slackers')
       client.users.each do |sid, u|
         @r.sadd('current_slackers', sid) if u.presence == 'active'
