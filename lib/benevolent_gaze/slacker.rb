@@ -180,7 +180,7 @@ module BenevolentGaze
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
-            puts "no profile: #{data['user']}"
+            puts "no profile: #{data['user']} : #{user_data.name}"
             client.web_client.chat_postMessage(channel: data['user'],
                                                text: "Please update your user profile on slack so people know who you are!
                                                Edit it here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
@@ -207,7 +207,7 @@ module BenevolentGaze
             @r.setex("face:#{data['user']}", one_day, true)
 
             if @r.get("face_remind:#{data['user']}").nil?
-              puts "reminding #{data['user']} to add profile portrait"
+              puts "reminding #{data['user']} : #{user_data.name} to add profile portrait"
               client.web_client.chat_postMessage(channel: data['user'],
                                                  text: "Please update your Slack profile picture with a photo of your face so people can put a face to the name!
                                                  Upload here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
