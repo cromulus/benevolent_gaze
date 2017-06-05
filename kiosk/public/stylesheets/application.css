@@ -24,6 +24,9 @@
   padding: 12px 0;
   white-space: normal;
 }
+#header .btn:nth-child(3){
+  margin-bottom: 0;
+}
 #header .btn-primary {
   border: 0;
   background-color: #b0e61d;
