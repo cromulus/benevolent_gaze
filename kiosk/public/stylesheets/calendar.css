@@ -1,3 +1,11 @@
+/* --- New css: START ---*/
+div.h5 {
+  font-size: 1em;
+  float: right;
+}
+
+/* --- New css: END ---*/
+
 .loading {
   opacity: 0.45;
   -moz-opacity: 0.45;
