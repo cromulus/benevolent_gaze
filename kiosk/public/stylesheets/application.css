@@ -11,19 +11,22 @@
   margin: 0;
 }
 #header li {
-  margin: 0 0 1em;
+  margin: 0;
 }
 #header li a {
   color: rgba(255, 255, 255, 0.8);
 }
-.btn-primary {
-  border: 0;
+#header .btn {
+  background-color: #ECECEC;
   width: 100%;
-  padding: 12px 0;
-  margin: 0 0 2em;
-  background-color: #b0e61d;
+  margin: 0 0 1em;
   color: #222;
-  font-weight: 600;
+  padding: 12px 0;
+  white-space: normal;
+}
+#header .btn-primary {
+  border: 0;
+  background-color: #b0e61d;
 }
 #main {
   padding: 2em;
