@@ -12,13 +12,15 @@ $(function() {
   $('#front-door').on('click', function(e) {
     $('#front-door').animateCss('pulse');
     $.ajax({ url: '/downstairs_door'}).done(function(data){
+      $('#front-door').css('background-color', '#ececec');
       $('#front-door').text('Opened!')
       setTimeout(function() {
         $('#front-door').text('Open Front Door');
+        $('#front-door').css('background-color', '#b0e61d');
       }, 1000);
     }).fail(function(data) {
       d = JSON.parse(data.responseText);
-      $('#front-door').tooltip({title: d['msg'], trigger: 'manual', placement: 'auto'}).tooltip('show');
+      $('#front-door').tooltip({title: d['msg'], trigger: 'manual', placement: 'top'}).tooltip('show');
       setTimeout(function() {
         $('#front-door').tooltip('hide');
       }, 2000);
@@ -95,14 +97,15 @@ $(function() {
       old_content = $worker.data('bs.popover').options.content + "<br>";
     }
 
-    $worker.popover('destroy');
+    $worker.popover('dispose');
 
     var options = {
       title : "<span class='text-info'><strong>Message</strong></span>"+
-                '<button type="button" class="popover_close" >&times;</button>',
+                '<button type="button" class="close" >&times;</button>',
       content: old_content + msg['msg'],
       trigger: 'manual',
-      placement: 'auto',
+      placement: 'top',
+      trigger: 'focus',
       html: true
     }
 
@@ -122,9 +125,10 @@ $(function() {
     $('html, body').animate({scrollTop:offset}, 600,'swing');
     Worker.animate_worker($worker,'bounce')
     $worker.popover(options).popover('show');
-    $worker.find('.popover_close').on('click',function(e){
-      $(this).popover('destroy');
+    $(document).on("click", ".popover .close" , function(){
+        $(this).parents(".popover").popover('dispose');
     });
+
   }
 
 
@@ -169,11 +173,11 @@ $(function() {
                     console.log('popover shown!');
                     var $pop = $(this);
                     $(this).next('.popover').find('button.cancel').click(function (e) {
-                      $pop.popover('destroy');
+                      $pop.popover('dispose');
                     });
 
                     setTimeout(function () {
-                      $pop.popover('destroy');
+                      $pop.popover('dispose');
                     }, 1000 * 7); // seven second timeout
                   });
                 },
@@ -183,7 +187,7 @@ $(function() {
     add_to_board: function(worker_data){
                     Worker.add_slack();
                     //Welcome.move_logo_and_welcomes();
-                    $(w).children('.pin_and_avatar_container').addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
+                    $(w).addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
                     $('.workers.row').append( w );
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
                     $('.newcomer_avatar img').attr('src', worker_data.avatar || "/images/visitor_art@1x-21d82dcb.png");
@@ -204,7 +208,7 @@ $(function() {
         }else{
           to = $(this).data('slackname');
         }
-        worker.children('.pin_and_avatar_container').tooltip('destroy');
+        worker.tooltip('dispose');
         $.ajax({
           type: 'POST',
           // make sure you respect the same origin policy with this url:
@@ -217,17 +221,17 @@ $(function() {
 
           Worker.animate_worker(worker,'swing2');
 
-          worker.children('.pin_and_avatar_container').tooltip({title:"Pinged!",trigger: 'manual', placement: 'auto'}).tooltip('show');
+          worker.tooltip({title:"Pinged!",trigger: 'manual', placement: 'top'}).tooltip('show');
 
         }).fail(function(data) {
           d=JSON.parse(data.responseText);
 
           Worker.animate_worker(worker,'shake');
-          worker.children('.pin_and_avatar_container').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
+          worker.tooltip({title:d['msg'],trigger: 'manual', placement: 'top'}).tooltip('show');
 
         }).always(function(){
           $.wait(function(){
-            worker.children('.pin_and_avatar_container').tooltip('destroy');
+            worker.tooltip('dispose');
           }, 6);
         });
 
