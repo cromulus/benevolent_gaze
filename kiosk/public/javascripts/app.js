@@ -342,8 +342,9 @@ $(function() {
 
   function showWorkers(){
     if(!keepFocus){
-      $('.worker').each(function(i,v){$(v).show();});
+      $('.worker').each(function(i, v) {$(v).show();});
       $('input').val('');
+      $('.form-control-clear').addClass('hidden');
     }
   }
 
@@ -361,6 +362,15 @@ $(function() {
   }).focus(function(){
       keepFocus = true;
   });
+
+
+  $('.form-control-clear').click(function() {
+    $(this).siblings('input[type="text"]').val('')
+      .trigger('propertychange').focus();
+
+    $('.worker').each(function(i, v) {$(v).show();});
+  });
+
 
   // searches for workers. simple Fuse search.
   var filter = function(){
@@ -400,6 +410,8 @@ $(function() {
       }
       t = setTimeout(filter(), 100);
   });
+
+
 
 });
 
