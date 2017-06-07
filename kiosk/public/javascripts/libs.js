@@ -9289,6 +9289,16 @@ jQuery.each([ "toggle", "show", "hide" ], function( i, name ) {
   };
 });
 
+
+jQuery.fn.extend({
+    animateCss: function (animationName) {
+        var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+        this.addClass('animated ' + animationName).one(animationEnd, function() {
+            $(this).removeClass('animated ' + animationName);
+        });
+    }
+});
+
 jQuery.fn.extend({
   fadeTo: function( speed, to, easing, callback ) {
 

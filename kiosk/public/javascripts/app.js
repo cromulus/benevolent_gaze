@@ -1,6 +1,6 @@
 $(function() {
 
-  window.setInterval(function(){
+  window.setInterval(function() {
     // every hour refresh the page
     // for the reception kiosk
     window.location.href = window.location.href;
@@ -9,15 +9,16 @@ $(function() {
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 
 
-  $('#front-door').on('click',function(e){
-    $.ajax({url:'/downstairs_door'}).done(function(data){
+  $('#front-door').on('click', function(e) {
+    $('#front-door').animateCss('pulse');
+    $.ajax({ url: '/downstairs_door'}).done(function(data){
       $('#front-door').text('Opened!')
       setTimeout(function() {
         $('#front-door').text('Open Front Door');
       }, 1000);
-    }).fail(function(data){
+    }).fail(function(data) {
       d = JSON.parse(data.responseText);
-      $('#front-door').tooltip({title:d['msg'],trigger: 'manual', placement: 'auto'}).tooltip('show');
+      $('#front-door').tooltip({title: d['msg'], trigger: 'manual', placement: 'auto'}).tooltip('show');
       setTimeout(function() {
         $('#front-door').tooltip('hide');
       }, 2000);
@@ -27,9 +28,9 @@ $(function() {
 
 
   // sends the user to register if unregistered,
-  $.ajax({url:'/is_registered'}).done(function(data){
-    if (data==='true') {
-      $.ajax({url:'/me', dataType: "json"}).done(function(d){
+  $.ajax({url: '/is_registered'}).done(function(data){
+    if (data === 'true') {
+      $.ajax({url: '/me', dataType: "json"}).done(function(d){
         window.me = d['data']; // ugly hack.
         if (d['data']['real_name'] === 'Reception') {
           $('#register').hide(); // hide registration
@@ -37,8 +38,8 @@ $(function() {
       });
       console.log('registered!');
     }else{
-      if(window.location.href.indexOf('register') === -1){
-        window.location.href='/register'
+      if(window.location.href.indexOf('register') === -1) {
+        window.location.href = '/register'
       }
     }
   });
