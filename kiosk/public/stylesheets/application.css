@@ -54,7 +54,7 @@
 }
 #main .input-group input {
   max-width: 25em;
-  min-width: 20em;
+  min-width: 10em;
   width: 90%;
 }
 .workers {
