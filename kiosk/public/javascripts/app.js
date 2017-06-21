@@ -11,8 +11,8 @@ $(function() {
 
   $('#front-door').on('click', function(e) {
     $('#front-door').animateCss('pulse');
+    $('#front-door').css('background-color', '#ececec');
     $.ajax({ url: '/downstairs_door'}).done(function(data){
-      $('#front-door').css('background-color', '#ececec');
       $('#front-door').text('Opened!')
       setTimeout(function() {
         $('#front-door').text('Open Front Door');
