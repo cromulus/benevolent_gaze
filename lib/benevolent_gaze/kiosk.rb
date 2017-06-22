@@ -108,6 +108,7 @@ module BenevolentGaze
           slack_id: slack_id,
           device_name: device_name,
           slack_title:  slack_title,
+          online: @r.sismember('current_slackers',slack_id),
           email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
