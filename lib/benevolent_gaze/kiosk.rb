@@ -219,10 +219,10 @@ module BenevolentGaze
 
           # hunting for a name...
           name = u_data['profile']['real_name_normalized']
-          name = u_data['real_name'] if name.empty?
-          name = u_data['profile']['real_name'] if name.empty?
-          name = u_data['name'] if name.empty?
-          name = name.empty? ? device_name : name
+          name = u_data['real_name'] if name&.blank?
+          name = u_data['profile']['real_name'] if name&.blank?
+          name = u_data['name'] if name&.blank?
+          name = name&.blank? ? device_name : name
 
           @r.set("name:#{device_name}", name)
           @r.set("slack:#{device_name}", u_data['name'])
