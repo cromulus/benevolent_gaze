@@ -42,7 +42,7 @@ module BenevolentGaze
     register Sinatra::CrossOrigin
 
     configure do
-      if ENV['AWS_ACCESS_KEY_ID'].nil? || ENV['AWS_ACCESS_KEY_ID'].empty? || ENV['AWS_SECRET_ACCESS_KEY'].empty? || ENV['AWS_CDN_BUCKET'].empty?
+      if ENV['AWS_ACCESS_KEY_ID'].nil? || ENV['AWS_ACCESS_KEY_ID'].blank? || ENV['AWS_SECRET_ACCESS_KEY'].blank? || ENV['AWS_CDN_BUCKET'].blank?
         USE_AWS = false
       else
         USE_AWS = true
@@ -218,11 +218,11 @@ module BenevolentGaze
           u_data = slack_info['user']
 
           # hunting for a name...
-          name = u_data['profile']['real_name_normalized']
-          name = u_data['real_name'] if name&.blank?
-          name = u_data['profile']['real_name'] if name&.blank?
-          name = u_data['name'] if name&.blank?
-          name = name&.blank? ? device_name : name
+          name = u_data.dig('profile','real_name_normalized')
+          name = u_data['real_name'] if name.blank?
+          name = u_data['profile']['real_name'] if name.blank?
+          name = u_data['name'] if name.blank?
+          name = name.blank? ? device_name : name
 
           @r.set("name:#{device_name}", name)
           @r.set("slack:#{device_name}", u_data['name'])
@@ -491,7 +491,7 @@ module BenevolentGaze
 
       real_name = nil
 
-      if params[:real_name].empty?
+      if params[:real_name].blank?
         status 401
         return "Please tell us your name! <a href='/register'>go back and try again.</a>"
       else
