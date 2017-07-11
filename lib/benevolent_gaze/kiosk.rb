@@ -19,7 +19,7 @@ require 'slack-ruby-client'
 require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
-require 'active_support/core_ext/time'
+require 'active_support'
 require 'securerandom'
 require 'set'
 
