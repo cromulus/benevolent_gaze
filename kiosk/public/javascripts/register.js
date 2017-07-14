@@ -101,7 +101,15 @@ $(document).ready(function() {
     console.log('not yet registered');
   });
     // don't let people register if they can't be pinged!
-    ping_poll();
-    $("input[type!='file']").attr("required", true);
+  ping_poll();
+  $("input[type!='file']").attr("required", true);
+
+  $.ajax({url: '/dns'}).done(function(d){
+    if (d == 'reception.brl.nyc') {
+      window.location.href = '/';
+    }
+  }).fail(function() {
+    window.location.href = '/';
+  });
 });
 

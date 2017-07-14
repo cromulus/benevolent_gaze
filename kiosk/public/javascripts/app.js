@@ -12,7 +12,7 @@ $(function() {
   $('#front-door').on('click', function(e) {
     $('#front-door').animateCss('pulse');
     $('#front-door').css('background-color', '#ececec');
-    $.ajax({ url: '/downstairs_door'}).done(function(data){
+    $.ajax({url: '/downstairs_door'}).done(function(data){
       $('#front-door').text('Opened!')
       setTimeout(function() {
         $('#front-door').text('Open Front Door');
@@ -39,8 +39,8 @@ $(function() {
         }
       });
       console.log('registered!');
-    }else{
-      if(window.location.href.indexOf('register') === -1) {
+    } else {
+      if (window.location.href.indexOf('register') === -1) {
         window.location.href = '/register'
       }
     }
@@ -54,9 +54,9 @@ $(function() {
     if (e.readyState == EventSource.CLOSED) {
       console.log('closed'); // not sure what to do here.
       // maybe refresh the page anyway?
-      setTimeout(window.location.href='/', 500);; // reload page on error
-    }else{
-      setTimeout(window.location.href='/register', 500);; // reload page on error
+      setTimeout(window.location.href = '/', 500);; // reload page on error
+    } else {
+      setTimeout(window.location.href = '/register', 500);; // reload page on error
     }
   }, false);
 
@@ -64,11 +64,11 @@ $(function() {
     data = JSON.parse(e.data); //
     // evveryone from the feed
 
-    people = jQuery.grep( data, function(d){
+    people = jQuery.grep(data, function(d) {
       return d.type === 'device'});
 
     // any messages we might have received
-    msgs = jQuery.grep( data, function(d){return d.type === 'msg'});
+    msgs = jQuery.grep(data, function(d) { return d.type === 'msg'});
 
     // loop through messages and send them to workers.
     msgs.forEach(onmessage);
@@ -90,9 +90,9 @@ $(function() {
   var onmessage = function(msg) {
     console.log(msg);
 
-    var slack_name = msg['user'].replace('@','');
+    var slack_name = msg['user'].replace('@', '');
     var old_content = '';
-    $worker = $('[data-slackname='+slack_name+']')
+    $worker = $('[data-slackname=' + slack_name+']')
     if ($worker.data('bs.popover') != undefined && $worker.data('bs.popover').options != undefined) {
       old_content = $worker.data('bs.popover').options.content + "<br>";
     }
@@ -122,8 +122,8 @@ $(function() {
     else {
       offset = elOffset;
     }
-    $('html, body').animate({scrollTop:offset}, 600,'swing');
-    Worker.animate_worker($worker,'bounce')
+    $('html, body').animate({scrollTop: offset}, 600, 'swing');
+    Worker.animate_worker($worker, 'bounce')
     $worker.popover(options).popover('show');
     $(document).on("click", ".popover .close" , function(){
         $(this).parents(".popover").popover('dispose');
@@ -139,7 +139,7 @@ $(function() {
   // the main worker management code is below.
   var Worker = {
     setup_and_add: function(worker_object) {
-            var klass = worker_object.device_name.replace(/\./g, "");
+            var klass = worker_object.device_name.replace(/\./g, '');
 
             Worker.grab_worker();
             Worker.set_avatar(worker_object.avatar);
@@ -172,19 +172,19 @@ $(function() {
 
                     console.log('popover shown!');
                     var $pop = $(this);
-                    $(this).next('.popover').find('button.cancel').click(function (e) {
+                    $(this).next('.popover').find('button.cancel').click(function(e) {
                       $pop.popover('dispose');
                     });
 
-                    setTimeout(function () {
+                    setTimeout(function() {
                       $pop.popover('dispose');
                     }, 1000 * 7); // seven second timeout
                   });
                 },
-    add_class: function(device_name){
+    add_class: function(device_name) {
                  w.addClass(device_name.replace(/\./g, ""));
                },
-    add_to_board: function(worker_data){
+    add_to_board: function(worker_data) {
                     Worker.add_slack();
                     //Welcome.move_logo_and_welcomes();
                     $(w).addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
@@ -197,15 +197,15 @@ $(function() {
                       Worker.redraw();
                     })
                   },
-    add_slack: function(){
-      $(w).click(function(e){
+    add_slack: function() {
+      $(w).click(function(e) {
         //if me, go to register
         //if slackname, send slack ping
-        var to='';
+        var to = '';
         var worker = $(this);
         if ($(this).data('slackname') === false) {
           to = $(this).data('name');
-        }else{
+        }else {
           to = $(this).data('slackname');
         }
         worker.tooltip('dispose');
@@ -221,23 +221,23 @@ $(function() {
 
           Worker.animate_worker(worker,'swing2');
 
-          worker.tooltip({title:"Pinged!",trigger: 'manual', placement: 'top'}).tooltip('show');
+          worker.tooltip({title:"Pinged!", trigger: 'manual', placement: 'top'}).tooltip('show');
 
         }).fail(function(data) {
-          d=JSON.parse(data.responseText);
+          d = JSON.parse(data.responseText);
 
-          Worker.animate_worker(worker,'shake');
-          worker.tooltip({title:d['msg'],trigger: 'manual', placement: 'top'}).tooltip('show');
+          Worker.animate_worker(worker, 'shake');
+          worker.tooltip({title: d['msg'], trigger: 'manual', placement: 'top'}).tooltip('show');
 
-        }).always(function(){
-          $.wait(function(){
+        }).always(function() {
+          $.wait(function() {
             worker.tooltip('dispose');
           }, 6);
         });
 
       });
     },
-    animate_worker: function(el,animation){
+    animate_worker: function(el, animation) {
       el.removeClass('animated').removeClass(animation);
       el.addClass("animated").addClass(animation);
       el.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
@@ -302,25 +302,25 @@ $(function() {
   };
 
   // how much of the below should be in Worker?
-  var sanitize_name = function(name){
-    var name_change = name.replace(/(s\-).*/, "");
-        name_change = name_change.replace(/\-.*/, "");
-        name_change = name_change.replace(/siP.*/, "");
-        name_change = name_change.replace(/iP.*/, "");
-        name_change = name_change.replace(/iM.*/, "");
-        name_change = name_change.replace(/\..*/, "");
-        if (name_change == "") {
-          name_change = "ANONYMOUS";
+  var sanitize_name = function(name) {
+    var name_change = name.replace(/(s\-).*/, '');
+        name_change = name_change.replace(/\-.*/, '');
+        name_change = name_change.replace(/siP.*/, '');
+        name_change = name_change.replace(/iP.*/, '');
+        name_change = name_change.replace(/iM.*/, '');
+        name_change = name_change.replace(/\..*/, '');
+        if (name_change == '') {
+          name_change = 'ANONYMOUS' ;
         }
         return name_change
   };
 
-  var strip_at_symbol = function(slack_name){
-    return slack_name.replace('@','');
+  var strip_at_symbol = function(slack_name)  {
+    return slack_name.replace('@', '');
   };
 
   var check_last_seen = function() {
-    $('.worker').each(function(num, wk){
+    $('.worker').each(function(num, wk) {
       // if we haven't seen the worker in the feed for 60 seconds, drop it.
       if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 60000) && $(wk).find('.tape').text() !== "Ted" ) {
         // console.log("inside if");
@@ -331,51 +331,32 @@ $(function() {
   }
 
 
-  var change_avatar = function(user_param, data_attribute){
+  var change_avatar = function(user_param, data_attribute) {
     var element = $(data_attribute).find('.avatar_container img')
-    if (typeof user_param.avatar == "string" && user_param.avatar != element.attr('src')) {
-      $(data_attribute).find(".avatar_container img").attr('src',user_param.avatar);
+    if ( typeof user_param.avatar == "string" && user_param.avatar != element.attr('src')) {
+      $(data_attribute).find(".avatar_container img").attr('src', user_param.avatar);
     }
   };
 
   var keepFocus = false;
 
-  function showWorkers(){
-    if(!keepFocus){
-      $('.worker').each(function(i, v) {$(v).show();});
-      $('input').val('');
-      $('.form-control-clear').addClass('hidden');
-    }
+  function showWorkers() {
+    $('.worker').each(function(i, v) {$(v).show();});
+    $('input').val('');
   }
-
-  $('input').blur(function() {
-      keepFocus = false;
-      window.setTimeout(showWorkers, 2000);
-  }).focus(function(){
-      keepFocus = true;
-  });
-
-
-  $('.worker').blur(function() {
-      keepFocus = false;
-      window.setTimeout(showWorkers, 2000);
-  }).focus(function(){
-      keepFocus = true;
-  });
-
 
   $('.form-control-clear').click(function() {
     $(this).siblings('input[type="text"]').val('')
       .trigger('propertychange').focus();
 
-    $('.worker').each(function(i, v) {$(v).show();});
+    $('.worker').each(function(i, v) { $(v).show(); });
   });
 
 
   // searches for workers. simple Fuse search.
-  var filter = function(){
+  var filter = function() {
     // map through each worker, hide it, and return a searchable obj.
-    var searchable_workers = $('.worker').map(function(){
+    var searchable_workers = $('.worker').map(function() {
           $(this).hide(); // hide em all.
           return { name: $(this).data('name'), title:$(this).data('title'), obj: $(this)}
         })
@@ -383,28 +364,28 @@ $(function() {
     // we search only name, could possibly search slackname or device...
     // should be "fuzzy" enough to be usefull
     var options = {
-      keys:['name','title'],
+      keys: ['name', 'title'],
       distance: 30,
       threshold: 0.3
     };
 
-    var fuse = new Fuse(searchable_workers,options);
-    var query = $("input").val();
+    var fuse = new Fuse(searchable_workers, options);
+    var query = $('input').val();
     var found = [];
-    if (query.length>0) {
+    if (query.length > 0) {
       found = fuse.search(query);
       // show only found workers.
-      $(found).each(function(i,v){$(v.obj).show();});
-    }else{
+      $(found).each(function(i, v) { $(v.obj).show();});
+    } else {
       // show all of the workers, didn't find anything
-      $('.worker').each(function(i,v){$(v).show();});
+      $('.worker').each(function(i, v) { $(v).show(); });
     }
-  }
+  };
   // should we think about a typeahead +filter here? for ease of use?
   // similar to register.js for slack ids, would need to ajax.
   // searching, simple debounce
   var t = null;
-  $("input").keyup(function(){
+  $("input").keyup(function() {
       if (t) {
           clearTimeout(t);
       }
