@@ -174,7 +174,7 @@ module BenevolentGaze
             end
         begin
           @slack.users_info(user: s)
-        rescue ExceSlack::Web::Api::Error
+        rescue Slack::Web::Api::Error
           false
         end
       end
