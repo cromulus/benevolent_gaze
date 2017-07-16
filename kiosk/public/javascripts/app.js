@@ -187,15 +187,18 @@ $(function() {
     add_to_board: function(worker_data) {
                     Worker.add_slack();
                     //Welcome.move_logo_and_welcomes();
-                    $(w).addClass("animated").addClass("swing" + (Math.floor(((Math.random() * 2) + 1))).toString());
+                    var animated = "swing" + (Math.floor(((Math.random() * 2) + 1));
+                    $(w).addClass("animated").addClass(animated.toString());
                     $('.workers.row').append( w );
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
                     $('.newcomer_avatar img').attr('src', worker_data.avatar || "/images/visitor_art@1x-21d82dcb.png");
                     $('.newcomer_avatar, .newcomer').show().removeClass('animated').removeClass('bounceOutUp').addClass('animated bounceInDown');
                     $('.newcomer_avatar, .newcomer').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
+                      $(this).removeClass('animated').removeClass(animated);
                       Worker.redraw();
                     })
+                    $(w).removeClass('animated').removeClass(animated);
                   },
     add_slack: function() {
       $(w).click(function(e) {
