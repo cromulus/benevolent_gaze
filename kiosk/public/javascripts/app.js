@@ -187,7 +187,7 @@ $(function() {
     add_to_board: function(worker_data) {
                     Worker.add_slack();
                     //Welcome.move_logo_and_welcomes();
-                    var animated = "swing" + (Math.floor(((Math.random() * 2) + 1));
+                    var animated = "swing" + Math.floor((Math.random() * 2) + 1)
                     $(w).addClass("animated").addClass(animated.toString());
                     $('.workers.row').append( w );
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
@@ -272,10 +272,10 @@ $(function() {
   var add_remove_workers = function(w){
     // this function need some love.
     w.map(function(worker_data){
-      // if worker_data == window.me, then skip adding
+      // if worker_data == window.me //then skip adding
 
-      data_attribute = "[data-name='" + (worker_data.name || worker_data.device_name) + "']";
-      data_attribute_device = "[data-name='" + worker_data.device_name + "']";
+      data_attribute = '[data-name="' + (worker_data.name || worker_data.device_name) + '"]';
+      data_attribute_device = '[data-name="' + worker_data.device_name + '"]';
       $element = $(data_attribute);
       if ($element.length > 0) {
         // the worker was already there, updating

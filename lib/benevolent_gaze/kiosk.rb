@@ -604,7 +604,7 @@ module BenevolentGaze
 
       if event && event.status != 'cancelled'
         logger.info('event is in another calendar and not cancelled')
-        old_cal_id = cal_id
+        old_cal_id = calendar_id
       else # event doesn't exist or status == cancelled
         logger.info('event is either cancelled or not in the calendar')
         event = nil
