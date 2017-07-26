@@ -623,7 +623,7 @@ module BenevolentGaze
         event.end.date_time = e_end
         event.status = 'confirmed'
         event.location = calendar
-        event.creator.displayName = user[:name]
+        event.creator.display_name = user[:name]
 
         res = service.update_event(calendar_id, event.id, event)
         logger.info(res)
