@@ -25,7 +25,7 @@ module BenevolentGaze
       private
 
       def ping(host)
-        p = Net::Ping::ICMP.new # must run as root!
+        @p ||= Net::Ping::ICMP.new # must run as root!
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
 
@@ -33,7 +33,7 @@ module BenevolentGaze
         # ^^ for ping external
 
         # pinging a host shouldn't take more than a second or two
-        p.ping(host) or p.ping(host) # rubocop:disable Style/AndOr
+        @p.ping(host) or @p.ping(host) # rubocop:disable Style/AndOr
       end
 
       def do_scan
@@ -76,23 +76,19 @@ module BenevolentGaze
 
         # ping is low memory and largely io bound.
         n = devices.length
-        device_array = Parallel.map(devices, in_threads: n) do |name|
+        device_array = Parallel.map(devices, in_threads: n) do |device_name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
-            ip = @dns.getaddress(name)
+            ip = @dns.getaddress(device_name)
+            ping(ip) ? [device_name, ip] : nil
           rescue Resolv::ResolvError
-            next
+            nil
           end
-
-          # next if ping fails
-          next unless ping(ip)
-
-          [name, ip]
         end
 
         device_array.compact! # remove nils.
-        # this is uneeded.
+        # this is uneeded, but need to change the whole process...
         device_array.map do |a|
           device_names_hash[a[0]] = a[1]
         end
@@ -103,6 +99,8 @@ module BenevolentGaze
           HTTParty.post(url, query: { devices: device_names_hash.to_json })
         rescue
           puts 'Looks like you might not have the Benevolent Gaze gem running'
+        ensure
+          device_array, devices, device_names_hash = nil
         end
       end
     end
