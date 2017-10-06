@@ -22,6 +22,8 @@ require 'googleauth/stores/file_token_store'
 require 'active_support'
 require 'securerandom'
 require 'set'
+require 'dotenv'
+Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
 # slack names do not have an @ in front of them for our purposes.
@@ -97,7 +99,6 @@ module BenevolentGaze
         rescue Resolv::ResolvError
           return false
         end
-        # real_name = @r.hget('current_devices', device_name)
         real_name = @r.get("name:#{device_name}")
         name_or_device_name = real_name.nil? ? device_name : real_name
         slack_name = @r.get("slack:#{device_name}")
@@ -464,17 +465,6 @@ module BenevolentGaze
       end
     end
 
-    # currently unused. all searching is now frontend.
-    # post 'search' do
-    #   if params[:slack]
-    #     devices = @r.keys('slack:*').select { |k| @r.get(k) == params[:slack] }
-    #     # if device exists, return true, else false
-    #     return !devices.detect { |d| @r.hexists('current_devices', d) }.nil?
-    #   elsif params[:name]
-    #     names = @r.keys('name:*').select { |k| @r.get(k) == params[:name] }
-    #     return !names.detect { |d| @r.hexists('current_devices', d) }.nil?
-    #   end
-    # end
 
     post '/register' do
       # no registration for un-pingable devices
@@ -663,16 +653,16 @@ module BenevolentGaze
           raw_data = []
           @r = Redis.current
 
-          @r.hgetall('current_devices').each do |k, v|
-            name_or_device_name = @r.get("name:#{k}") || k
+          @r.smembers('current_devices').each do |device|
+            name_or_device_name = @r.get("name:#{device}") || device
 
             # don't need to show self
             # next if k == current_user[:device_name]
             # next if name_or_device_name == current_user[:real_name]
 
-            email = @r.get("email:#{k}")
-            slack = @r.get("slack:#{k}")
-            slack_id = @r.get("slack_id:#{k}")
+            email = @r.get("email:#{device}")
+            slack = @r.get("slack:#{device}")
+            slack_id = @r.get("slack_id:#{device}")
             slack_title = get_slack_title(slack_id)
             # if you're not setup, we don't want to see you.
             next unless slack && slack_id
@@ -681,8 +671,8 @@ module BenevolentGaze
             online = @r.sismember('current_slackers', slack_id) || false
 
             raw_data << { type: 'device',
-                      device_name: k,
-                      name: v,
+                      device_name: device,
+                      name: name_or_device_name,
                       online: online,
                       email: email,
                       slack_name: slack,
@@ -769,34 +759,34 @@ module BenevolentGaze
       end
     end
 
-    post '/information' do
-      # grab current devices on network.
-      # Save them to the devices on network key after we make sure that we
-      # grab the names that have been added already to the whole list and
-      # then save them to the updated hash (set?)for redis.
+    # post '/information' do
+    #   # grab current devices on network.
+    #   # Save them to the devices on network key after we make sure that we
+    #   # grab the names that have been added already to the whole list and
+    #   # then save them to the updated hash (set?)for redis.
 
-      # or push them out to all the clients.
-      # https://blog.alexmaccaw.com/killing-a-library
+    #   # or push them out to all the clients.
+    #   # https://blog.alexmaccaw.com/killing-a-library
 
-      devices_on_network = JSON.parse(params[:devices])
-      if IGNORE_HOSTS != false
-        devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
-      end
+    #   devices_on_network = JSON.parse(params[:devices])
+    #   if IGNORE_HOSTS != false
+    #     devices_on_network.delete_if { |k, _v| IGNORE_HOSTS.include?(k) }
+    #   end
 
-      # deletes devices not in new batch
-      old_set = @r.hkeys('current_devices')
-      new_set = devices_on_network.keys
-      diff_set = old_set - new_set
-      diff_set.each do |d|
-        @r.hdel('current_devices', d)
-      end
+    #   # deletes devices not in new batch
+    #   old_set = @r.hkeys('current_devices')
+    #   new_set = devices_on_network.keys
+    #   diff_set = old_set - new_set
+    #   diff_set.each do |d|
+    #     @r.srem('current_devices', d)
+    #   end
 
-      # adds devices in new batch in.
-      # there will be some overwrites. OK: updates with new data
-      devices_on_network.each do |k, _v|
-        @r.hmset('current_devices', k, @r.get("name:#{k}"))
-      end
-      status 204 # response without entity body
-    end
+    #   # adds devices in new batch in.
+    #   # there will be some overwrites. OK: updates with new data
+    #   devices_on_network.each do |k, _v|
+    #     @r.hmset('current_devices', k, @r.get("name:#{k}"))
+    #   end
+    #   status 204 # response without entity body
+    # end
   end
 end

@@ -44,10 +44,12 @@ module BenevolentGaze
 
     desc 'assign_users', 'This will prompt you for each current user without an associated name so that you can assign one.'
     def assign_users
-      # users = `redis-cli hgetall "current_devices"`.split("\n")
+
       require 'redis'
       redis = Redis.new
-      users = redis.hgetall 'current_devices'
+      devices = redis.smembers('current_devices')
+      users = {}
+      devices.each {|d| users[d] = redis.get("name:#{d}") }
 
       puts 'Right now, these are the devices on your network'
       users.each { |u, _v| puts "  #{u}" }

@@ -70,7 +70,8 @@ module BenevolentGaze
       command 'who', 'list' do |client, data, _command|
         names = []
         @r ||= Redis.current
-        @r.hgetall('current_devices').each do |device, real_name|
+        @r.smembers('current_devices').each do |device|
+          real_name = @r.get("name:#{device}")
           slack = @r.get("slack:#{device}") || false
           next unless slack
           name = real_name.empty? ? slack : real_name

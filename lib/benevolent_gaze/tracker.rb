@@ -5,12 +5,18 @@ require 'httparty'
 require 'parallel'
 require 'set'
 require 'net/ping'
-
+require 'dotenv'
+Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 # must run as root!
 
 module BenevolentGaze
   class Tracker
     def self.run!
+      @ignore_hosts = if ENV['IGNORE_HOSTS'].nil?
+                        false
+                      else
+                        ENV['IGNORE_HOSTS'].split(',')
+                      end
       # Run forever
       loop do
         @r ||= Redis.current # right? we've got redis right here.
@@ -81,27 +87,35 @@ module BenevolentGaze
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
             ip = @dns.getaddress(device_name)
-            ping(ip) ? [device_name, ip] : nil
+
+            if ping(ip)
+              @redis.sadd('current_devices', device_name)
+            else
+              @redis.srem('current_devices', device_name)
+            end
           rescue Resolv::ResolvError
-            nil
+            # dnsmasq doesn't know about this device
+            # remove from current devices set.
+            @redis.srem('current_devices', device_name)
           end
         end
 
-        device_array.compact! # remove nils.
-        # this is uneeded, but need to change the whole process...
-        device_array.map do |a|
-          device_names_hash[a[0]] = a[1]
-        end
+        # device_array.compact! # remove nils.
+        # # this is uneeded, but need to change the whole process...
+        # device_array.map do |a|
+        #   device_names_hash[a[0]] = a[1]
+        # end
 
-        # why not communicate directly with redis?
-        begin
-          url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
-          HTTParty.post(url, query: { devices: device_names_hash.to_json })
-        rescue
-          puts 'Looks like you might not have the Benevolent Gaze gem running'
-        ensure
-          device_array, devices, device_names_hash = nil
-        end
+
+        # # why not communicate directly with redis?
+        # begin
+        #   url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
+        #   HTTParty.post(url, query: { devices: device_names_hash.to_json })
+        # rescue
+        #   puts 'Looks like you might not have the Benevolent Gaze gem running'
+        # ensure
+        #   device_array, devices, device_names_hash = nil
+        # end
       end
     end
   end
