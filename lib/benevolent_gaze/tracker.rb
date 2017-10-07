@@ -17,12 +17,14 @@ module BenevolentGaze
                       else
                         ENV['IGNORE_HOSTS'].split(',')
                       end
+      @r = Redis.current # right? we've got redis right here.
+      @dns = Resolv.new # not sure if we want to re-init resolve.
+      @p = Net::Ping::ICMP.new
+      @r.del('current_devices')
+
       # Run forever
       loop do
-        @r ||= Redis.current # right? we've got redis right here.
-        @dns ||= Resolv.new # not sure if we want to re-init resolve.
         do_scan
-        # check_time # not sure we need this.
         sleep 1
       end
     end
@@ -31,7 +33,7 @@ module BenevolentGaze
       private
 
       def ping(host)
-        @p ||= Net::Ping::ICMP.new # must run as root!
+         # must run as root!
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
 
@@ -39,17 +41,18 @@ module BenevolentGaze
         # ^^ for ping external
 
         # pinging a host shouldn't take more than a second or two
-        @p.ping(host) or @p.ping(host) # rubocop:disable Style/AndOr
+        res = @p.ping(host) or @p.ping(host) # rubocop:disable Style/AndOr
+        res.nil? ? false : true
       end
 
       def do_scan
-        device_names_hash = {}
         # so, we don't want ALL hosts on LAN, just registered ones.
         # this could also be a request to to the web service too...
-        devices = Set.new # no dupes.
+        devices = @r.smembers('all_devices')
 
-        @r.smembers('all_devices').map{|d| devices.add(d) }
-
+        if @ignore_hosts != false
+          devices.delete_if { |k| @ignore_hosts.include?(k) }
+        end
         #### sooo....
         #### we used to want all hosts on the net. Turns out, we only
         #### want registered hosts...
@@ -81,22 +84,22 @@ module BenevolentGaze
         # end
 
         # ping is low memory and largely io bound.
-        n = devices.length
-        device_array = Parallel.map(devices, in_threads: n) do |device_name|
+
+        Parallel.map(devices, in_threads: devices.length) do |device_name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
             ip = @dns.getaddress(device_name)
 
             if ping(ip)
-              @redis.sadd('current_devices', device_name)
+              @r.sadd('current_devices', device_name)
             else
-              @redis.srem('current_devices', device_name)
+              @r.srem('current_devices', device_name)
             end
           rescue Resolv::ResolvError
             # dnsmasq doesn't know about this device
             # remove from current devices set.
-            @redis.srem('current_devices', device_name)
+            @r.srem('current_devices', device_name)
           end
         end
 
@@ -105,7 +108,6 @@ module BenevolentGaze
         # device_array.map do |a|
         #   device_names_hash[a[0]] = a[1]
         # end
-
 
         # # why not communicate directly with redis?
         # begin
