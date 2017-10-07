@@ -1,9 +1,7 @@
 require 'resolv'
 require 'redis'
 require 'hiredis'
-require 'httparty'
 require 'parallel'
-require 'set'
 require 'net/ping'
 require 'dotenv'
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
