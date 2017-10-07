@@ -33,7 +33,7 @@ module BenevolentGaze
       private
 
       def ping(host)
-         # must run as root!
+        # must run as root!
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
 
