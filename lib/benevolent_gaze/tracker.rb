@@ -83,13 +83,12 @@ module BenevolentGaze
 
         # ping is low memory and largely io bound.
 
-        f = Parallel.map(devices, in_threads: devices.length) do |device_name|
+        f = Parallel.map(devices, in_processes: 8, isolation: true) do |device_name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
-            ip = @dns.getaddress(device_name)
 
-            if ping(ip) == true
+            if @dns.getaddress(device_name) && ping(device_name)
               @r.sadd('current_devices', device_name)
               device_name
             else
