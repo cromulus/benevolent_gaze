@@ -39,10 +39,9 @@ module BenevolentGaze
             # pinging a host shouldn't take more than a few tenths of a second
             a = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
             b = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
-            sleep(2)
             a || b
           end
-        rescue Timeout::Error
+        rescue
           res = false
         end
         res
