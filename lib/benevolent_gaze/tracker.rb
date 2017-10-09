@@ -89,18 +89,22 @@ module BenevolentGaze
             # it isn't a host anymore.
             ip = @dns.getaddress(device_name)
 
-            if ping(ip)
+            if ping(ip) == true
               @r.sadd('current_devices', device_name)
+              device_name
             else
               @r.srem('current_devices', device_name)
+              nil
             end
           rescue Resolv::ResolvError
             # dnsmasq doesn't know about this device
             # remove from current devices set.
             @r.srem('current_devices', device_name)
+            nil
           end
         end
-        puts "#{f.count(true)} devices found"
+        f.compact!
+        puts "found: #{f.to_s}"
         # device_array.compact! # remove nils.
         # # this is uneeded, but need to change the whole process...
         # device_array.map do |a|
