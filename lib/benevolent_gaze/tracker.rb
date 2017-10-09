@@ -2,7 +2,7 @@ require 'resolv'
 require 'redis'
 require 'hiredis'
 require 'parallel'
-require 'net/ping'
+require 'timeout'
 require 'dotenv'
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 # must run as root!
@@ -17,7 +17,6 @@ module BenevolentGaze
                       end
       @r = Redis.current # right? we've got redis right here.
       @dns = Resolv.new # not sure if we want to re-init resolve.
-      @p = Net::Ping::ICMP.new
       @r.del('current_devices')
 
       # Run forever
@@ -34,13 +33,18 @@ module BenevolentGaze
         # must run as root!
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-
-        # ping(host = @host, count = 1, interval = 1, timeout = @timeout)
-        # ^^ for ping external
-
-        # pinging a host shouldn't take more than a second or two
-        res = @p.ping(host) or @p.ping(host) # rubocop:disable Style/AndOr
-        res.nil? ? false : true
+        res = false
+        begin
+        Timeout.timeout(1){
+          # pinging a host shouldn't take more than a few tenths of a second
+           a = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
+           b = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
+           res = a || b
+         }
+        rescue Timeout::Error
+          res = false
+        end
+        res
       end
 
       def do_scan
@@ -83,7 +87,7 @@ module BenevolentGaze
 
         # ping is low memory and largely io bound.
 
-        f = Parallel.map(devices, in_processes: 8, isolation: true) do |device_name|
+        f = Parallel.map(devices, in_threads: devices.length) do |device_name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
