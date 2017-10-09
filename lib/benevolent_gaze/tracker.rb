@@ -83,7 +83,7 @@ module BenevolentGaze
 
         # ping is low memory and largely io bound.
 
-        Parallel.map(devices, in_threads: devices.length) do |device_name|
+        f = Parallel.map(devices, in_threads: devices.length) do |device_name|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
@@ -100,7 +100,7 @@ module BenevolentGaze
             @r.srem('current_devices', device_name)
           end
         end
-
+        puts "#{f.count(true)} devices found"
         # device_array.compact! # remove nils.
         # # this is uneeded, but need to change the whole process...
         # device_array.map do |a|
