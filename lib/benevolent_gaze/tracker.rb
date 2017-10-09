@@ -35,12 +35,13 @@ module BenevolentGaze
         # the device might be asleep...
         res = false
         begin
-        Timeout.timeout(1){
-          # pinging a host shouldn't take more than a few tenths of a second
-           a = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
-           b = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
-           res = a || b
-         }
+          res = Timeout.timeout(1) do
+            # pinging a host shouldn't take more than a few tenths of a second
+            a = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
+            b = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
+            sleep(2)
+            a || b
+          end
         rescue Timeout::Error
           res = false
         end
