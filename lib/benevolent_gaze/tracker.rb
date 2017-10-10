@@ -15,7 +15,10 @@ module BenevolentGaze
 
       @r = Redis.current # right? we've got redis right here.
       @dns = Resolv.new # not sure if we want to re-init resolve.
-      @r.del('current_devices') # delete all on start
+
+      # delete all on start
+      @r.del('current_devices')
+      @r.keys('last_seen:*').each { |key| @r.del(key) }
 
       # Run forever
       loop do
@@ -30,15 +33,16 @@ module BenevolentGaze
       # first pings can sometimes fail as
       # the device might be asleep...
       # && in bash will only hit if ping is successfull
-      def ping(host)
-        cmd = "timeout 0.5 ping -c1 -q #{host}  > /dev/null 2>&1 && echo true"
+      def ping(device)
+        begin
+          ip = @dns.getaddress(device)
+        rescue Resolv::ResolvError
+          return false
+        end
+        cmd = "timeout 0.5 ping -c1 -q #{ip}  > /dev/null 2>&1 && echo true"
         first = exec_with_timeout(cmd, 1).chomp == 'true'
         second = exec_with_timeout(cmd, 1).chomp == 'true'
         first || second # if either hits, we return true
-      end
-
-      def check_dns(device)
-        !!IPAddr.new(@dns.getaddress(device)) rescue false
       end
 
       def add_device(device)
@@ -58,7 +62,7 @@ module BenevolentGaze
       def remove_device(device)
         key = "last_seen:#{device}"
         diff = Time.now.to_i - @r.get(key).to_i
-        if diff >= 30 && @r.sismember('current_devices', device)
+        if diff >= 60 && @r.sismember('current_devices', device)
           @r.srem('current_devices', device)
           @r.publish('devices.remove', device)
           puts "removed device: #{device}"
@@ -107,10 +111,12 @@ module BenevolentGaze
         devices.delete_if { |k| @ignore_hosts.include?(k) } if @ignore_hosts
 
         Parallel.map(devices, in_threads: devices.length) do |device|
-          if check_dns(device) && ping(device)
+          if ping(device)
             add_device(device)
+            puts "added #{device}"
           else
             remove_device(device)
+            puts "removed #{device}"
           end
         end
       end
