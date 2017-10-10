@@ -113,10 +113,8 @@ module BenevolentGaze
         Parallel.map(devices, in_threads: devices.length) do |device|
           if ping(device)
             add_device(device)
-            puts "added #{device}"
           else
             remove_device(device)
-            puts "removed #{device}"
           end
         end
       end
