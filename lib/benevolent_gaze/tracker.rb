@@ -44,7 +44,10 @@ module BenevolentGaze
       # setex vs set current timestamp and diff?
       def add_device(device)
         key = "last_seen:#{device}"
-        @r.publish('devices.add', device) unless @r.exists(key)
+        unless @r.exists(key)
+          @r.publish('devices.add', device)
+          puts "added: #{device}"
+        end
         @r.set(key, Time.now.to_i)
         @r.sadd('current_devices', device)
         device
@@ -58,6 +61,7 @@ module BenevolentGaze
           unless diff >= 30 # 30 seconds
             @r.srem('current_devices', device)
             @r.publish('devices.remove', device)
+            puts "removed device: #{device}"
           end
         end
         false
@@ -154,8 +158,6 @@ module BenevolentGaze
             nil
           end
         end
-        f.compact!
-        puts "found: #{f.to_s}"
         # device_array.compact! # remove nils.
         # # this is uneeded, but need to change the whole process...
         # device_array.map do |a|
