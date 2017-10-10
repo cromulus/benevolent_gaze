@@ -4,20 +4,18 @@ require 'hiredis'
 require 'parallel'
 require 'timeout'
 require 'dotenv'
+require 'ipaddr'
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 # must run as root!
 
 module BenevolentGaze
   class Tracker
     def self.run!
-      @ignore_hosts = if ENV['IGNORE_HOSTS'].nil?
-                        false
-                      else
-                        ENV['IGNORE_HOSTS'].split(',')
-                      end
+      @ignore_hosts = ENV['IGNORE_HOSTS'].nil? ? false : ENV['IGNORE_HOSTS'].split(',')
+
       @r = Redis.current # right? we've got redis right here.
       @dns = Resolv.new # not sure if we want to re-init resolve.
-      @r.del('current_devices')
+      @r.del('current_devices') # delete all on start
 
       # Run forever
       loop do
@@ -29,41 +27,45 @@ module BenevolentGaze
     class << self
       private
 
+      # first pings can sometimes fail as
+      # the device might be asleep...
+      # && in bash will only hit if ping is successfull
       def ping(host)
-        # must run as root! (maybe)
-        # or makes sense here, actually. first pings can sometimes fail as
-        # the device might be asleep...
-        # && in bash will only hit if ping is successfull
         cmd = "timeout 0.5 ping -c1 -q #{host}  > /dev/null 2>&1 && echo true"
-        a = exec_with_timeout(cmd, 1).chomp == 'true'
-        b = exec_with_timeout(cmd, 1).chomp == 'true'
+        first = exec_with_timeout(cmd, 1).chomp == 'true'
+        second = exec_with_timeout(cmd, 1).chomp == 'true'
+        first || second # if either hits, we return true
+      end
 
-        a || b # if either hits, we return true
+      def check_dns(device)
+        !!IPAddr.new(@dns.getaddress(device)) rescue false
       end
 
       def add_device(device)
         key = "last_seen:#{device}"
-        res = false
         diff = Time.now.to_i - @r.get(key).to_i
         @r.set(key, Time.now.to_i)
-        if diff >= 30 && @r.sadd('current_devices', device)
+        if diff >= 30 && !@r.sismember('current_devices', device)
+          @r.sadd('current_devices', device)
           @r.publish('devices.add', device)
           puts "added: #{device}"
-          res = true
+          true
+        else
+          false
         end
-        res
       end
 
       def remove_device(device)
-        res = false
         key = "last_seen:#{device}"
         diff = Time.now.to_i - @r.get(key).to_i
-        if diff >= 30 && @r.srem('current_devices', device)
+        if diff >= 30 && @r.sismember('current_devices', device)
+          @r.srem('current_devices', device)
           @r.publish('devices.remove', device)
           puts "removed device: #{device}"
-          res = true
+          true
+        else
+          false
         end
-        res
       end
 
       # https://stackoverflow.com/questions/8292031/ruby-timeouts-and-system-commands
@@ -86,7 +88,6 @@ module BenevolentGaze
             stdout = rout.readlines.join
             stderr = rerr.readlines.join
           end
-
         rescue Timeout::Error
           Process.kill(-9, pid)
           Process.detach(pid)
@@ -100,76 +101,18 @@ module BenevolentGaze
         stdout
       end
 
+      # ping is low memory and largely io bound.
       def do_scan
-        # so, we don't want ALL hosts on LAN, just registered ones.
-        # this could also be a request to to the web service too...
         devices = @r.smembers('all_devices')
-
-        if @ignore_hosts != false
-          devices.delete_if { |k| @ignore_hosts.include?(k) }
-        end
-        #### sooo....
-        #### we used to want all hosts on the net. Turns out, we only
-        #### want registered hosts...
-
-        # nmap for the win. slow, but awesome.
-        # if `which nmap`
-        # `nmap -T4 192.168.200.1/24 -n -sP | grep report | awk '{print $5}'`.split("\n").map{|n| begin; devices.add @dns.getname(n); rescue; end}
-        #   Parallel.each(nmapping) do |d|
-        #     begin
-        #       name = @dns.getname(d)
-        #       devices.add(name)
-        #     rescue Resolv::ResolvError
-        #       # can't look it up, router doesn't know it. Static IP.
-        #       # moving on.
-        #       next
-        #     end
-        #   end
-        # end
-
-        # # arp, for where nmap mysteriously fails or isn't installed (why not?)
-        # # speedy, but occasionally deeply innacurrate.
-        # `arp -a | grep -v "?" | grep -v "incomplete" | awk '{print $1 }'`.split("\n").each { |d| devices.add(d) }
-
-        # device_names_arr = `for i in {1..254}; do echo ping -c 4 192.168.200.${i} ; done | parallel -j 0 --no-notice 2> /dev/null | awk '/ttl/ { print $4 }' | sort | uniq | sed 's/://' | xargs -n 1 host | awk '{ print $5 }' | awk '!/3\(NXDOMAIN\)/' | sed 's/\.$//'`.split(/\n/)
-        # device_names_arr.each do |d|
-        #   unless d.match(/Wireless|EPSON/)
-        #     device_names_hash[d] = nil
-        #   end
-        # end
-
-        # ping is low memory and largely io bound.
+        devices.delete_if { |k| @ignore_hosts.include?(k) } if @ignore_hosts
 
         Parallel.map(devices, in_threads: devices.length) do |device|
-          begin
-            # because if dnsmasq doesn't know about it
-            # it isn't a host anymore.
-            if @dns.getaddress(device) && ping(device)
-              add_device(device)
-            else
-              remove_device(device)
-            end
-          rescue Resolv::ResolvError
-            # dnsmasq doesn't know about this device
-            # remove from current devices set.
+          if check_dns(device) && ping(device)
+            add_device(device)
+          else
             remove_device(device)
           end
         end
-        # device_array.compact! # remove nils.
-        # # this is uneeded, but need to change the whole process...
-        # device_array.map do |a|
-        #   device_names_hash[a[0]] = a[1]
-        # end
-
-        # # why not communicate directly with redis?
-        # begin
-        #   url = "http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/information"
-        #   HTTParty.post(url, query: { devices: device_names_hash.to_json })
-        # rescue
-        #   puts 'Looks like you might not have the Benevolent Gaze gem running'
-        # ensure
-        #   device_array, devices, device_names_hash = nil
-        # end
       end
     end
   end
