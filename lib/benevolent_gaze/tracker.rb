@@ -30,21 +30,71 @@ module BenevolentGaze
       private
 
       def ping(host)
-        # must run as root!
+        # must run as root! (maybe)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        res = false
-        begin
-          res = Timeout.timeout(1) do
-            # pinging a host shouldn't take more than a few tenths of a second
-            a = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
-            b = system("timeout 0.2 ping -c1 -q #{host}  > /dev/null 2>&1")
-            a || b
+        # && in bash will only hit if ping is successfull
+        cmd = "timeout 0.5 ping -c1 -q #{host}  > /dev/null 2>&1 && echo true"
+        a = exec_with_timeout(cmd, 1).chomp == 'true'
+        b = exec_with_timeout(cmd, 1).chomp == 'true'
+
+        a || b # if either hits, we return true
+      end
+
+      # setex vs set current timestamp and diff?
+      def add_device(device)
+        key = "last_seen:#{device}"
+        @r.publish('devices.add', device) unless @r.exists(key)
+        @r.set(key, Time.now.to_i)
+        @r.sadd('current_devices', device)
+        device
+      end
+
+      # if expire exists, do not remove, else remove
+      def remove_device(device)
+        key = "last_seen:#{device}"
+        if @r.exists(key)
+          diff = Time.now.to_i - @r.get(key).to_i
+          unless diff >= 30 # 30 seconds
+            @r.srem('current_devices', device)
+            @r.publish('devices.remove', device)
           end
-        rescue
-          res = false
         end
-        res
+        false
+      end
+
+      # https://stackoverflow.com/questions/8292031/ruby-timeouts-and-system-commands
+      def exec_with_timeout(cmd, timeout)
+        begin
+          # stdout, stderr pipes
+          rout, wout = IO.pipe
+          rerr, werr = IO.pipe
+          stdout, stderr = nil
+
+          pid = Process.spawn(cmd, pgroup: true, :out => wout, :err => werr)
+
+          Timeout.timeout(timeout) do
+            Process.waitpid(pid)
+
+            # close write ends so we can read from them
+            wout.close
+            werr.close
+
+            stdout = rout.readlines.join
+            stderr = rerr.readlines.join
+          end
+
+        rescue Timeout::Error
+          Process.kill(-9, pid)
+          Process.detach(pid)
+        ensure
+          wout.close unless wout.closed?
+          werr.close unless werr.closed?
+          # dispose the read ends of the pipes
+          rout.close
+          rerr.close
+        end
+        stdout
       end
 
       def do_scan
@@ -93,16 +143,14 @@ module BenevolentGaze
             # it isn't a host anymore.
 
             if @dns.getaddress(device_name) && ping(device_name)
-              @r.sadd('current_devices', device_name)
-              device_name
+              add_device(device_name)
             else
-              @r.srem('current_devices', device_name)
-              nil
+              remove_device(device_name)
             end
           rescue Resolv::ResolvError
             # dnsmasq doesn't know about this device
             # remove from current devices set.
-            @r.srem('current_devices', device_name)
+            remove_device(device_name)
             nil
           end
         end
