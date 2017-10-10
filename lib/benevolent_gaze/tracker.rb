@@ -41,30 +41,29 @@ module BenevolentGaze
         a || b # if either hits, we return true
       end
 
-      # setex vs set current timestamp and diff?
       def add_device(device)
         key = "last_seen:#{device}"
-        unless @r.exists(key)
+        res = false
+        diff = Time.now.to_i - @r.get(key).to_i
+        @r.set(key, Time.now.to_i)
+        if diff >= 30 && @r.sadd('current_devices', device)
           @r.publish('devices.add', device)
           puts "added: #{device}"
+          res = true
         end
-        @r.set(key, Time.now.to_i)
-        @r.sadd('current_devices', device)
-        device
+        res
       end
 
-      # if expire exists, do not remove, else remove
       def remove_device(device)
+        res = false
         key = "last_seen:#{device}"
-        if @r.exists(key)
-          diff = Time.now.to_i - @r.get(key).to_i
-          unless diff >= 30 # 30 seconds
-            @r.srem('current_devices', device)
-            @r.publish('devices.remove', device)
-            puts "removed device: #{device}"
-          end
+        diff = Time.now.to_i - @r.get(key).to_i
+        if diff >= 30 && @r.srem('current_devices', device)
+          @r.publish('devices.remove', device)
+          puts "removed device: #{device}"
+          res = true
         end
-        false
+        res
       end
 
       # https://stackoverflow.com/questions/8292031/ruby-timeouts-and-system-commands
@@ -141,21 +140,19 @@ module BenevolentGaze
 
         # ping is low memory and largely io bound.
 
-        f = Parallel.map(devices, in_threads: devices.length) do |device_name|
+        Parallel.map(devices, in_threads: devices.length) do |device|
           begin
             # because if dnsmasq doesn't know about it
             # it isn't a host anymore.
-
-            if @dns.getaddress(device_name) && ping(device_name)
-              add_device(device_name)
+            if @dns.getaddress(device) && ping(device)
+              add_device(device)
             else
-              remove_device(device_name)
+              remove_device(device)
             end
           rescue Resolv::ResolvError
             # dnsmasq doesn't know about this device
             # remove from current devices set.
-            remove_device(device_name)
-            nil
+            remove_device(device)
           end
         end
         # device_array.compact! # remove nils.
