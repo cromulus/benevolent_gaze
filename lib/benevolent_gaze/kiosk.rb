@@ -109,7 +109,7 @@ module BenevolentGaze
           slack_id: slack_id,
           device_name: device_name,
           slack_title:  slack_title,
-          online: @r.sismember('current_slackers',slack_id),
+          online: @r.sismember('current_slackers', slack_id),
           email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
@@ -161,7 +161,7 @@ module BenevolentGaze
             title = @slack.users_info(user: slack_id).user.profile.title || ''
             @r.hset('slack_title', slack_id, title)
           rescue ExceSlack::Web::Api::Error
-            title = ""
+            title = ''
           end
         end
         title
@@ -219,7 +219,7 @@ module BenevolentGaze
           u_data = slack_info['user']
 
           # hunting for a name...
-          name = u_data.dig('profile','real_name_normalized')
+          name = u_data.dig('profile', 'real_name_normalized')
           name = u_data['real_name'] if name.blank?
           name = u_data['profile']['real_name'] if name.blank?
           name = u_data['name'] if name.blank?
@@ -238,6 +238,7 @@ module BenevolentGaze
           false
         end
       end
+
       # this is to access the google calendar. see /calendar below
       def service
         return @service unless @service.nil?
@@ -460,11 +461,10 @@ module BenevolentGaze
         redirect '/'
       else
         status 402
-        msg = "Could not setup user"
+        msg = 'Could not setup user'
         return { success: false, msg: msg }.to_json
       end
     end
-
 
     post '/register' do
       # no registration for un-pingable devices
@@ -671,15 +671,15 @@ module BenevolentGaze
             online = @r.sismember('current_slackers', slack_id) || false
 
             raw_data << { type: 'device',
-                      device_name: device,
-                      name: name_or_device_name,
-                      online: online,
-                      email: email,
-                      slack_name: slack,
-                      title: slack_title,
-                      slack_id: slack_id,
-                      last_seen: (Time.now.to_f * 1000).to_i,
-                      avatar: image_url }
+                          device_name: device,
+                          name: name_or_device_name,
+                          online: online,
+                          email: email,
+                          slack_name: slack,
+                          title: slack_title,
+                          slack_id: slack_id,
+                          last_seen: (Time.now.to_f * 1000).to_i,
+                          avatar: image_url }
           end
 
           data = raw_data.sort_by { |k| k[:name].downcase }

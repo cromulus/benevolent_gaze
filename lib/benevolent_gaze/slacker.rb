@@ -14,7 +14,6 @@ Slack.configure do |config|
   config.token = ENV['SLACK_API_TOKEN']
 end
 
-
 ###################################################
 # What we want to do:
 ###################################################
@@ -143,7 +142,7 @@ module BenevolentGaze
           # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
                         query: { msg: slack_msg,
-                          msg_token: ENV['MSG_TOKEN'] })
+                                 msg_token: ENV['MSG_TOKEN'] })
 
           client.message(channel: (data['channel']).to_s,
                          text: "sent '#{msg}' to the kiosk")
@@ -178,7 +177,6 @@ module BenevolentGaze
         user_data = info.user
         next if user_data.is_bot
 
-
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?
             puts "no profile: #{data['user']} : #{user_data.name}"
@@ -195,7 +193,7 @@ module BenevolentGaze
 
         facecheck = @r.get("face:#{data['user']}")
         if facecheck.nil? && !ENV['GOOGLE_PROJECT_ID'].nil?
-          one_day = (60 * 60 * 24 )
+          one_day = (60 * 60 * 24)
           @vision ||= Google::Cloud::Vision.new project: ENV['GOOGLE_PROJECT_ID']
           image = @vision.image user_data.profile.image_512
           if image.faces.size == 1
@@ -227,7 +225,7 @@ module BenevolentGaze
         if !@r.sismember('slinvited', data['user']) && @r.hget('slack_id2slack_name', data['user']).nil?
           puts "inviting #{data['user']}"
           client.web_client.chat_postMessage(channel: data['user'],
-            text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
                                              as_user: true)
           @r.sadd('slinvited', data['user'])
         end

@@ -30,6 +30,11 @@ module BenevolentGaze
     class << self
       private
 
+      # use 120 seconds for phones
+      def get_ttl(device)
+        device =~ /android|phone/ ? 120 : 60
+      end
+
       # first pings can sometimes fail as
       # the device might be asleep...
       # && in bash will only hit if ping is successfull
@@ -62,7 +67,7 @@ module BenevolentGaze
       def remove_device(device)
         key = "last_seen:#{device}"
         diff = Time.now.to_i - @r.get(key).to_i
-        if diff >= 60 && @r.sismember('current_devices', device)
+        if diff >= get_ttl(device) && @r.sismember('current_devices', device)
           @r.srem('current_devices', device)
           @r.publish('devices.remove', device)
           puts "removed device: #{device}"
@@ -80,7 +85,7 @@ module BenevolentGaze
           rerr, werr = IO.pipe
           stdout, stderr = nil
 
-          pid = Process.spawn(cmd, pgroup: true, :out => wout, :err => werr)
+          pid = Process.spawn(cmd, pgroup: true, out: wout, err: werr)
 
           Timeout.timeout(timeout) do
             Process.waitpid(pid)
