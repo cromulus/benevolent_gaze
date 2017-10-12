@@ -28,8 +28,8 @@ SlackRubyBot::Client.logger.level = Logger::WARN
 module BenevolentGaze
   class Slacker < SlackRubyBot::Bot
     def initialize
-      @redis = Redis.new
-      @r = @redis
+      @redis ||= Redis.current
+      @r ||= @redis
     end
 
     help do
@@ -55,15 +55,11 @@ module BenevolentGaze
         client.say(text: 'pong', channel: data.channel)
       end
 
-      command 'invite' do |client, data, users|
-        message = data['message']
-        users = message.scan(/<@([^>]+)>/)
-        users = users.blank? ? data['user'] : users
-        users.each do |user|
-          client.web_client.chat_postMessage(channel: user,
-                                             text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{user} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
-                                             as_user: true)
-        end
+      match(/invite <@([^>]+)>/) do |client, data, match|
+        user = match[1]
+        client.web_client.chat_postMessage(channel: user,
+                                           text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{user} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
+                                           as_user: true)
       end
 
       command 'who', 'list' do |client, data, _command|
@@ -154,6 +150,10 @@ end
 
 module BenevolentGaze
   class Server < SlackRubyBot::Server
+    def initialize
+
+    end
+
     on 'hello' do |client, _data|
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
 
@@ -166,16 +166,23 @@ module BenevolentGaze
       puts "#{@r.scard('current_slackers')} slackers online"
     end
 
+    on 'team_join' do |client, data| # onboarding opportunity
+      info = client.web_client.users_info(user: data['user'])
+      user_data = info.user
+      next if user_data.is_bot
+      puts "just joined team : #{user_data.name}"
+    end
+
     on 'presence_change' do |client, data|
       @r ||= Redis.current
       puts "#{data['user']}: is #{data['presence']}."
       case data['presence']
       when 'active'
-        @r.sadd('current_slackers', data['user'])
-
         info = client.web_client.users_info(user: data['user'])
         user_data = info.user
         next if user_data.is_bot
+
+        @r.sadd('current_slackers', data['user'])
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?

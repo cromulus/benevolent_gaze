@@ -30,9 +30,9 @@ module BenevolentGaze
     class << self
       private
 
-      # use 120 seconds for phones
+      # use 240 seconds for phones
       def get_ttl(device)
-        device =~ /android|phone/ ? 120 : 60
+        device =~ /android|phone/ ? 240 : 60
       end
 
       # first pings can sometimes fail as
@@ -98,8 +98,8 @@ module BenevolentGaze
             stderr = rerr.readlines.join
           end
         rescue Timeout::Error
-          Process.kill(-9, pid)
-          Process.detach(pid)
+          Process.kill(-9, pid) rescue Errno::ESRCH
+          Process.detach(pid) rescue Errno::ESRCH
         ensure
           wout.close unless wout.closed?
           werr.close unless werr.closed?
