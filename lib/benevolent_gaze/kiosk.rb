@@ -196,19 +196,8 @@ module BenevolentGaze
       end
 
       def is_slack_user_online(sname)
-        s = sname.dup.prepend('@') if sname[0] != '@'
-        begin
-          if @slack.users_getPresence(user: s)['presence'] == 'active'
-            @r.sadd 'current_slackers', lookup_slack_id(s)
-            return true
-          else
-            @r.srem 'current_slackers', lookup_slack_id(s)
-            return false
-          end
-        rescue Slack::Web::Api::Error
-          # throws an exception if user not found.
-          return false
-        end
+        s =  sname[0] == '@' ? sname.delete('@') : sname
+        @r.sismember('current_slackers', s)
       end
 
       def slackem(slack_id, device_name)
@@ -660,13 +649,15 @@ module BenevolentGaze
             # next if k == current_user[:device_name]
             # next if name_or_device_name == current_user[:real_name]
 
-            email = @r.get("email:#{device}")
+
             slack = @r.get("slack:#{device}")
             slack_id = @r.get("slack_id:#{device}")
             slack_title = get_slack_title(slack_id)
+
             # if you're not setup, we don't want to see you.
             next unless slack && slack_id
-
+            email = @r.get("email:#{device}")
+            last_seen = @r.get("last_seen:#{device}")
             image_url = @r.get("image:#{name_or_device_name}")
             online = @r.sismember('current_slackers', slack_id) || false
 
@@ -678,7 +669,7 @@ module BenevolentGaze
                           slack_name: slack,
                           title: slack_title,
                           slack_id: slack_id,
-                          last_seen: (Time.now.to_f * 1000).to_i,
+                          last_seen: last_seen,
                           avatar: image_url }
           end
 
