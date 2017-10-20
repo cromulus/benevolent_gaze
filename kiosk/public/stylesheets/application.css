@@ -30,6 +30,8 @@
 #header .btn-primary {
   border: 0;
   background-color: #b0e61d;
+  height:300px;
+  border-radius: 50%;
 }
 #main {
   padding: 2em;
@@ -367,3 +369,41 @@
   pointer-events: auto;
   cursor: pointer;
 }
+
+.round-button {
+  width:100%;
+  margin-bottom:30px;
+}
+
+.round-button-circle {
+
+  width: 100%;
+  height:0;
+  padding-bottom: 100%;
+  border-radius: 50%;
+
+  overflow:hidden;
+
+  background: #b0e61d;
+  box-shadow: 0 0 3px gray;
+}
+
+.round-button-circle:hover {
+  background:#b0e61d;
+}
+
+.round-button a {
+  display:block;
+  float:left;
+  width:100%;
+  padding-top:50%;
+  padding-bottom:50%;
+  line-height:1em;
+  margin-top:-0.5em;
+
+  text-align:center;
+  color:#e2eaf3;
+  font-size:1.2em;
+  font-weight:bold;
+  text-decoration:none;
+.}

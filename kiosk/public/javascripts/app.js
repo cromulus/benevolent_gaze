@@ -79,12 +79,18 @@ $(function() {
     // check to see if any are stale
     // stale == not in feed for a little while.
     check_last_seen();
+
+    // hack to fix the sidebar
+    $('#header').css('height',$('#main').height() + 100);
   }, false);
 
   es.addEventListener('open', function(e) {
     console.log('Connection was opened.');
   }, false);
 
+  $(window).resize(function() {
+    $('#header').css('height',$('#main').height() + 100);
+  });
   // handles inbound messages
   // should refactor most of this into Worker class
   var onmessage = function(msg) {
