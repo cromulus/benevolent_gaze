@@ -32,6 +32,8 @@
   background-color: #b0e61d;
   height:300px;
   border-radius: 50%;
+  font-weight: bold;
+  font-size: 2rem;
 }
 #main {
   padding: 2em;
@@ -373,6 +375,7 @@
 .round-button {
   width:100%;
   margin-bottom:30px;
+
 }
 
 .round-button-circle {

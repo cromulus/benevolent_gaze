@@ -715,7 +715,7 @@ module BenevolentGaze
                  msg: "the person you're trying to ping isn't on slack" }.to_json
       end
 
-      unless is_slack_user_online(to)
+      unless is_slack_user_online(to_id)
         status 412
         return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
