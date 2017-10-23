@@ -98,8 +98,16 @@ module BenevolentGaze
             stderr = rerr.readlines.join
           end
         rescue Timeout::Error
-          Process.kill(-9, pid) rescue Errno::ESRCH
-          Process.detach(pid) rescue Errno::ESRCH
+          begin
+            Process.kill(-9, pid)
+          rescue
+            Errno::ESRCH
+          end
+          begin
+            Process.detach(pid)
+          rescue
+            Errno::ESRCH
+          end
         ensure
           wout.close unless wout.closed?
           werr.close unless werr.closed?

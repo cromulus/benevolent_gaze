@@ -55,7 +55,7 @@ module BenevolentGaze
         client.say(text: 'pong', channel: data.channel)
       end
 
-      match(/invite <@([^>]+)>/) do |client, data, match|
+      match(/invite <@([^>]+)>/) do |client, _data, match|
         user = match[1]
         client.web_client.chat_postMessage(channel: user,
                                            text: "Hi! Welcome! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{user} when you are in the office, connected to the wifi. (It won't work anywhere else.)",
@@ -150,9 +150,7 @@ end
 
 module BenevolentGaze
   class Server < SlackRubyBot::Server
-    def initialize
-
-    end
+    def initialize; end
 
     on 'hello' do |client, _data|
       puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."

@@ -130,7 +130,7 @@ module BenevolentGaze
         p = Net::Ping::External.new(host)
         # or makes sense here, actually. first pings can sometimes fail as
         # the device might be asleep...
-        p.ping? or p.ping? or p.ping? # rubocop:disable Style/AndOr
+        p.ping? or p.ping? or p.ping?
       end
 
       def find_devicename(ip = nil)
@@ -719,6 +719,33 @@ module BenevolentGaze
         status 412
         return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
+
+
+      attachments = [{
+        text: "Quick Responses:",
+        fallback: "You are unable to send quick responses",
+        callback_id: "bg_quickresponse",
+        color: '#3AA3E3',
+        attachment_type: 'default',
+        actions:[{
+                    name: "response",
+                    text: "Be right there!",
+                    type: "button",
+                    value: "brt"
+                },
+                {
+                    name: "response",
+                    text: "Take a seat, I'll be a minute",
+                    type: "button",
+                    value: "minute"
+                },
+                {
+                    name: "response",
+                    text: "Take a seat, I'll be a minute",
+                    type: "button",
+                    value: "minute"
+                }]
+        }]
 
       res = @slack.chat_postMessage(channel: "@#{to}",
                                     text: "ping from #{from}, responses to me will be posted on the board.",
