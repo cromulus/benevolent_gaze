@@ -11,24 +11,23 @@ $(function() {
 
   $('#front-door').on('click', function(e) {
 
+    $('.round-button-circle').animateCss('pulse');
     $.ajax({ url: '/downstairs_door'}).done(function(data){
-      $('#front-door').animateCss('pulse');
       $('#front-door').css('background-color', '#ececec');
       $('#front-door').text('Opened!');
-      setTimeout(function() {
-        $('#front-door').text('Open Front Door');
-        $('#front-door').css('background-color', '#b0e61d');
-      }, 1000);
     }).fail(function(data) {
       $('#front-door').animateCss('shake');
       d = JSON.parse(data.responseText);
       $('#front-door').tooltip({title: d['msg'],
                                 trigger: 'manual',
                                 placement: 'right'}).tooltip('show');
-      $('#front-door').css('background-color', '#b0e61d');
-      setTimeout(function() { $('#front-door').tooltip('hide'); }, 2000);
 
+      setTimeout(function() { $('#front-door').tooltip('hide'); }, 2000);
     })
+    setTimeout(function() {
+        $('#front-door').text('Open Front Door');
+        $('#front-door').css('background-color', '#b0e61d');
+      }, 1000);
   })
 
 
