@@ -10,7 +10,6 @@ $(function() {
 
 
   $('#front-door').on('click', function(e) {
-
     $('.round-button-circle').animateCss('pulse');
     $.ajax({ url: '/downstairs_door'}).done(function(data){
       $('#front-door').css('background-color', '#ececec');

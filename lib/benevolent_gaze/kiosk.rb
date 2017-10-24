@@ -328,7 +328,6 @@ module BenevolentGaze
     get '/calendar' do
       send_file 'public/calendar.html'
     end
-
     # checks for the front end if we can door.
     get '/can_door' do
       door_auth?
