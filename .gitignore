@@ -17,7 +17,7 @@
 mkmf.log
 .DS_Store
 /bg_public/
-
+dump.rdb
 
 client_secret.json
 .credentials
