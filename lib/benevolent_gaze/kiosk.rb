@@ -1,10 +1,10 @@
 require 'json'
-require 'sinatra/base'
-require 'sinatra/advanced_routes'
-require 'sinatra/support'
+require 'sinatra'
 require 'sinatra/json'
+require 'eventmachine'
 require 'redis'
 require 'hiredis'
+require 'em-hiredis'
 require 'em-synchrony'
 require 'resolv'
 require 'sinatra/cross_origin'
@@ -628,11 +628,20 @@ module BenevolentGaze
       return { success: true }.to_json
     end
 
+    get '/feed2', provides: 'text/event-stream' do
+      subscriber = EM::Hiredis.connect
+      pubsub = subscriber.pubsub
+      stream :keep_open do |out|
+        pubsub.subscribe("foo") do |msg|
+          puts msg
+          out << "data: #{msg}\n\n" unless out.closed?
+        end
+      end
+    end
+
     get '/feed', provides: 'text/event-stream' do
       cross_origin
       response.headers['X-Accel-Buffering'] = 'no'
-
-      current_user = get_user_info
 
       stream :keep_open do |out|
         loop do

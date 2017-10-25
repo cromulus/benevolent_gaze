@@ -20,10 +20,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'airbrake'
+  spec.add_dependency 'eventmachine'
   spec.add_dependency 'sinatra'
-  spec.add_dependency 'sinatra-advanced-routes'
   spec.add_dependency 'redis'
   spec.add_dependency 'hiredis'
+  spec.add_dependency 'em-hiredis'
   spec.add_dependency 'em-synchrony'
   spec.add_dependency 'sinatra-support'
   spec.add_dependency 'sinatra-contrib'
@@ -39,7 +40,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'picky'
   spec.add_dependency 'slack-ruby-client'
   spec.add_dependency 'slack-ruby-bot'
-  spec.add_dependency 'eventmachine'
   spec.add_dependency 'faye-websocket'
   spec.add_dependency 'celluloid-io'
   spec.add_dependency 'dotenv'
