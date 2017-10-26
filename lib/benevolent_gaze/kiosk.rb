@@ -167,6 +167,36 @@ module BenevolentGaze
         title
       end
 
+      def device_info(device)
+        name_or_device_name = @r.get("name:#{device}") || device
+
+        # don't need to show self
+        # next if k == current_user[:device_name]
+        # next if name_or_device_name == current_user[:real_name]
+
+        slack = @r.get("slack:#{device}")
+        slack_id = @r.get("slack_id:#{device}")
+        slack_title = get_slack_title(slack_id)
+
+        # if you're not setup, we don't want to see you.
+        return nil unless slack && slack_id
+        email = @r.get("email:#{device}")
+        last_seen = @r.get("last_seen:#{device}")
+        image_url = @r.get("image:#{name_or_device_name}")
+        online = @r.sismember('current_slackers', slack_id) || false
+
+        { type: 'device',
+          device_name: device,
+          name: name_or_device_name,
+          online: online,
+          email: email,
+          slack_name: slack,
+          title: slack_title,
+          slack_id: slack_id,
+          last_seen: last_seen,
+          avatar: image_url }
+      end
+
       def get_slack_info(sname)
         s = if sname[0] != 'U' && sname[0] != '@'
               sname.dup.prepend('@')
@@ -632,9 +662,37 @@ module BenevolentGaze
       subscriber = EM::Hiredis.connect
       pubsub = subscriber.pubsub
       stream :keep_open do |out|
-        pubsub.subscribe("foo") do |msg|
-          puts msg
-          out << "data: #{msg}\n\n" unless out.closed?
+
+        break if out.closed?
+
+        settings.connections << out # so we can use this stream elsewhere
+
+        pubsub.psubscribe('*') do |channel, msg|
+          output = nil
+          case channel
+          when 'msg'
+            m = JSON.parse(msg)
+            slack_name = slack_id_to_name(m['user'])
+            output = [{ id: SecureRandom.uuid.to_s,
+                        type: 'msg',
+                        msg: m['msg'],
+                        user: slack_name.delete('@') }]
+
+          when 'devices.add'
+            info = device_info(msg)
+            unless info.nil?
+              info[:action] = 'add'
+              output = info
+            end
+          when 'devices.remove'
+            info = device_info(msg)
+            unless info.nil?
+              info[:action] = 'remove'
+              output = info
+            end
+          end
+
+          out << "data: #{output.to_json}\n\n" unless out.closed? || output.nil?
         end
       end
     end
@@ -651,35 +709,9 @@ module BenevolentGaze
           @r = Redis.current
 
           @r.smembers('current_devices').each do |device|
-            name_or_device_name = @r.get("name:#{device}") || device
-
-            # don't need to show self
-            # next if k == current_user[:device_name]
-            # next if name_or_device_name == current_user[:real_name]
-
-
-            slack = @r.get("slack:#{device}")
-            slack_id = @r.get("slack_id:#{device}")
-            slack_title = get_slack_title(slack_id)
-
-            # if you're not setup, we don't want to see you.
-            next unless slack && slack_id
-            email = @r.get("email:#{device}")
-            last_seen = @r.get("last_seen:#{device}")
-            image_url = @r.get("image:#{name_or_device_name}")
-            online = @r.sismember('current_slackers', slack_id) || false
-
-            raw_data << { type: 'device',
-                          device_name: device,
-                          name: name_or_device_name,
-                          online: online,
-                          email: email,
-                          slack_name: slack,
-                          title: slack_title,
-                          slack_id: slack_id,
-                          last_seen: last_seen,
-                          avatar: image_url }
+            raw_data << device_info(device)
           end
+          raw_data.compact!
 
           data = raw_data.sort_by { |k| k[:name].downcase }
 

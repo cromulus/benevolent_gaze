@@ -134,7 +134,8 @@ module BenevolentGaze
           user = data['user']
           msg  = data['text']
           slack_msg = { user: user, msg: msg, data: data }.to_json
-
+          @r ||= Redis.current
+          @r.publish('msg', slack_msg)
           # this should be over a redis pubsub, but I can't get it to work.
           HTTParty.post("http://#{ENV['SERVER_HOST']}:#{ENV['IPORT']}/msg",
                         query: { msg: slack_msg,
