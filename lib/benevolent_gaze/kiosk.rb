@@ -658,7 +658,7 @@ module BenevolentGaze
       return { success: true }.to_json
     end
 
-    get '/feed2', provides: 'text/event-stream' do
+    get '/pubsub', provides: 'text/event-stream' do
       subscriber = EM::Hiredis.connect
       pubsub = subscriber.pubsub
       stream :keep_open do |out|
