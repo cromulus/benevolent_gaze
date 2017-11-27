@@ -55,10 +55,9 @@ $(function() {
     if (e.readyState == EventSource.CLOSED) {
       console.log('closed'); // not sure what to do here.
       // maybe refresh the page anyway?
-      setTimeout(window.location.href = '/', 500);; // reload page on error
-    } else {
-      setTimeout(window.location.href = '/register', 500);; // reload page on error
+      setTimeout(window.location.href = '/', 500); // reload page on error
     }
+    console.log(e.readyState);
   }, false);
 
   es.addEventListener('message', function(e) {
