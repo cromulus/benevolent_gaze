@@ -22,18 +22,18 @@ $(function() {
                                 placement: 'right'}).tooltip('show');
 
       setTimeout(function() { $('#front-door').tooltip('hide'); }, 2000);
-    })
+    });
     setTimeout(function() {
         $('#front-door').text('Open Front Door');
         $('#front-door').css('background-color', '#b0e61d');
       }, 1000);
-  })
+  });
 
 
   // sends the user to register if unregistered,
   $.ajax({url: '/is_registered'}).done(function(data){
     if (data === 'true') {
-      $.ajax({url: '/me', dataType: "json"}).done(function(d){
+      $.ajax({url: '/me', dataType: 'json'}).done(function(d){
         window.me = d['data']; // ugly hack.
         if (d['data']['real_name'] === 'Reception') {
           $('#register').hide(); // hide registration
@@ -42,7 +42,7 @@ $(function() {
       console.log('registered!');
     } else {
       if (window.location.href.indexOf('register') === -1) {
-        window.location.href = '/register'
+        window.location.href = '/register';
       }
     }
   });
@@ -94,22 +94,22 @@ $(function() {
 
     var slack_name = msg['user'].replace('@', '');
     var old_content = '';
-    $worker = $('[data-slackname=' + slack_name+']')
+    $worker = $('[data-slackname=' + slack_name + ']');
     if ($worker.data('bs.popover') != undefined && $worker.data('bs.popover').options != undefined) {
-      old_content = $worker.data('bs.popover').options.content + "<br>";
+      old_content = $worker.data('bs.popover').options.content + '<br>';
     }
 
     $worker.popover('dispose');
 
     var options = {
-      title : "<span class='text-info'><strong>Message</strong></span>"+
+      title: '<span class="text-info"><strong>Message</strong></span>' +
                 '<button type="button" class="close" >&times;</button>',
       content: old_content + msg['msg'],
       trigger: 'manual',
       placement: 'top',
       trigger: 'focus',
       html: true
-    }
+    };
 
 
     // scrolling so the worker is in the middle
@@ -125,13 +125,13 @@ $(function() {
       offset = elOffset;
     }
     $('html, body').animate({scrollTop: offset}, 600, 'swing');
-    Worker.animate_worker($worker, 'bounce')
+    Worker.animate_worker($worker, 'bounce');
     $worker.popover(options).popover('show');
-    $(document).on("click", ".popover .close" , function(){
-        $(this).parents(".popover").popover('dispose');
+    $(document).on('click', '.popover .close' , function() {
+        $(this).parents('.popover').popover('dispose');
     });
 
-  }
+  };
 
 
   // stores the worker we are currently operating on.
@@ -146,31 +146,31 @@ $(function() {
             Worker.grab_worker();
             Worker.set_avatar(worker_object.avatar);
             Worker.set_name(worker_object);
-            Worker.add_class("."+klass);
+            Worker.add_class('.' + klass);
             Worker.add_to_board(worker_object);
             Worker.set_popover_timeout();
           },
-    grab_worker: function(){
+    grab_worker: function() {
                   w = $('.worker').first().clone().removeClass('hidden');
                 },
-    set_image: function(string){
+    set_image: function(string) {
                 $('img', w).attr('src', string);
               },
-    set_name: function(worker_data){
-                $('.tape', w ).text(worker_data.name || sanitize_name(worker_data.device_name));
-                $(w).attr("data-name", (worker_data.name || worker_data.device_name));
-                $(w).attr("data-online",     worker_data.online);
-                $(w).attr("data-devicename", worker_data.device_name);
-                $(w).attr("data-slackname",  worker_data.slack_name);
-                $(w).attr("data-title",  worker_data.title);
-                $(w).addClass('online-'+worker_data.online); // future
+    set_name: function(worker_data) {
+                $('.tape', w).text(worker_data.name || sanitize_name(worker_data.device_name));
+                $(w).attr('data-name', (worker_data.name || worker_data.device_name));
+                $(w).attr('data-online', worker_data.online);
+                $(w).attr('data-devicename', worker_data.device_name);
+                $(w).attr('data-slackname', worker_data.slack_name);
+                $(w).attr('data-title', worker_data.title);
+                $(w).addClass('online-' + worker_data.online); // future
               },
-    set_avatar: function(avatar_url){
-                  $('.avatar_container img', w).attr('src', avatar_url || "/images/visitor_art@1x-21d82dcb.png");
+    set_avatar: function(avatar_url) {
+                  $('.avatar_container img', w).attr('src', avatar_url || '/images/visitor_art@1x-21d82dcb.png');
                 },
-    set_popover_timeout: function(){
+    set_popover_timeout: function() {
                   // this is the thing that hides the popover and resets it.
-                  $(w).on('shown.bs.popover', function () {
+                  $(w).on('shown.bs.popover', function() {
 
                     console.log('popover shown!');
                     var $pop = $(this);
@@ -184,22 +184,22 @@ $(function() {
                   });
                 },
     add_class: function(device_name) {
-                 w.addClass(device_name.replace(/\./g, ""));
+                 w.addClass(device_name.replace(/\./g, ''));
                },
     add_to_board: function(worker_data) {
                     Worker.add_slack();
                     //Welcome.move_logo_and_welcomes();
-                    var animated = "swing" + Math.floor((Math.random() * 2) + 1)
-                    $(w).addClass("animated").addClass(animated.toString());
-                    $('.workers.row').append( w );
+                    var animated = 'swing' + Math.floor((Math.random() * 2) + 1)
+                    $(w).addClass('animated').addClass(animated.toString());
+                    $('.workers.row').append(w);
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
-                    $('.newcomer_avatar img').attr('src', worker_data.avatar || "/images/visitor_art@1x-21d82dcb.png");
+                    $('.newcomer_avatar img').attr('src', worker_data.avatar || '/images/visitor_art@1x-21d82dcb.png');
                     $('.newcomer_avatar, .newcomer').show().removeClass('animated').removeClass('bounceOutUp').addClass('animated bounceInDown');
                     $('.newcomer_avatar, .newcomer').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                       $(this).removeClass('bounceInDown').addClass('bounceOutUp');
                       $(this).removeClass('animated').removeClass(animated);
                       Worker.redraw();
-                    })
+                    });
                     $(w).removeClass('animated').removeClass(animated);
                   },
     add_slack: function() {
@@ -224,9 +224,9 @@ $(function() {
           }
         }).done(function() {
 
-          Worker.animate_worker(worker,'swing2');
+          Worker.animate_worker(worker, 'swing2');
 
-          worker.tooltip({title:"Pinged!", trigger: 'manual', placement: 'top'}).tooltip('show');
+          worker.tooltip({title: 'Pinged!', trigger: 'manual', placement: 'top'}).tooltip('show');
 
         }).fail(function(data) {
           d = JSON.parse(data.responseText);
@@ -244,13 +244,13 @@ $(function() {
     },
     animate_worker: function(el, animation) {
       el.removeClass('animated').removeClass(animation);
-      el.addClass("animated").addClass(animation);
+      el.addClass('animated').addClass(animation);
       el.one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
         el.removeClass('animated').removeClass(animation);
       });
     },
     remove_worker: function(k) {
-                     $( k ).addClass("animated bounceOutDown");
+                     $(k).addClass('animated bounceOutDown');
                      $('.bounceOutDown').one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(e) {
                        $(this).remove();
                        Worker.redraw();
@@ -258,22 +258,22 @@ $(function() {
                    },
     redraw: function() {
               var w = $('.worker').length;
-              if ( w <= 6 ) {
+              if (w <= 6) {
                 $('.board').removeClass('med small xsmall').addClass('large');
-              } else if ( w <= 12 ) {
+              } else if (w <= 12) {
                 $('.board').removeClass('small xsmall large').addClass('med');
-              } else if ( w <= 24 ) {
+              } else if (w <= 24) {
                 $('.board').removeClass('xsmall large med').addClass('small');
               } else {
                 $('.board').removeClass('large med small').addClass('xsmall');
               }
             }
-  }
+  };
 
 
-  var add_remove_workers = function(w){
+  var add_remove_workers = function(w) {
     // this function need some love.
-    w.map(function(worker_data){
+    w.map(function(worker_data) {
       // if worker_data == window.me //then skip adding
 
       data_attribute = '[data-name="' + (worker_data.name || worker_data.device_name) + '"]';
@@ -281,14 +281,14 @@ $(function() {
       $element = $(data_attribute);
       if ($element.length > 0) {
         // the worker was already there, updating
-        $element.attr("data-lastseen", $.now());
+        $element.attr('data-lastseen', $.now());
         change_avatar(worker_data, data_attribute);
         $element.data('slackname', worker_data.slack_name);
         $element.data('online', worker_data.online);
 
         data_attribute_worker = "[data-devicename='" + worker_data.device_name + "']";
 
-        if ( $(data_attribute_worker).find(".tape").text() !== ( worker_data.name || sanitize_name(worker_data.device_name) ) ) {
+        if ($(data_attribute_worker).find('.tape').text() !== (worker_data.name || sanitize_name(worker_data.device_name))) {
           // if the tape (shown name) isn't right, we nuke now to add later
           // console.log("this is the problem");
           Worker.remove_worker(data_attribute_worker);
@@ -315,9 +315,9 @@ $(function() {
         name_change = name_change.replace(/iM.*/, '');
         name_change = name_change.replace(/\..*/, '');
         if (name_change == '') {
-          name_change = 'ANONYMOUS' ;
+          name_change = 'ANONYMOUS';
         }
-        return name_change
+        return name_change;
   };
 
   var strip_at_symbol = function(slack_name)  {
@@ -327,25 +327,25 @@ $(function() {
   var check_last_seen = function() {
     $('.worker').each(function(num, wk) {
       // if we haven't seen the worker in the feed for 60 seconds, drop it.
-      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 60000) && $(wk).find('.tape').text() !== "Ted" ) {
+      if (parseInt($(wk).attr('data-lastseen')) < ($.now() - 60000) && $(wk).find('.tape').text() !== 'Ted') {
         // console.log("inside if");
         Worker.remove_worker(wk);
       }
-    })
+    });
     Worker.redraw();
-  }
+  };
 
 
   var change_avatar = function(user_param, data_attribute) {
     var element = $(data_attribute).find('.avatar_container img')
-    if ( typeof user_param.avatar == "string" && user_param.avatar != element.attr('src')) {
-      $(data_attribute).find(".avatar_container img").attr('src', user_param.avatar);
+    if (typeof user_param.avatar == 'string' && user_param.avatar != element.attr('src')) {
+      $(data_attribute).find('.avatar_container img').attr('src', user_param.avatar);
     }
   };
 
   $('.form-control-clear').click(function() {
     $(this).siblings('input[type="text"]').val('').trigger('propertychange').focus();
-    $('.form-control-clear button').removeClass("btn-primary").addClass("btn-secondary");
+    $('.form-control-clear button').removeClass('btn-primary').addClass('btn-secondary');
     $(this).siblings('input[type="text"]').blur();
     $('.worker').each(function(i, v) { $(v).show(); });
   });
@@ -383,19 +383,16 @@ $(function() {
   // similar to register.js for slack ids, would need to ajax.
   // searching, simple debounce
   var t = null;
-  $("input").keyup(function() {
+  $('input').keyup(function() {
       if (t) {
           clearTimeout(t);
       }
       t = setTimeout(filter(), 100);
       if ($('input').val() != '') {
-        $('.form-control-clear button').removeClass("btn-secondary").addClass("btn-primary");
+        $('.form-control-clear button').removeClass('btn-secondary').addClass('btn-primary');
       } else {
-        $('.form-control-clear button').removeClass("btn-primary").addClass("btn-secondary");
+        $('.form-control-clear button').removeClass('btn-primary').addClass('btn-secondary');
       }
   });
-
-
-
 });
 
