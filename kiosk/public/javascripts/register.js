@@ -15,12 +15,12 @@ $(document).ready(function() {
   }).bind('change blur', validateSelection);
 
   function validateSelection(el) {
-    if(all_slack_names.get($(this).val())[0] === undefined) { $(this).val('') }
+    if (all_slack_names.get($(this).val())[0] === undefined) { $(this).val('') }
   }
 
-  var me_poll = function(){
-    $.ajax({url:'/me',
-            dataType:'json',
+  var me_poll = function() {
+    $.ajax({url: '/me',
+            dataType: 'json',
             timeout: 500,
             async: true})
         .done(function(){
@@ -98,6 +98,7 @@ $(document).ready(function() {
       $("#img_holder").html('<img src="'+ avatar +'" alt="yourimage" />');
     }
   }).fail(function(){
+    $('#go_back').hide();
     console.log('not yet registered');
   });
     // don't let people register if they can't be pinged!
