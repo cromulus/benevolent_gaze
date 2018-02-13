@@ -19,6 +19,7 @@ module BenevolentGaze
       # delete all on start
       @r.del('current_devices')
       @r.keys('last_seen:*').each { |key| @r.del(key) }
+      @r.keys('ip:*').each { |key| @r.del(key) }
 
       # Run forever
       loop do
@@ -35,15 +36,24 @@ module BenevolentGaze
         device =~ /android|phone/ ? 240 : 60
       end
 
+      def get_ip(device)
+        ip = @r.get("ip:#{device}") # some nice dns caching.
+        return ip unless ip.nil?
+        begin
+          resource = @dns.getresource(device, Resolv::DNS::Resource::IN::A)
+        rescue Resolv::ResolvError
+          return false
+        end
+        @r.setex("ip:#{device}", resource.address.ttl, resource.address.to_s)
+        resource.address.to_s
+      end
+
       # first pings can sometimes fail as
       # the device might be asleep...
       # && in bash will only hit if ping is successfull
       def ping(device)
-        begin
-          ip = @dns.getaddress(device)
-        rescue Resolv::ResolvError
-          return false
-        end
+        ip = get_ip(device)
+        return false unless ip
         cmd = "timeout 0.5 ping -c1 -q #{ip}  > /dev/null 2>&1 && echo true"
         first = exec_with_timeout(cmd, 1).chomp == 'true'
         second = exec_with_timeout(cmd, 1).chomp == 'true'
