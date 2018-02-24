@@ -93,7 +93,7 @@ module BenevolentGaze
         client.message(channel: (data['channel']).to_s, text: "Joined the 100 Pushups club!")
       end
       
-      comand 'quit-pushups' do |client, data, _command|
+      command 'quit-pushups' do |client, data, _command|
         @r ||= Redis.current
         @r.srem('pushups', data['user'])
         client.message(channel: (data['channel']).to_s, text: "left the 100 Pushups club!")
@@ -108,7 +108,7 @@ module BenevolentGaze
             
             done = false
             while done == false
-              chec_date = Date.today - counter
+              check_date = Date.today - counter
               if @r.hexists("pushups:#{data['user']}", check_date.to_s)
                 count +=1
               else
@@ -239,7 +239,7 @@ module BenevolentGaze
                                                as_user: true)
         end
             # slightly less than once a day
-        end
+        
         @r.sadd('current_slackers', data['user'])
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
