@@ -44,6 +44,14 @@ module BenevolentGaze
         desc 'Tells you if @username is in the office.'
         long_desc 'thats about it'
       end
+      command 'pushups' do
+        desc 'records how many pushups you did today'
+        long_desc 'yeah, marco is keeping track'
+      end
+      command 'join-pushups' do
+        desc 'join the 100 pushups crew'
+        long_desc 'yeah, marco is keeping track'
+      end
     end
   end
 end
@@ -77,6 +85,44 @@ module BenevolentGaze
         #{names.join("
         ")}
         Register your devices here: http://#{ENV['SERVER_HOST']}/register")
+      end
+
+      command 'join-pushups' do |client, data, _command|
+        @r ||= Redis.current
+        @r.sadd('pushups', data['user'])
+        client.message(channel: (data['channel']).to_s, text: "Joined the 100 Pushups club!")
+      end
+      
+      comand 'quit-pushups' do |client, data, _command|
+        @r ||= Redis.current
+        @r.srem('pushups', data['user'])
+        client.message(channel: (data['channel']).to_s, text: "left the 100 Pushups club!")
+      end
+      
+      command %r{pushups ([0-9]+)} do |client, data, command_match|
+        @r ||= Redis.current
+        if @r.sismember('pushups',data['user'])
+          if !@r.hexists("pushups:#{data['user']}",Date.today.to_s)
+            @r.hset("pushups:#{data['user']}",Date.today.to_s, command_match[1])
+            counter = 0
+            
+            done = false
+            while done == false
+              chec_date = Date.today - counter
+              if @r.hexists("pushups:#{data['user']}", check_date.to_s)
+                count +=1
+              else
+                done = true
+              end
+            end
+            client.message(channel: (data['channel']).to_s, text:"Streak: #{count}")
+            client.message(channel: (data['channel']).to_s, text:"Total: #{@r.hlen("pushups:#{data['user']}")}")
+          else
+            client.message(channel: (data['channel']).to_s, text:"you already recorded for today!")
+          end
+        else
+          client.message(channel: (data['channel']).to_s, text: "doesn't look like you are in the pushup club. message '@marco join-pushups' to join")
+        end
       end
 
       # scan(/<@([^>]+)>/) do |client, data, users|
@@ -181,6 +227,19 @@ module BenevolentGaze
         user_data = info.user
         next if user_data.is_bot
 
+        reminded = @r.exists("pushup_reminder:#{data['user']}")
+        pushuper = @r.sismember('pushups',data['user'])
+        counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
+        if !reminded && !counted_today && pushuper
+          client.web_client.chat_postMessage(channel: data['user'],
+                                               text: "Remember to send to @marco your pushup count!",
+                                               as_user: true)
+          client.web_client.chat_postMessage(channel: data['user'],
+                                               text: "like this: '@marco pushups 5'",
+                                               as_user: true)
+        end
+            # slightly less than once a day
+        end
         @r.sadd('current_slackers', data['user'])
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
