@@ -383,6 +383,9 @@ module BenevolentGaze
         res = RestClient.post url, '', headers
 
         if res.code == 200
+          @slack.chat_postMessage(channel: '#bot-testing',
+                                  text: "Door opened by #{get_user_info[:real_name]}",
+                                  as_user: true)
           return { success: true }.to_json
         else
           status 400
