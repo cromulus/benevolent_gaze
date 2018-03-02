@@ -90,13 +90,13 @@ module BenevolentGaze
       command 'join-pushups' do |client, data, _command|
         @r ||= Redis.current
         @r.sadd('pushups', data['user'])
-        client.message(channel: (data['channel']).to_s, text: "Joined the 100 Pushups club!")
+        client.message(channel: (data['channel']).to_s, text: "<@#{data['user']}>: Joined the 100 Pushups club!")
       end
       
-      comand 'quit-pushups' do |client, data, _command|
+      command 'quit-pushups' do |client, data, _command|
         @r ||= Redis.current
         @r.srem('pushups', data['user'])
-        client.message(channel: (data['channel']).to_s, text: "left the 100 Pushups club!")
+        client.message(channel: (data['channel']).to_s, text: "<@#{data['user']}>: left the 100 Pushups club!")
       end
       
       command %r{pushups ([0-9]+)} do |client, data, command_match|

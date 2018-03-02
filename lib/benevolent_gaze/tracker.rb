@@ -14,7 +14,7 @@ module BenevolentGaze
       @ignore_hosts = ENV['IGNORE_HOSTS'].nil? ? false : ENV['IGNORE_HOSTS'].split(',')
 
       @r = Redis.current # right? we've got redis right here.
-      @dns = Resolv.new # not sure if we want to re-init resolve.
+      @dns = Resolv::DNS.new # not sure if we want to re-init resolve.
 
       # delete all on start
       @r.del('current_devices')
@@ -44,7 +44,7 @@ module BenevolentGaze
         rescue Resolv::ResolvError
           return false
         end
-        @r.setex("ip:#{device}", resource.address.ttl, resource.address.to_s)
+        @r.setex("ip:#{device}", resource.ttl, resource.address.to_s)
         resource.address.to_s
       end
 
