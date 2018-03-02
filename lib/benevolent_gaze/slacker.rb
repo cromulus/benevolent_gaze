@@ -238,8 +238,6 @@ module BenevolentGaze
                                                text: "like this: '@marco pushups 5'",
                                                as_user: true)
         end
-            # slightly less than once a day
-        end
         @r.sadd('current_slackers', data['user'])
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
