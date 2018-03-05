@@ -204,11 +204,18 @@ module BenevolentGaze
 
       # should update all current slackers here
       @r ||= Redis.current
-      @r.del('current_slackers')
-      client.users.each do |sid, u|
-        @r.sadd('current_slackers', sid) if u.presence == 'active'
-      end
-      puts "#{@r.scard('current_slackers')} slackers online"
+      # @r.del('current_slackers')
+      # @r.smembers('current_devices').each { |device_name|
+      #   slack_name = @r.get("slack:#{device_name}")
+      #   if client.getPresence(slack_name) == 'active' 
+      #     @r.sadd('current_slackers', slack_name) 
+      #     puts "active"
+      #   end
+      # }
+      # client.users.each do |sid, u|
+      #   @r.sadd('current_slackers', sid) if u.presence == 'active'
+      # end
+      #puts "#{@r.scard('current_slackers')} slackers online"
     end
 
     on 'team_join' do |client, data| # onboarding opportunity

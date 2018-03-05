@@ -109,7 +109,7 @@ module BenevolentGaze
           slack_id: slack_id,
           device_name: device_name,
           slack_title:  slack_title,
-          online: @r.sismember('current_slackers', slack_id),
+          online: true,
           email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
@@ -183,7 +183,7 @@ module BenevolentGaze
         email = @r.get("email:#{device}")
         last_seen = @r.get("last_seen:#{device}")
         image_url = @r.get("image:#{name_or_device_name}")
-        online = @r.sismember('current_slackers', slack_id) || false
+        online = true // slack presence is broken
 
         { type: 'device',
           device_name: device,
@@ -226,6 +226,7 @@ module BenevolentGaze
       end
 
       def is_slack_user_online(sname)
+        return true
         s =  sname[0] == '@' ? sname.delete('@') : sname
         @r.sismember('current_slackers', s)
       end
