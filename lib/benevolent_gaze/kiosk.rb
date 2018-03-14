@@ -183,7 +183,7 @@ module BenevolentGaze
         email = @r.get("email:#{device}")
         last_seen = @r.get("last_seen:#{device}")
         image_url = @r.get("image:#{name_or_device_name}")
-        online = true // slack presence is broken
+        online = true # slack presence is broken
 
         { type: 'device',
           device_name: device,
@@ -230,7 +230,7 @@ module BenevolentGaze
         return res if res.present?
         res = @slack.users_getPresence(user: sname).presence
         @redis.setex("presence:#{sname}", 60, res)
-        return res == 'active' ? true : false
+        res == 'active'
       end
 
       def slackem(slack_id, device_name)
