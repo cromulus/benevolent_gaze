@@ -226,10 +226,10 @@ module BenevolentGaze
       end
 
       def is_slack_user_online(sname)
-        res = @redis.get("presence:#{sname}")
+        res = @r.get("presence:#{sname}")
         return res if res.present?
         res = @slack.users_getPresence(user: sname).presence
-        @redis.setex("presence:#{sname}", 60, res)
+        @r.setex("presence:#{sname}", 60, res)
         res == 'active'
       end
 
