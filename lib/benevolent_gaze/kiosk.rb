@@ -226,9 +226,11 @@ module BenevolentGaze
       end
 
       def is_slack_user_online(sname)
-        return true
-        s =  sname[0] == '@' ? sname.delete('@') : sname
-        @r.sismember('current_slackers', s)
+        res = @redis.get("presence:#{sname}")
+        return res if res.present?
+        res = @slack.users_getPresence(user: sname).presence
+        @redis.setex("presence:#{sname}", 60, res)
+        return res == 'active' ? true : false
       end
 
       def slackem(slack_id, device_name)
