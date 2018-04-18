@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'httparty'
   spec.add_dependency 'rest-client'
   spec.add_dependency 'sinatra-cross_origin'
-  spec.add_dependency 'aws-s3'
+  spec.add_dependency 'aws-sdk-s3'
   spec.add_dependency 'mini_magick'
   spec.add_dependency 'thor'
   spec.add_dependency 'parallel'

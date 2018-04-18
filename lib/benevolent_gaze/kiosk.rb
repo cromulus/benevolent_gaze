@@ -8,7 +8,7 @@ require 'em-hiredis'
 require 'em-synchrony'
 require 'resolv'
 require 'sinatra/cross_origin'
-require 'aws/s3'
+require 'aws-sdk-s3'
 require 'securerandom'
 require 'mini_magick'
 require 'httparty'
@@ -22,6 +22,7 @@ require 'googleauth/stores/file_token_store'
 require 'active_support'
 require 'securerandom'
 require 'set'
+require 'tempfile'
 require 'dotenv'
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 
@@ -48,6 +49,12 @@ module BenevolentGaze
         USE_AWS = false
       else
         USE_AWS = true
+        Aws.config.update({
+          region: 'us-east-1',
+          credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'],
+                                            ENV['AWS_SECRET_ACCESS_KEY'])
+        })
+      
       end
       KISI_TOKEN = ENV['KISI_TOKEN']
       IGNORE_HOSTS = if ENV['IGNORE_HOSTS'].nil?
@@ -321,17 +328,17 @@ module BenevolentGaze
           end
 
           if USE_AWS
-            AWS::S3::Base.establish_connection!(
-              access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-              secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
-            )
-            AWS::S3::S3Object.store(
-              new_file_name,
-              image.to_blob,
-              bucket,
-              access: :public_read
-            )
-            image_url = AWS::S3::S3Object.url_for(new_file_name, bucket, expires: doomsday)
+            tmp = Tempfile.new(new_file_name)
+            tmp.write(image.to_blob)
+            begin
+              s3 = Aws::S3::Resource.new        
+              obj = s3.bucket(bucket).object(new_file_name)
+              obj.upload_file(tmp.path,{acl: 'public-read'})
+              image_url = obj.public_url 
+            ensure
+              tmp.close
+              tmp.unlink
+            end           
           else
             upload_path =  @@local_file_system + '/images/uploads/'
             file_on_disk = upload_path + new_file_name
