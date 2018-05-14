@@ -420,12 +420,12 @@ module BenevolentGaze
     end
 
     get '/currently_in_office.json' do
-      names = []
+      people = []
       @r.smembers('current_devices').each do |device|
-        names << device_info(device)[:name]
+        people << device_info(device)
       end
       status 200
-      return { success: true, names: names.compact }.to_json
+      return { success: true, people: people.compact }.to_json
     end
     
     get '/ping' do
