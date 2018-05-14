@@ -424,11 +424,13 @@ module BenevolentGaze
       @r.smembers('current_devices').each do |device|
         people << device_info(device)
       end
+      content_type 'application/json'
       status 200
       return { success: true, people: people.compact }.to_json
     end
     
     get '/ping' do
+      content_type 'application/json'
       if ping(find_ip)
         status 200
         return { success: true }.to_json
@@ -439,6 +441,7 @@ module BenevolentGaze
     end
 
     get '/me' do
+      content_type 'application/json'
       data = get_user_info
       if data
         status 200
@@ -468,6 +471,7 @@ module BenevolentGaze
     end
 
     get '/slack_names.json' do
+      content_type 'application/json'
       # search for slack ids based on user input. do a typeahead thing.
       @slack.users_list.members.map(&:name).to_json
     end
@@ -488,6 +492,7 @@ module BenevolentGaze
     end
 
     get '/slack_me_up/:id' do
+      content_type 'application/json'
       unless ping(find_ip)
         status 404
         return { success: false, msg: 'we cannot ping your device' }.to_json
@@ -507,6 +512,7 @@ module BenevolentGaze
     end
 
     post '/register' do
+      content_type 'application/json'
       # no registration for un-pingable devices
       unless ping(find_ip)
         status 404
@@ -560,6 +566,7 @@ module BenevolentGaze
     end
 
     get '/event' do
+      content_type 'application/json'
       calendar_id = calendar_name_to_id(params[:calendar])
       begin
         event = service.get_event(calendar_id, params[:id])
@@ -572,6 +579,7 @@ module BenevolentGaze
     end
 
     delete '/calendar' do
+      content_type 'application/json'
       calendar_id = calendar_name_to_id(params[:calendar])
       begin
         service.delete_event(calendar_id, params[:id])
@@ -589,6 +597,7 @@ module BenevolentGaze
     #
     # handle the creation & editing of events.
     post '/calendar' do
+      content_type 'application/json'
       user = get_user_info
       if user == false
         status 410
@@ -744,6 +753,7 @@ module BenevolentGaze
     end
 
     post '/slack_ping/' do
+      content_type 'application/json'
       to = params[:to]
       # throttle our messages. 30 second, "to" and IP
       if @r.get("msg_throttle:#{to}:#{find_ip}")
