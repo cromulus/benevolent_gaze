@@ -422,7 +422,7 @@ module BenevolentGaze
     get '/currently_in_office.json' do
       names = []
       @r.smembers('current_devices').each do |device|
-        names << device_info(device)[:real_name]
+        names << device_info(device)[:name]
       end
       status 200
       return { success: true, names: names.compact }.to_json
