@@ -424,7 +424,8 @@ module BenevolentGaze
       @r.smembers('current_devices').each do |device|
         names << device_info(device)[:real_name]
       end
-      return names.compact.to_json
+      status 200
+      return { success: true, names: names.compact }.to_json
     end
     
     get '/ping' do
