@@ -419,7 +419,7 @@ module BenevolentGaze
       find_ip
     end
 
-    get 'currently_in_office' do
+    get '/currently_in_office.json' do
       names = []
       @r.smembers('current_devices').each do |device|
         names << device_info(device)[:real_name]
