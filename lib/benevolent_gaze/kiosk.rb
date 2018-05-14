@@ -419,6 +419,14 @@ module BenevolentGaze
       find_ip
     end
 
+    get 'currently_in_office' do
+      names = []
+      @r.smembers('current_devices').each do |device|
+        names << device_info(device)[:real_name]
+      end
+      return names.compact.to_json
+    end
+    
     get '/ping' do
       if ping(find_ip)
         status 200
