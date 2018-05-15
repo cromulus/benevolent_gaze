@@ -45,12 +45,18 @@ module BenevolentGaze
         long_desc 'thats about it'
       end
       command 'pushups' do
-        desc 'records how many pushups you did today'
+        desc 'records how many pushups you did today: pushups #'
         long_desc 'yeah, marco is keeping track'
       end
-      command 'join-pushups' do
+      command 'pushups-join' do
         desc 'join the 100 pushups crew'
         long_desc 'yeah, marco is keeping track'
+      end
+      command 'pushups-quit' do
+        desc 'quit the 100 pushups crew'
+      end
+      command 'pushups-stats' do
+        desc 'lists the top five current longest streaks!'
       end
     end
   end
