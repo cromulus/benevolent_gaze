@@ -87,41 +87,49 @@ module BenevolentGaze
         Register your devices here: http://#{ENV['SERVER_HOST']}/register")
       end
 
-      command 'join-pushups' do |client, data, _command|
+      command 'join-pushups', 'pushups-join' do |client, data, _command|
         @r ||= Redis.current
         @r.sadd('pushups', data['user'])
         client.message(channel: (data['channel']).to_s, text: "<@#{data['user']}>: Joined the 100 Pushups club!")
       end
-      
-      command 'quit-pushups' do |client, data, _command|
+
+      command 'quit-pushups', 'pushups-quit' do |client, data, _command|
         @r ||= Redis.current
         @r.srem('pushups', data['user'])
         client.message(channel: (data['channel']).to_s, text: "<@#{data['user']}>: left the 100 Pushups club!")
       end
-      
+
+      command 'stats-pushups', 'pushups-stats' do |client, data, _command|
+        @r ||= Redis.current
+        people = @r.zrange('pushups-streaks',0,5,withscores: true).map do |person, score| 
+          "<@#{person}>: #{score}\n"
+        end
+        client.message(channel: (data['channel']).to_s, text: "Top 5 Streaks:\n #{people}")
+      end
+
       command %r{pushups ([0-9]+)} do |client, data, command_match|
         @r ||= Redis.current
-        if @r.sismember('pushups',data['user'])
-          if !@r.hexists("pushups:#{data['user']}",Date.today.to_s)
+        if @r.sismember('pushups', data['user'])
+          if !@r.hexists("pushups:#{data['user']}", Date.today.to_s)
             @r.hset("pushups:#{data['user']}",Date.today.to_s, command_match[1])
             counter = 0
-            
             done = false
             while done == false
-              chec_date = Date.today - counter
+              check_date = Date.today - counter
               if @r.hexists("pushups:#{data['user']}", check_date.to_s)
-                count +=1
+                counter +=1
               else
                 done = true
               end
             end
-            client.message(channel: (data['channel']).to_s, text:"Streak: #{count}")
-            client.message(channel: (data['channel']).to_s, text:"Total: #{@r.hlen("pushups:#{data['user']}")}")
+            @r.zadd('pushups-streaks', count, data['user'])
+            client.message(channel: (data['channel']).to_s, text: "Streak: #{counter}")
+            client.message(channel: (data['channel']).to_s, text: "Total: #{@r.hlen("pushups:#{data['user']}")}")
           else
-            client.message(channel: (data['channel']).to_s, text:"you already recorded for today!")
+            client.message(channel: (data['channel']).to_s, text: "you already recorded for today!")
           end
         else
-          client.message(channel: (data['channel']).to_s, text: "doesn't look like you are in the pushup club. message '@marco join-pushups' to join")
+          client.message(channel: (data['channel']).to_s, text: "doesn't look like you are in the pushup club. message '@marco pushups-join' to join")
         end
       end
 
