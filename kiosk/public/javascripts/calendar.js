@@ -190,20 +190,20 @@ $(document).ready(function() {
       }
     ],
     eventSources: [{
-        googleCalendarId: 'robinhood.org_2d37313337333130363239@resource.calendar.google.com',
+        googleCalendarId: 'labs.robinhood.org_2d37313337333130363239@resource.calendar.google.com',
         className: 'tiny',
         color: 'green',
         resourceId: 'tiny',
         editable: true
       },
       {
-        googleCalendarId: 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
+        googleCalendarId: 'labs.robinhood.org_3730373137363538363534@resource.calendar.google.com',
         className: 'smalls',
         color: 'red',
         resourceId: 'smalls',
         editable: true
       }, {
-        googleCalendarId: 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
+        googleCalendarId: 'labs.robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
         className: 'biggie',
         color: 'blue',
         resourceId: 'biggie',
