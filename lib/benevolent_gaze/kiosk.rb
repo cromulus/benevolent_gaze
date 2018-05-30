@@ -83,9 +83,9 @@ module BenevolentGaze
 
       # to refactor into config system
       CALENDAR_IDS = {
-        'biggie' => 'robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
-        'smalls' => 'robinhood.org_3730373137363538363534@resource.calendar.google.com',
-        'tiny' => 'robinhood.org_2d37313337333130363239@resource.calendar.google.com'
+        'biggie' => 'labs.robinhood.org_2d33313439373439322d363134@resource.calendar.google.com',
+        'smalls' => 'labs.robinhood.org_3730373137363538363534@resource.calendar.google.com',
+        'tiny' => 'labs.robinhood.org_2d37313337333130363239@resource.calendar.google.com'
       }.freeze
     end
 
@@ -393,9 +393,9 @@ module BenevolentGaze
         res = RestClient.post url, '', headers
 
         if res.code == 200
-          @slack.chat_postMessage(channel: '#bot-testing',
-                                  text: "Door opened by #{get_user_info[:real_name]}",
-                                  as_user: true)
+          # @slack.chat_postMessage(channel: '#bot-testing',
+          #                         text: "Door opened by #{get_user_info[:real_name]}",
+          #                         as_user: true)
           return { success: true }.to_json
         else
           status 400
