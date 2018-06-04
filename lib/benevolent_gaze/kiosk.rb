@@ -599,6 +599,7 @@ module BenevolentGaze
     post '/calendar' do
       content_type 'application/json'
       user = get_user_info
+      res = nil
       if user == false
         status 410
         return { success: false }.to_json
@@ -654,9 +655,9 @@ module BenevolentGaze
         if old_cal_id
           # we move the event if it was in another calendar
           logger.info('moving event!')
-          event = service.move_event(old_cal_id, event.id, calendar_id)
-          logger.info(event.status)
-        end
+          res = service.move_event(old_cal_id, event.id, calendar_id)
+          logger.info(res.status)
+        end # should this be an else?
         event.sequence += 2
         event.start.date_time = e_start
         event.end.date_time = e_end
@@ -682,11 +683,11 @@ module BenevolentGaze
           end: { date_time: e_end }
         }
         event = Google::Apis::CalendarV3::Event.new(options)
-        service.insert_event(calendar_id, event)
+        res = service.insert_event(calendar_id, event)
       end
 
       status 200
-      return { success: true }.to_json
+      return { success: true, res: res.to_json }.to_json
     end
 
     get '/pubsub', provides: 'text/event-stream' do
