@@ -165,9 +165,9 @@ module BenevolentGaze
         title = @r.hget('slack_title', slack_id)
         if title.nil? || title == ''
           begin
-            title = @slack.users_info(user: slack_id).user.profile.title || ''
+            title = @slack.users_info(user: slack_id)&.user&.profile&.title || ''
             @r.hset('slack_title', slack_id, title)
-          rescue ExceSlack::Web::Api::Error
+          rescue Slack::Web::Api::Error
             title = ''
           end
         end
