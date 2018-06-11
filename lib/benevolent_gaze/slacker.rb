@@ -236,6 +236,9 @@ module BenevolentGaze
       info = client.web_client.users_info(user: data['user'])
       user_data = info.user
       next if user_data.is_bot
+      client.web_client.chat_postMessage(channel: data['user'],
+                                             text: "Hi! Welcome to BRL! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.) You can click on the link anytime to update your photo on the Kiosk.",
+                                             as_user: true)
       puts "just joined team : #{user_data.name}"
     end
 
@@ -248,12 +251,12 @@ module BenevolentGaze
         info = client.web_client.users_info(user: data['user'])
         user_data = info.user
         next if user_data.is_bot
-        @r.sadd('current_slackers', data['user'])
-        @r.setex("presence:#{data['user']}",120,'active')
+        #@r.sadd('current_slackers', data['user'])
+        #@r.setex("presence:#{data['user']}",120,'active')
         
-        reminded = @r.exists("pushup_reminder:#{data['user']}")
-        pushuper = @r.sismember('pushups',data['user'])
-        counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
+        #reminded = @r.exists("pushup_reminder:#{data['user']}")
+        #pushuper = @r.sismember('pushups',data['user'])
+        #counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
         if !reminded && !counted_today && pushuper
           client.web_client.chat_postMessage(channel: data['user'],
                                                text: "Remember to send to @marco your pushup count!",
