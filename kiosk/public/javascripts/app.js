@@ -149,6 +149,7 @@ $(function() {
             Worker.add_class('.' + klass);
             Worker.add_to_board(worker_object);
             Worker.set_popover_timeout();
+            tinysort($('.worker'), {data:'name'});
           },
     grab_worker: function() {
                   w = $('.worker').first().clone().removeClass('hidden');
@@ -201,6 +202,7 @@ $(function() {
                       Worker.redraw();
                     });
                     $(w).removeClass('animated').removeClass(animated);
+
                   },
     add_slack: function() {
       $(w).click(function(e) {

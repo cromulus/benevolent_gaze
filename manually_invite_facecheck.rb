@@ -1,3 +1,19 @@
+require 'json'
+require 'redis'
+require 'slack-ruby-bot'
+require 'httparty'
+require 'celluloid'
+require 'celluloid/io'
+require 'google/cloud/vision'
+require 'dotenv'
+Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
+# https://github.com/slack-ruby/slack-ruby-bot/blob/master/examples/weather/weatherbot.rb
+
+# use https://github.com/slack-ruby/slack-ruby-bot
+Slack.configure do |config|
+  config.token = ENV['SLACK_API_TOKEN']
+end
+@r = Redis.current 
 client = Slack::Web::Client.new
 client.users_list.members.each do |user_data|
   next if user_data.is_bot?
@@ -7,9 +23,9 @@ client.users_list.members.each do |user_data|
   if user_data.profile.title == '' || user_data.profile.title.nil?
     if @r.get("profile_remind:#{data['user']}").nil?
       puts "no profile: #{data['user']} : #{user_data.name}"
-      client.web_client.chat_postMessage(channel: data['user'],
+      client.chat_postMessage(channel: data['user'],
                                          text: "Please update your user profile on slack so people know who you are!
-                                         Edit it here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
+                                         Edit it here: https://150court.slack.com/team/#{user_data.name}",
                                          as_user: true)
       # slightly less than once a day
       @r.setex("profile_remind:#{data['user']}", 60 * 59 * 24, true)
@@ -37,7 +53,7 @@ client.users_list.members.each do |user_data|
         puts "reminding #{data['user']} : #{user_data.name} to add profile portrait"
         client.chat_postMessage(channel: data['user'],
                                            text: "Please update your Slack profile picture with a photo of your face so people can put a face to the name!
-                                           Upload here: https://#{client.team.domain}.slack.com/team/#{user_data.name}",
+                                           Upload here: https://150court.slack.com/team/#{user_data.name}",
                                            as_user: true)
 
         @r.setex("face_remind:#{data['user']}", one_day - 60, true)

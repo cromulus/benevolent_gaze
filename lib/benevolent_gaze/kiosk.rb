@@ -163,7 +163,7 @@ module BenevolentGaze
 
       def get_slack_title(slack_id)
         title = @r.hget('slack_title', slack_id)
-        if title.nil? || title == ''
+        if title.nil?
           begin
             title = @slack.users_info(user: slack_id)&.user&.profile&.title || ''
             @r.hset('slack_title', slack_id, title)
