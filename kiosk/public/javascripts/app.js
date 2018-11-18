@@ -3,12 +3,21 @@ $(function() {
 
   $(document).idle({
     onIdle: function(){
-      location.reload(true);
+      // every minute
+      // clear the search form
+      $('.form-control-clear').click();
+      // close out popovers
+      $('.popover .close').click();
+      
+      // reset front door button
+      $('#front-door').text('Open Front Door');
+      $('#front-door').css('background-color', '#b0e61d');
     },
     idle: 60000
   })
  
-
+  // reload the page every hour.
+  setTimeout(function(){window.location.reload(true)}, (60000*60));
 
   $('#front-door').on('click', function(e) {
     $('.round-button-circle').animateCss('pulse');

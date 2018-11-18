@@ -7,11 +7,20 @@ $(document).ready(function() {
 
   $(document).idle({
     onIdle: function(){
-      location = '/';
+      $('#modalDelete').click();
     },
-    idle: 60000 // after a minute, go back to kiosk.
+    idle: 60000 // after a little over a minute of idleness, clear modal
+  })
+
+  $('#calendar').idle({
+    onIdle: function(){
+      window.location.href = '/'
+    },
+    idle: (60000*15) // after a little over a 15 minutes of idleness, go to kiosk
   })
  
+  // go to main page after about 15 minutes of idleness
+  
   // should probably use
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 
