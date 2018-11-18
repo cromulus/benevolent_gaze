@@ -3,14 +3,15 @@ $(document).ready(function() {
   window.setInterval(function() {
     // get the events from google every 15 seconds
     $('#calendar').fullCalendar('refetchEvents')
-  }, 15000);
+  }, 5000); // reload calendars every 5 seconds
 
-  window.setInterval(function(){
-    // every hour refresh the page
-    // for the reception kiosk
-    window.location.href = window.location.href;
-  },1000 * 60 * 60);
-
+  $(document).idle({
+    onIdle: function(){
+      location = '/';
+    },
+    idle: 60000 // after a minute, go back to kiosk.
+  })
+ 
   // should probably use
   // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
 

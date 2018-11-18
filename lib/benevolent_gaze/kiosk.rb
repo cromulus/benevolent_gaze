@@ -793,7 +793,7 @@ module BenevolentGaze
         return { success: false, msg: "@#{to} isn't currently online. Try someone else?" }.to_json
       end
 
-
+      # need.a public facing endpoint for these to work. how to do that?
       attachments = [{
         text: "Quick Responses:",
         fallback: "You are unable to send quick responses",
@@ -814,9 +814,9 @@ module BenevolentGaze
                 },
                 {
                     name: "response",
-                    text: "Take a seat, I'll be a minute",
+                    text: "I'm not at the office right now. Can you find someone else?",
                     type: "button",
-                    value: "minute"
+                    value: "ooo"
                 }]
         }]
 

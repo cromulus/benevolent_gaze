@@ -1,12 +1,13 @@
 $(function() {
 
-  window.setInterval(function() {
-    // every hour refresh the page
-    // for the reception kiosk
-    window.location.href = window.location.href;
-  },1000 * 60 * 60);
-  // should probably use
-  // http://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
+
+  $(document).idle({
+    onIdle: function(){
+      location.reload(true);
+    },
+    idle: 60000
+  })
+ 
 
 
   $('#front-door').on('click', function(e) {
