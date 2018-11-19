@@ -20,10 +20,12 @@ $(function() {
   setTimeout(function(){window.location.reload(true)}, (60000*60));
 
   $('#front-door').on('click', function(e) {
-    $('.round-button-circle').animateCss('pulse');
+    
     $.ajax({ url: '/downstairs_door'}).done(function(data){
       $('#front-door').css('background-color', '#ececec');
       $('#front-door').text('Opened!');
+      $('#front-door').animateCss('pulse');
+
     }).fail(function(data) {
       $('#front-door').animateCss('shake');
       d = JSON.parse(data.responseText);
@@ -32,11 +34,13 @@ $(function() {
                                 placement: 'right'}).tooltip('show');
 
       setTimeout(function() { $('#front-door').tooltip('hide'); }, 2000);
-    });
-    setTimeout(function() {
+    }).always(function(){
+      setTimeout(function() {
         $('#front-door').text('Open Front Door');
         $('#front-door').css('background-color', '#b0e61d');
       }, 1000);
+    })
+    
   });
 
 
