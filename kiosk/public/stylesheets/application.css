@@ -1,6 +1,13 @@
 html, body, .container-fluid, .row {
- height: 100%;
+ height:auto;
  }
+
+@media (min-width: 576px) { 
+  html, body, .container-fluid, .row {
+    height: 100%;
+  }
+}
+
 
 /* --- split panel layout ---*/
 
@@ -27,9 +34,8 @@ html, body, .container-fluid, .row {
 #header .btn {
   background-color: #ECECEC;
   width: 100%;
-  margin: 0 0 1em;
+  margin: 1rem;
   color: #222;
-  padding: 12px 0;
   white-space: normal;
 }
 #header .btn:nth-child(3){
@@ -41,6 +47,20 @@ html, body, .container-fluid, .row {
   background-color: #b0e61d;
   font-weight: bold;
   font-size: 2rem;
+}
+
+#header #clear-button{
+  margin: auto;
+  height: 100%;
+  font-size:1rem;
+}
+
+#header .input-group {
+  margin: 1rem;
+}
+#header .input-group input {
+  margin-right: 5px;
+  border-radius: 5px;
 }
 
 #main {
@@ -60,14 +80,6 @@ html, body, .container-fluid, .row {
 #main h3.tape {
   margin: 1em 0 0 0;
   font-weight: 600;
-}
-#main .input-group {
-  margin: 1em 0 2em;
-}
-#main .input-group input {
-  max-width: 15rem;
-  margin-right: 5px;
-  border-radius: 5px;
 }
 .workers {
   padding: 2em 0 0 0;
