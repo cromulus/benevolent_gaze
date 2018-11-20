@@ -8,14 +8,18 @@ $(function() {
       $('.form-control-clear').click();
       // close out popovers
       $('.popover .close').click();
-      
+
       // reset front door button
       $('#front-door').text('Open Front Door');
       $('#front-door').css('background-color', '#b0e61d');
+      
+      // close the onscreen keyboard on the kiosk
+      $('input[type="text"]').blur();
     },
     idle: 60000
   })
  
+
   // reload the page every hour.
   setTimeout(function(){window.location.reload(true)}, (60000*60));
 
@@ -364,6 +368,7 @@ $(function() {
     $('.form-control-clear button').removeClass('btn-primary').addClass('btn-secondary');
     $(this).siblings('input[type="text"]').blur();
     $('.worker').each(function(i, v) { $(v).show(); });
+    $('#worker-search').onScreenKeyboard('hide',{topPosition: '75%'});
   });
 
 
