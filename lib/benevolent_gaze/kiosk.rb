@@ -161,6 +161,14 @@ module BenevolentGaze
         end
       end
 
+      def regularize_sname(sname)
+        if sname[0] != 'U' && sname[0] != '@'
+          sname.dup.prepend('@')
+        else
+          sname
+        end 
+      end
+
       def get_slack_title(slack_id)
         title = @r.hget('slack_title', slack_id)
         if title.nil?
@@ -190,12 +198,11 @@ module BenevolentGaze
         email = @r.get("email:#{device}")
         last_seen = @r.get("last_seen:#{device}")
         image_url = @r.get("image:#{name_or_device_name}")
-        online = true # slack presence is broken
+        
 
         { type: 'device',
           device_name: device,
           name: name_or_device_name,
-          online: online,
           email: email,
           slack_name: slack,
           title: slack_title,
@@ -437,6 +444,17 @@ module BenevolentGaze
       else
         status 404
         return { success: false }.to_json
+      end
+    end
+
+    get '/online' do
+      sname =  params[:slack_id]
+      if is_slack_user_online(sname)
+        status 200
+        return { success: true }.to_json
+      else
+        status 400
+        return {success:false}.to_json
       end
     end
 
@@ -756,6 +774,7 @@ module BenevolentGaze
     post '/slack_ping/' do
       content_type 'application/json'
       to = params[:to]
+      msg = params[:msg]
       # throttle our messages. 30 second, "to" and IP
       if @r.get("msg_throttle:#{to}:#{find_ip}")
         status 420 # enhance your chill
@@ -821,7 +840,7 @@ module BenevolentGaze
         }]
 
       res = @slack.chat_postMessage(channel: "@#{to}",
-                                    text: "ping from #{from}, responses to me will be posted on the board.",
+                                    text: "ping from #{from}, responses to me will be posted on the board. They said:\n '#{msg}'",
                                     as_user: true)
       # set throttle
       @r.setex("msg_throttle:#{to}:#{find_ip}", 30, true)

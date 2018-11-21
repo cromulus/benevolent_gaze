@@ -20,6 +20,44 @@ $(function() {
   })
  
 
+  $('#worker-modal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var name = button.data('name') // Extract info from data-* attributes
+    var slackname = button.data('slackname') // Extract info from data-* attributes
+    var title = button.data('title') // Extract info from data-* attributes
+    var slack_id = button.data('slackid') // Extract info from data-* attributes
+    var avatar = button.data('avatar') // Extract info from data-* attributes
+  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    modal.find('.worker-name').text(name);
+    modal.find('.avatar_container img').attr("src", avatar);
+    modal.find('.modal-profile').text(title);
+    $('.slack_buttons button').on('click',function(el){
+      var msg = $(this).html();
+      console.log(msg);
+      $.ajax({
+          type: 'POST',
+          // make sure you respect the same origin policy with this url:
+          // http://en.wikipedia.org/wiki/Same_origin_policy
+          url: '/slack_ping/',
+          data: {
+              'to': slack_id,
+              'message': msg
+          }
+        }).done(function() {
+          // what do we do with success?
+        }).fail(function(data){
+          console.log(data.responseJSON.msg);
+        }).always(function(data){
+          $.wait(function() {
+            console.log('waited')
+          }, 6);
+        })
+      
+    })
+  })
+
   // reload the page every hour.
   setTimeout(function(){window.location.reload(true)}, (60000*60));
 
@@ -177,11 +215,11 @@ $(function() {
     set_name: function(worker_data) {
                 $('.tape', w).text(worker_data.name || sanitize_name(worker_data.device_name));
                 $(w).attr('data-name', (worker_data.name || worker_data.device_name));
-                $(w).attr('data-online', worker_data.online);
                 $(w).attr('data-devicename', worker_data.device_name);
                 $(w).attr('data-slackname', worker_data.slack_name);
+                $(w).attr('data-slackid', worker_data.slack_id);
+                $(w).attr('data-avatar', worker_data.avatar);
                 $(w).attr('data-title', worker_data.title);
-                $(w).addClass('online-' + worker_data.online); // future
               },
     set_avatar: function(avatar_url) {
                   $('.avatar_container img', w).attr('src', avatar_url || '/images/visitor_art@1x-21d82dcb.png');
@@ -205,7 +243,7 @@ $(function() {
                  w.addClass(device_name.replace(/\./g, ''));
                },
     add_to_board: function(worker_data) {
-                    Worker.add_slack();
+                    //Worker.add_slack(); // slack pinging is handled elsewhere
                     //Welcome.move_logo_and_welcomes();
                     var animated = 'swing' + Math.floor((Math.random() * 2) + 1)
                     $(w).addClass('animated').addClass(animated.toString());
@@ -367,7 +405,6 @@ $(function() {
     $('.form-control-clear button').removeClass('btn-primary').addClass('btn-secondary');
     $(this).siblings('input[type="text"]').blur();
     $('.worker').each(function(i, v) { $(v).show(); });
-    $('#worker-search').onScreenKeyboard('hide',{topPosition: '75%'});
   });
 
 
