@@ -65,7 +65,6 @@ $(function() {
     }
   });
 
-
   var es = new EventSource('/feed');
   var people = [];
 
@@ -210,7 +209,7 @@ $(function() {
                     //Welcome.move_logo_and_welcomes();
                     var animated = 'swing' + Math.floor((Math.random() * 2) + 1)
                     $(w).addClass('animated').addClass(animated.toString());
-                    $('.workers.row').append(w);
+                    $('.workers.flex-row').append(w);
                     $('.newcomer h3').text(worker_data.name || sanitize_name(worker_data.device_name));
                     $('.newcomer_avatar img').attr('src', worker_data.avatar || '/images/visitor_art@1x-21d82dcb.png');
                     $('.newcomer_avatar, .newcomer').show().removeClass('animated').removeClass('bounceOutUp').addClass('animated bounceInDown');

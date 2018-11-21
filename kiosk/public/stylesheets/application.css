@@ -1,10 +1,15 @@
-html, body, .container-fluid, .row {
- height:auto;
- }
+html {
+ min-height: 100%
+ position: relative;
+}
+
+body{
+  height:100%;
+}
 
 @media (min-width: 576px) { 
-  html, body, .container-fluid, .row {
-    height: 100%;
+  #header {
+    height: 100vh;
   }
 }
 
@@ -12,13 +17,15 @@ html, body, .container-fluid, .row {
 /* --- split panel layout ---*/
 
 
-#header {
+#header { 
+  display:block;
   background-color: #0c314d;
   padding: 2em;
 }
 
 .nav-item {
-  width:100%;
+  width: 100%;
+  margin-right: 2rem;
 }
 /*#header nav ul {
   padding: 0;
@@ -64,6 +71,7 @@ html, body, .container-fluid, .row {
 }
 
 #main {
+
   padding: 2em;
 }
 /*#main .col-sm-6 {
@@ -236,12 +244,6 @@ html, body, .container-fluid, .row {
   left:22%;
   top:-5px;
   margin-bottom:-35px;
-}
-
-.worker {
-  padding: 2em 0 0 0;
-  position:relative;
-  text-align: center;
 }
 
 .avatar_container {
