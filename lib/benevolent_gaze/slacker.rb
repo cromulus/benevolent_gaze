@@ -251,20 +251,7 @@ module BenevolentGaze
         info = client.web_client.users_info(user: data['user'])
         user_data = info.user
         next if user_data.is_bot
-        #@r.sadd('current_slackers', data['user'])
-        #@r.setex("presence:#{data['user']}",120,'active')
         
-        #reminded = @r.exists("pushup_reminder:#{data['user']}")
-        #pushuper = @r.sismember('pushups',data['user'])
-        #counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
-        if !reminded && !counted_today && pushuper
-          client.web_client.chat_postMessage(channel: data['user'],
-                                               text: "Remember to send to @marco your pushup count!",
-                                               as_user: true)
-          client.web_client.chat_postMessage(channel: data['user'],
-                                               text: "like this: '@marco pushups 5'",
-                                               as_user: true)
-        end
 
         if user_data.profile.title == '' || user_data.profile.title.nil?
           if @r.get("profile_remind:#{data['user']}").nil?

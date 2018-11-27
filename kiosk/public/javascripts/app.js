@@ -30,12 +30,14 @@ $(function() {
   // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
   // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     var modal = $(this)
-    modal.find('.worker-name').text(name);
-    modal.find('.avatar_container img').attr("src", avatar);
-    modal.find('.modal-profile').text(title);
-    $('.slack_buttons button').on('click',function(el){
+    var is_online = true
+    
+    $.ajax({url:'/online', type: "get", data: {slack_id: slack_id}}).done(function(){
+      
+      is_online = true;
+      $('.slack_buttons button').on('click',function(el){
       var msg = $(this).html();
-      console.log(msg);
+      
       $.ajax({
           type: 'POST',
           // make sure you respect the same origin policy with this url:
@@ -53,9 +55,19 @@ $(function() {
           $.wait(function() {
             console.log('waited')
           }, 6);
-        })
-      
+        })  
     })
+      // setup online stuff
+    }).fail(function(){
+      
+      is_online = false;
+      
+    });
+
+    
+    modal.find('.worker-name').text(name);
+    modal.find('.avatar_container img').attr("src", avatar);
+    modal.find('.modal-profile').text(title);
   })
 
   // reload the page every hour.
@@ -145,6 +157,8 @@ $(function() {
   // handles inbound messages
   // should refactor most of this into Worker class
   var onmessage = function(msg) {
+
+    //https://stackoverflow.com/questions/19506672/how-to-check-if-bootstrap-modal-is-open-so-i-can-use-jquery-validate
     console.log(msg);
 
     var slack_name = msg['user'].replace('@', '');

@@ -19,6 +19,7 @@ require 'slack-ruby-client'
 require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
+require 'google/cloud/vision'
 require 'active_support'
 require 'securerandom'
 require 'set'
@@ -618,6 +619,7 @@ module BenevolentGaze
       content_type 'application/json'
       user = get_user_info
       res = nil
+      
       if user == false
         status 410
         return { success: false }.to_json
@@ -654,16 +656,17 @@ module BenevolentGaze
         other_calendars.each do |cal_id|
           begin
             event = service.get_event(cal_id, e_id)
+            if event.present?
+              old_cal_id = cal_id
+              logger.info('event is in another calendar')
+            end
           rescue Google::Apis::ClientError => e
             logger.info('failed to find event in other calendars')
           end
         end
       end
 
-      if event && event.status != 'cancelled'
-        logger.info('event is in another calendar and not cancelled')
-        old_cal_id = calendar_id
-      else # event doesn't exist or status == cancelled
+      if event.present? && event.status == 'cancelled'
         logger.info('event is either cancelled or not in the calendar')
         event = nil
       end
