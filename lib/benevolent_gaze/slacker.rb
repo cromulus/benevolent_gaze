@@ -184,12 +184,6 @@ module BenevolentGaze
                          gif: 'idiot')
         end
       end
-
-      match(/.*/) do |client, data, match|
-        @r ||= Redis.current
-        @r.setex("presence:month:#{data['user']}", 1.month.to_i, true)
-      end
-
       # catchall
       match(/^(?<bot>\w*)\s(?<expression>.*)$/) do |client, data, match|
         expression = match['expression'].strip
@@ -209,6 +203,10 @@ module BenevolentGaze
           client.message(channel: (data['channel']).to_s,
                          text: "sent '#{msg}' to the kiosk")
         end
+      end
+      match(/.*/) do |client, data, match|
+        @r ||= Redis.current
+        @r.setex("presence:month:#{data['user']}", 1.month.to_i, true)
       end
     end
   end
