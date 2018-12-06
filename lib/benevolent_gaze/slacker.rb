@@ -186,7 +186,8 @@ module BenevolentGaze
       end
 
       match(/.*/) do |client, data, match|
-        @redis.setex("presence:month:#{data['user']}", 1.month.to_i, true)
+        @r ||= Redis.current
+        @r.setex("presence:month:#{data['user']}", 1.month.to_i, true)
       end
 
       # catchall

@@ -493,7 +493,7 @@ module BenevolentGaze
     get '/everyone' do
       workers = @slack.users_list.members.select do |w|
         # check if they've said anything in the past month. see slacker.rb
-        if @redis.exists?("presence:month:#{w.id}")
+        if @r.exists("presence:month:#{w.id}")
           w.profile.is_custom_image && !w.is_bot && w.real_name.present?
         else
           false
