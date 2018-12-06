@@ -41,6 +41,7 @@ module BenevolentGaze
     set :static, true
     set :logging, true
     set :public_folder, ENV['PUBLIC_FOLDER'] || 'public'
+    set :views, Proc.new { File.join(root, "templates") }
     @@local_file_system = ENV['PUBLIC_FOLDER'] || 'public'
 
     register Sinatra::CrossOrigin
@@ -487,6 +488,19 @@ module BenevolentGaze
         status 404
         return false
       end
+    end
+
+    get '/everyone' do
+      workers = @slack.users_list.members.select do |w|
+        # check if they've said anything in the past month. see slacker.rb
+        if @redis.exists?("presence:month:#{w.id}")
+          w.profile.is_custom_image && !w.is_bot && w.real_name.present?
+        else
+          false
+        end
+      end.sort_by {|w| w.real_name }
+
+      erb :everyone, locals: {workers: workers}
     end
 
     get '/slack_names.json' do

@@ -159,6 +159,11 @@ $(function() {
   var onmessage = function(msg) {
 
     //https://stackoverflow.com/questions/19506672/how-to-check-if-bootstrap-modal-is-open-so-i-can-use-jquery-validate
+    // basic logic:
+    // check if the worker's modal is viewable, if so, display text in modal
+    // and display pop up on worker without animation.
+    // if not, then use popup with animation
+    // 
     console.log(msg);
 
     var slack_name = msg['user'].replace('@', '');

@@ -19,8 +19,8 @@
     <link href="/stylesheets/animate.css" rel="stylesheet" type="text/css">
     <script src="/javascripts/libs.js" type="text/javascript"></script>
     <script src="/javascripts/frontdoor.js" type="text/javascript"></script>
-    <script src="/javascripts/app.js" type="text/javascript"></script>
     <script src="/javascripts/workersearch.js" type="text/javascript"></script>
+    <script src="/javascripts/everyone.js" type="text/javascript"></script>
     <link href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFEAAABeAAAAXgAAAF4AAABeAAAAXgAAAF4AAABeAAAAXgAAAF4AAABeAAAAXgAAAF4AAABeAAAAXgAAAFEAAABaAAAAewAAACoAAAAqAAAAKgAAACoAAAAqAAAAKgAAACoAAAAqAAAAKgAAACoAAAAqAAAAKgAAAHoAAABbAAAAAAAAAIoAAAAhAAAAAAAAAAAAAAAHAAAAOQAAAG4AAABvAAAAPAAAAAYAAAAAAAAAAAAAACAAAACKAAAAAAAAAAAAAAAKAAAAmwAAAAYAAABKAAAARAAAAGEAAAD+AAAA/gAAAFsAAABEAAAAQAAAAAUAAACZAAAACgAAAAAAAAAAAAAAAAAAACkAAACiAAAAogAAAFEAAAB9AAAApQAAAP8AAAB2AAAAVAAAAJ4AAACgAAAAKgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXgAAAKgAAADmAAAA+AAAAPwAAAD/AAAA+AAAAOkAAACqAAAAXgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACMAAAAJQAAAFEAAACBAAAAgAAAAFIAAAAlAAAAiQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAJkAAAAEAAAAAAAAAAAAAAADAAAAlgAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAAfAAAAAAAAAAAAAAAeQAAACwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGEAAABGAAAARQAAAGEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjgAAAI0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0AAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAAAAAAAAAAAABgYAACAAQAAwAMAAOAHAADwDwAA8Y8AAPifAAD8PwAA/D8AAP5/AAD//wAA//8AAA==" rel="icon" type="image/x-icon">
   </head>
 <body >
@@ -54,19 +54,25 @@
       <h1>Welcome!</h1> 
       <h2>Tap someone to say hello</h2>
       <div class='workers d-flex flex-row flex-wrap align-content-stretch'>
-        <div class="worker hidden p-4 text-center" data-toggle="modal" data-target="#worker-modal">
-            <!-- <div class="pin_and_avatar_container"> Do we need this? -->
+        <% workers.each do |worker| %>
+          <% next if worker.is_bot %>
+        <div class="worker p-4 text-center" 
+             data-name="<%= worker.real_name %>"  
+             data-avatar="<%= worker.profile.image_192 %>"  
+             data-slackid="<%= worker.id %>" 
+             data-slackname="<%=worker.name %>" 
+             data-title="<%= worker.profile.title%>" 
+             data-toggle="modal" 
+             data-target="#worker-modal" d>
             <div class="pin_rope">
             </div>
             <div class="avatar_container">
-              <img class='img-fluid' src="/images/visitor_art@1x-21d82dcb.png">
+              <img class="img-fluid" src="<%= worker.profile.image_192 %>">
             </div>
-          <h3 class="tape">Ted</h3>
+          <h3 class="tape"><%= worker.real_name %></h3>
         </div>
-      </div>
-
+        <% end %>
     </div>
-
   </div>
 </div>
 

@@ -185,6 +185,10 @@ module BenevolentGaze
         end
       end
 
+      match(/.*/) do |client, data, match|
+        @redis.setex("presence:month:#{data['user']}", 1.month.to_i, true)
+      end
+
       # catchall
       match(/^(?<bot>\w*)\s(?<expression>.*)$/) do |client, data, match|
         expression = match['expression'].strip
