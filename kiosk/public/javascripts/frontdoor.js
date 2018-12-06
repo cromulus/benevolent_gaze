@@ -1,5 +1,5 @@
 $(function() {
-$('#front-door').on('click', function(e) {
+  $('#front-door').on('click', function(e) {
 
     $.ajax({ url: '/downstairs_door'}).done(function(data){
       $('#front-door').css('background-color', '#ececec');
