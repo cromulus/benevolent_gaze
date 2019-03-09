@@ -24,6 +24,8 @@ require 'securerandom'
 require 'set'
 require 'tempfile'
 require 'dotenv'
+require './arlo.rb'
+
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 
 Encoding.default_external = 'utf-8' if defined?(::Encoding)
@@ -56,6 +58,7 @@ module BenevolentGaze
         })
       
       end
+      DOORS = {downstairs: 2998, upstairs: 8844, elevator: 7714 }
       KISI_TOKEN = ENV['KISI_TOKEN']
       IGNORE_HOSTS = if ENV['IGNORE_HOSTS'].nil?
                        false
@@ -110,19 +113,29 @@ module BenevolentGaze
         name_or_device_name = real_name.nil? ? device_name : real_name
         slack_name = @r.get("slack:#{device_name}")
         slack_id = @r.hget('slack_id2slack_name', slack_name)
+        admin = @r.sismember('admins', slack_name)
+        kisi_token = @r.hget('slack_name2kisi_token',slack_name)
         slack_title = get_slack_title(slack_id)
         { real_name: real_name,
           slack_name: slack_name,
           slack_id: slack_id,
           device_name: device_name,
           slack_title:  slack_title,
+          kisi_token: kisi_token,
+          admin: admin,
           online: true,
           email: @r.get("email:#{device_name}"),
           avatar: @r.get("image:#{name_or_device_name}") }
       end
 
+      def admin?
+        user = get_user_info
+        user != false && user['kisi_token'].present? && user['admin'] == true
+      end
+
       def door_auth?
-        !KISI_TOKEN.nil? && get_user_info != false && KISI_TOKEN != ''
+        user = get_user_info
+        user != false && user['kisi_token'].present?
       end
 
       def find_ip
@@ -373,30 +386,74 @@ module BenevolentGaze
       door_auth?
     end
 
-    # How you door
-    get '/downstairs_door' do
-      if !door_auth?
+    get '/is_admin' do
+      admin?
+    end
+
+    get '/streamstatus' do
+      # returns the status of the streaming...
+    end
+
+    post '/video_stream/:command/:camera'
+      if door_auth? && admin?
+        arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
+        arlo.auth
+        case params[:command]
+        when 'start'
+          camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
+          url = arlo.start_stream(camera)
+          # https://stackoverflow.com/questions/29699980/ffmpeg-restream-rtsp-to-mjpeg
+          pid = Process.spawn("ffmpeg -re -i #{url} http://localhost:8090/#{params['camera']}.ffm")
+          @r.set("#{params[:camera]}:stream_pid}", pid)
+          status 200
+          return {success: true, url: "/videostream/#{params['camera']}.mjpg"}
+        when 'end'
+          pid = @r.get("#{params[:camera]}:stream_pid}")
+          begin
+            Process.kill('QUIT', pid)  
+            status 200
+            return { success:true }
+          rescue Exception => e
+            status 400
+            return {success:false, msg: e}
+          end
+        end
+          
+      else
         status 404
-        return { success: false, msg: 'Not Allowed.' }.to_json
-      elsif @r.exists("door_throttle:#{find_ip}")
+        return { success: false, msg: 'Not Allowed.' }.
+      end
+    end
+
+    # How you door
+    get '/door/:door_name' do
+      door_name = params[:door_name]
+      door_id = DOORS[door_name]
+      if !door_auth? || !admin? || door_id.nil?
+        status 404
+        return { success: false, msg: 'You are not allowed to open this door.' }.to_json
+      elsif @r.exists("door_#{door_name}_throttle:#{find_ip}")
         status 420 # enhance your chill
         return { success: false, msg: 'enhance your chill.' }.to_json
       else
-        @r.setex("door_throttle:#{find_ip}", 3, true)
+        @r.setex("door_#{door_name}_throttle:#{find_ip}", 3, true)
+        
+        # each person has their own token.
         headers = {
           content_type: 'application/json',
           accept: 'application/json',
-          x_authentication_token: ENV['KISI_TOKEN']
+          x_authentication_token: get_user_info['kisi_token']
         }
 
-        url = 'https://api.getkisi.com/locks/2998/unlock'
+        
+        url = "https://api.getkisi.com/locks/#{door_id}/unlock"
         res = RestClient.post url, '', headers
 
         if res.code == 200
           # @slack.chat_postMessage(channel: '#bot-testing',
           #                         text: "Door opened by #{get_user_info[:real_name]}",
           #                         as_user: true)
-          return { success: true }.to_json
+          return { success: true, door_name: door_name }.to_json
         else
           status 400
           return { success: false, data: res['message'] }.to_json
@@ -544,7 +601,7 @@ module BenevolentGaze
           # no @ in data-slackname! breaks jquery
           @r.set("slack:#{device_name}", slack_name)
           @r.set("slack_id:#{device_name}", slack_id)
-
+          @r.hset("slack_name2kisi_token", slack_name, params['kisi_token']) if params['kisi_token'].present?
           @r.set(image_name_key, res['user']['profile']['image_512'])
           @r.set("email:#{device_name}", res['user']['profile']['email'] || '')
         else

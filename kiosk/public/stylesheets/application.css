@@ -432,4 +432,8 @@ body{
   font-size:2rem;
   font-weight:bold;
   text-decoration:none;
-.}
+}
+.door-button{
+  text-transform:capitalize;
+}
+

@@ -1,0 +1,21 @@
+video:
+start button, end button for each camera
+start button starts video, returns streaming url
+url is passed to ffmpeg, which opens up file: stairway.mp4
+once that is returned to front end we use js to open up sinatra stream to stairway.mp4
+
+
+close stream: on navigate away, we stop the stream with JS calling sinatra to call arlo.
+
+possibly use this instead? https://github.com/chpmrc/foscam_streamer
+foscams streamer edit: take in rtsp stream and port as command line, and stream to port.
+
+flow: 
+  click start stream to arlo -> get stream url 
+  pass to foscamstreamer and pass port to front end. pid = Process.spawn("ls -arlo")
+  save foscam_stream pid in redis and use to kill later on.
+  js opens port or proxies through sinatra and plays video
+  button click to end stream -> ends js stream and sends message to stop stream at arlo
+
+
+use https://github.com/phoboslab/jsmpeg to play video

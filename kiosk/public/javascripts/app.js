@@ -23,30 +23,29 @@ $(function() {
   // reload the page every hour.
   setTimeout(function(){window.location.reload(true)}, (60000*60));
 
-  $('#front-door').on('click', function(e) {
 
-    $.ajax({ url: '/downstairs_door'}).done(function(data){
-      $('#front-door').css('background-color', '#ececec');
-      $('#front-door').text('Opened!');
-      $('#front-door').animateCss('pulse');
+  $('.door-button').on('click', function(e) {
+    var door_name = $($this).attr('id');
+    $.ajax({ url: '/door/'+door_name}).done(function(data){
+      $('#'+door_name+'-door').css('background-color', '#ececec');
+      $('#'+door_name+'-door').text('Opened!');
+      $('#'+door_name+'-door').animateCss('pulse');
 
     }).fail(function(data) {
-      $('#front-door').animateCss('shake');
+      $('#'+door_name+'-door').animateCss('shake');
       d = JSON.parse(data.responseText);
-      $('#front-door').tooltip({title: d['msg'],
+      $('#'+door_name+'-door').tooltip({title: d['msg'],
                                 trigger: 'manual',
                                 placement: 'right'}).tooltip('show');
 
-      setTimeout(function() { $('#front-door').tooltip('hide'); }, 2000);
+      setTimeout(function() { $('#'+door_name+'-door').tooltip('hide'); }, 2000);
     }).always(function(){
       setTimeout(function() {
-        $('#front-door').text('Open Front Door');
-        $('#front-door').css('background-color', '#b0e61d');
+        $('#'+door_name+'-door').text('Open '+door_name+' Door');
+        $('#'+door_name+'-door').css('background-color', '#b0e61d');
       }, 1000);
-    })
-    
-  });
-
+    })    
+  })
 
   // sends the user to register if unregistered,
   $.ajax({url: '/is_registered'}).done(function(data){
@@ -56,7 +55,12 @@ $(function() {
         if (d['data']['real_name'] === 'Reception') {
           $('#register').hide(); // hide registration
         }
+        if (d['data']['admin'] != 'true') {
+          $('#video').hide(); // hide video options
+          $('.door-button').hide(); // hide doors unless admin
+        }
       });
+
       console.log('registered!');
     } else {
       if (window.location.href.indexOf('register') === -1) {
