@@ -398,18 +398,19 @@ module BenevolentGaze
       if door_auth? && admin?
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
+        camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
         case params[:command]
         when 'start'
-          camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
           url = arlo.start_stream(camera)
           # https://stackoverflow.com/questions/29699980/ffmpeg-restream-rtsp-to-mjpeg
-          pid = Process.spawn("ffmpeg -re -i #{url} http://localhost:8090/#{params['camera']}.ffm")
+          pid = Process.spawn("ffmpeg -re -i '#{url}' -acodec copy -vcodec copy 'http://127.0.0.1:8090/#{params['camera'].downcase}.mp4'")
           @r.set("#{params[:camera]}:stream_pid}", pid)
           status 200
-          return {success: true, url: "/videostream/#{params['camera']}.mjpg"}
-        when 'end'
+          return {success: true, url: "/videostream/#{params['camera'].downcase}.mjpg"}
+        when 'stop'
           pid = @r.get("#{params[:camera]}:stream_pid}")
           begin
+            arlo.stop_stream(camera)
             Process.kill('QUIT', pid)  
             status 200
             return { success:true }
@@ -418,7 +419,6 @@ module BenevolentGaze
             return {success:false, msg: e}
           end
         end
-          
       else
         status 404
         return { success: false, msg: 'Not Allowed.' }.
