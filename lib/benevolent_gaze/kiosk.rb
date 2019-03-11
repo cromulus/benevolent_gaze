@@ -390,38 +390,42 @@ module BenevolentGaze
       admin?
     end
 
-    get '/streamstatus' do
-      # returns the status of the streaming...
+    get '/streamstatus/:camera' do
+      @r.exists("#{params[:camera]}:stream_pid}")
     end
 
     post '/video_stream/:command/:camera'
+      # how this works:
+      # stream to a special websocket relay for each camera
+      # kill with pids
       if door_auth? && admin?
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
-        camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
+        camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'].capitalize }
         case params[:command]
-        when 'start'
-          url = arlo.start_stream(camera)
-          # https://stackoverflow.com/questions/29699980/ffmpeg-restream-rtsp-to-mjpeg
-          pid = Process.spawn("ffmpeg -re -i '#{url}' -acodec copy -vcodec copy 'http://127.0.0.1:8090/#{params['camera'].downcase}.mp4'")
-          @r.set("#{params[:camera]}:stream_pid}", pid)
-          status 200
-          return {success: true, url: "/videostream/#{params['camera'].downcase}.mjpg"}
-        when 'stop'
-          pid = @r.get("#{params[:camera]}:stream_pid}")
-          begin
-            arlo.stop_stream(camera)
-            Process.kill('QUIT', pid)  
+          when 'start'
+            url = arlo.start_stream(camera)
+            # https://github.com/phoboslab/jsmpeg
+            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -codec:a mp2 'http://127.0.0.1:8081/supersecret/#{params['camera'].downcase}.ts'")
+            @r.set("#{params[:camera]}:stream_pid}", pid)
             status 200
-            return { success:true }
-          rescue Exception => e
-            status 400
-            return {success:false, msg: e}
-          end
+            return {success: true, url: "/#{params['camera'].downcase}.mjpg"}
+          when 'stop'
+            pid = @r.get("#{params[:camera]}:stream_pid}")
+            begin
+              arlo.stop_stream(camera)
+              Process.kill('QUIT', pid)  
+              status 200
+              @r.del("#{params[:camera]}:stream_pid}")
+              return { success:true }
+            rescue Exception => e
+              status 400
+              return {success:false, msg: e}
+            end
         end
       else
         status 404
-        return { success: false, msg: 'Not Allowed.' }.
+        return { success: false, msg: 'Not Allowed.' }
       end
     end
 

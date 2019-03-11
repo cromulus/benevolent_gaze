@@ -1,13 +1,12 @@
 from arlo import Arlo
 import sys
-from dotenv import load_dotenv
 from subprocess import call
 
-load_dotenv()
 
-USERNAME = os.getenv('ALRO_EMAIL')
-PASSWORD = os.getenv('ALRO_PASSWORD')
-
+#USERNAME = os.getenv('ALRO_EMAIL')
+#PASSWORD = os.getenv('ALRO_PASSWORD')
+USERNAME = 'robinhoodfoundation@live.com'
+PASSWORD = '1u@jh&Yf1'
 
 try:
 
