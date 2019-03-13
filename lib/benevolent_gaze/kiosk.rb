@@ -405,8 +405,8 @@ module BenevolentGaze
         case params[:command]
           when 'start'
             url = arlo.start_stream(camera)
-            # https://github.com/phoboslab/jsmpeg
-            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -codec:a mp2 'http://127.0.0.1:8081/supersecret/#{params['camera'].downcase}.ts'")
+            # https://github.com/phoboslab/jsmpegx
+            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:8081/supersecret/#{params['camera'].downcase}.ts'")
             @r.set("#{params[:camera]}:stream_pid}", pid)
             status 200
             return {success: true, url: "/#{params['camera'].downcase}.mjpg"}
