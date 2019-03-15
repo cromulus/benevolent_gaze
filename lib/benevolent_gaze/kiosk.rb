@@ -390,6 +390,7 @@ module BenevolentGaze
       admin?
     end
 
+    # https://github.com/djberg96/sys-proctable
     get '/streamstatus/:camera' do
       @r.exists("#{params[:camera]}:stream_pid}")
     end
@@ -397,7 +398,9 @@ module BenevolentGaze
     post '/video_stream/:command/:camera'
       # how this works:
       # stream to a special websocket relay for each camera
-      # kill with pids
+      # kill ffmpeg with pids.
+      # use sendbeacon to notify that there is no one watching.
+      # use eventstream to stream count of folks watching.
       if door_auth? && admin?
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
