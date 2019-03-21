@@ -10,7 +10,7 @@ include FileUtils
 module BenevolentGaze
   class Cli < Thor
     include Thor::Actions
-    source_root File.expand_path('../../../kiosk', __FILE__)
+    source_root File.expand_path('../../kiosk', __dir__)
 
     desc 'kiosk', 'Start up the sinatra app that displays the users'
     def kiosk

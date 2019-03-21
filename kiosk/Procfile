@@ -2,4 +2,4 @@ kiosk:      benevolent_gaze kiosk
 tracker:    benevolent_gaze tracker
 slacker:    benevolent_gaze slacker
 doorrelay:    node websocket-relay.js supersecret 8081 8082
-stairwellrelayf:    node websocket-relay.js supersecret 8083 8084
+stairwellrelay:    node websocket-relay.js supersecret 8083 8084

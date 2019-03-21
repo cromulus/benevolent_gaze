@@ -39,6 +39,7 @@ module BenevolentGaze
       def get_ip(device)
         ip = @r.get("ip:#{device}") # some nice dns caching.
         return ip unless ip.nil?
+
         begin
           resource = @dns.getresource(device, Resolv::DNS::Resource::IN::A)
         rescue Resolv::ResolvError
@@ -54,6 +55,7 @@ module BenevolentGaze
       def ping(device)
         ip = get_ip(device)
         return false unless ip
+
         cmd = "timeout 0.5 ping -c1 -q #{ip}  > /dev/null 2>&1 && echo true"
         first = exec_with_timeout(cmd, 1).chomp == 'true'
         second = exec_with_timeout(cmd, 1).chomp == 'true'
@@ -110,12 +112,12 @@ module BenevolentGaze
         rescue Timeout::Error
           begin
             Process.kill(-9, pid)
-          rescue
+          rescue StandardError
             Errno::ESRCH
           end
           begin
             Process.detach(pid)
-          rescue
+          rescue StandardError
             Errno::ESRCH
           end
         ensure

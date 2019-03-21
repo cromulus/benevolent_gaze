@@ -83,6 +83,7 @@ module BenevolentGaze
           real_name = @r.get("name:#{device}")
           slack = @r.get("slack:#{device}") || false
           next unless slack
+
           name = real_name.empty? ? slack : real_name
           names << name
         end
@@ -107,23 +108,23 @@ module BenevolentGaze
 
       command 'stats-pushups', 'pushups-stats' do |client, data, _command|
         @r ||= Redis.current
-        people = @r.zrange('pushups-streaks',0,5,withscores: true).map do |person, score| 
+        people = @r.zrange('pushups-streaks', 0, 5, withscores: true).map do |person, score|
           "<@#{person}>: #{score}\n"
         end
         client.message(channel: (data['channel']).to_s, text: "Top 5 Streaks:\n #{people}")
       end
 
-      command %r{pushups ([0-9]+)} do |client, data, command_match|
+      command /pushups ([0-9]+)/ do |client, data, command_match|
         @r ||= Redis.current
         if @r.sismember('pushups', data['user'])
           if !@r.hexists("pushups:#{data['user']}", Date.today.to_s)
-            @r.hset("pushups:#{data['user']}",Date.today.to_s, command_match[1])
+            @r.hset("pushups:#{data['user']}", Date.today.to_s, command_match[1])
             counter = 0
             done = false
             while done == false
               check_date = Date.today - counter
               if @r.hexists("pushups:#{data['user']}", check_date.to_s)
-                counter +=1
+                counter += 1
               else
                 done = true
               end
@@ -132,7 +133,7 @@ module BenevolentGaze
             client.message(channel: (data['channel']).to_s, text: "Streak: #{counter}")
             client.message(channel: (data['channel']).to_s, text: "Total: #{@r.hlen("pushups:#{data['user']}")}")
           else
-            client.message(channel: (data['channel']).to_s, text: "you already recorded for today!")
+            client.message(channel: (data['channel']).to_s, text: 'you already recorded for today!')
           end
         else
           client.message(channel: (data['channel']).to_s, text: "doesn't look like you are in the pushup club. message '@marco pushups-join' to join")
@@ -166,7 +167,7 @@ module BenevolentGaze
 
       # unsure about this one.
       command 'marco', 'call' do |client, data, _match|
-        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+        if client.ims.key?(data['channel']) && data['user'] != 'U0L4P1CSH'
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
@@ -188,7 +189,8 @@ module BenevolentGaze
       match(/^(?<bot>\w*)\s(?<expression>.*)$/) do |client, data, match|
         expression = match['expression'].strip
         next if expression == 1
-        if client.ims.keys.include?(data['channel']) && data['user'] != 'U0L4P1CSH'
+
+        if client.ims.key?(data['channel']) && data['user'] != 'U0L4P1CSH'
           puts "post '#{data['text']}' to kiosk from #{data['user']}"
           user = data['user']
           msg  = data['text']
@@ -204,7 +206,7 @@ module BenevolentGaze
                          text: "sent '#{msg}' to the kiosk")
         end
       end
-      match(/.*/) do |client, data, match|
+      match(/.*/) do |_client, data, _match|
         @r ||= Redis.current
         @r.setex("presence:month:#{data['user']}", 1.month.to_i, true)
       end
@@ -224,24 +226,25 @@ module BenevolentGaze
       # @r.del('current_slackers')
       # @r.smembers('current_devices').each { |device_name|
       #   slack_name = @r.get("slack:#{device_name}")
-      #   if client.getPresence(slack_name) == 'active' 
-      #     @r.sadd('current_slackers', slack_name) 
+      #   if client.getPresence(slack_name) == 'active'
+      #     @r.sadd('current_slackers', slack_name)
       #     puts "active"
       #   end
       # }
       # client.users.each do |sid, u|
       #   @r.sadd('current_slackers', sid) if u.presence == 'active'
       # end
-      #puts "#{@r.scard('current_slackers')} slackers online"
+      # puts "#{@r.scard('current_slackers')} slackers online"
     end
 
     on 'team_join' do |client, data| # onboarding opportunity
       info = client.web_client.users_info(user: data['user'])
       user_data = info.user
       next if user_data.is_bot
+
       client.web_client.chat_postMessage(channel: data['user'],
-                                             text: "Hi! Welcome to BRL! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.) You can click on the link anytime to update your photo on the Kiosk.",
-                                             as_user: true)
+                                         text: "Hi! Welcome to BRL! If you want to be on the reception Kiosk, click on this link http://#{ENV['SERVER_HOST']}/slack_me_up/#{data['user']} when you are in the office, connected to the wifi. (It won't work anywhere else.) You can click on the link anytime to update your photo on the Kiosk.",
+                                         as_user: true)
       puts "just joined team : #{user_data.name}"
     end
 
@@ -250,23 +253,24 @@ module BenevolentGaze
       puts "#{data['user']}: is #{data['presence']}."
       case data['presence']
       when 'active'
-        
+
         info = client.web_client.users_info(user: data['user'])
         user_data = info.user
         next if user_data.is_bot
-        #@r.sadd('current_slackers', data['user'])
-        #@r.setex("presence:#{data['user']}",120,'active')
-        
-        #reminded = @r.exists("pushup_reminder:#{data['user']}")
-        #pushuper = @r.sismember('pushups',data['user'])
-        #counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
+
+        # @r.sadd('current_slackers', data['user'])
+        # @r.setex("presence:#{data['user']}",120,'active')
+
+        # reminded = @r.exists("pushup_reminder:#{data['user']}")
+        # pushuper = @r.sismember('pushups',data['user'])
+        # counted_today = @r.hexists("pushups:#{data['user']}", Date.today.to_s)
         if !reminded && !counted_today && pushuper
           client.web_client.chat_postMessage(channel: data['user'],
-                                               text: "Remember to send to @marco your pushup count!",
-                                               as_user: true)
+                                             text: 'Remember to send to @marco your pushup count!',
+                                             as_user: true)
           client.web_client.chat_postMessage(channel: data['user'],
-                                               text: "like this: '@marco pushups 5'",
-                                               as_user: true)
+                                             text: "like this: '@marco pushups 5'",
+                                             as_user: true)
         end
 
         if user_data.profile.title == '' || user_data.profile.title.nil?

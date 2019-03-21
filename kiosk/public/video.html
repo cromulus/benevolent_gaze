@@ -9,16 +9,34 @@
       text-align: center;
     }
   </style>
-  
+  <script>
+    window.addEventListener("unload", stopStream, false);
+    function stopStream() {
+      navigator.sendBeacon("/streamstop", {});
+    }
+  </script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript" src="/javascripts/jsmpeg.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
 </head>
 <body>
-  <canvas id="video-canvas"></canvas>
-  <script type="text/javascript" src="/javascripts/jsmpeg.min.js"></script>
+  <canvas id="stairwell"></canvas>
+  <canvas id="door"></canvas>
 <!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon -->
   <script type="text/javascript">
-    var canvas = document.getElementById('video-canvas');
-    var url = 'ws://'+document.location.hostname+':8082/';
-    var player = new JSMpeg.Player(url, {canvas: canvas});
+    $.post('/video_stream/start/stairwell',{},function(){
+      var canvas = document.getElementById('stairwell');
+      var url = 'ws://'+document.location.hostname+':8083/';
+      var player = new JSMpeg.Player(url, {canvas: canvas});  
+    });
+    $.post('/video_stream/start/door',{},function(){
+      var canvas = document.getElementById('door');
+      var url = 'ws://'+document.location.hostname+':8081/';
+      var player = new JSMpeg.Player(url, {canvas: canvas});  
+    });
+    
   </script>
 </body>
 </html>
