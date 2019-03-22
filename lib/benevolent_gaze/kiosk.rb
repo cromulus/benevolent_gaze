@@ -24,7 +24,7 @@ require 'securerandom'
 require 'set'
 require 'tempfile'
 require 'dotenv'
-require './arlo.rb'
+
 
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
 
@@ -382,10 +382,22 @@ module BenevolentGaze
     get '/calendar' do
       send_file 'public/calendar.html'
     end
+    
+    get '/video' do
+      send_file 'public/video.html'
+    end
+    
     # checks for the front end if we can door.
     get '/can_door' do
-      door_auth?
+      if door_auth?
+        status 200
+        return {success: true}
+      else
+        status 404
+        return {success: false}
+      end
     end
+
 
     get '/is_admin' do
       admin?
@@ -416,45 +428,46 @@ module BenevolentGaze
       return { success:true }
     end
 
-    post '/video_stream/:command/:camera'
+    post '/video_stream/:command/:camera' do
     # how this works:
     # stream to a special websocket relay for each camera
     # kill ffmpeg with pids.
     # use sendbeacon to notify that there is no one watching.
     # use eventstream to stream count of folks watching.
-    user = get_user_info
-    if door_auth? && admin?
-      arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
-      arlo.auth
-      camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'].capitalize }
-      case params[:command]
-      when 'start'
-        @r.sadd('viewers',user['slack_name'])
-        url = arlo.start_stream(camera)
-        # https://github.com/phoboslab/jsmpegx
-        pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:8081/supersecret/#{params['camera'].downcase}.ts'")
-        @r.set("#{params[:camera]}:stream_pid}", pid)
-        status 200
-        return {success: true, url: "/#{params['camera'].downcase}.mjpg"}
-      when 'stop'
-        pid = @r.get("#{params[:camera]}:stream_pid}")
-        begin
-          arlo.stop_stream(camera)
-          Process.kill('QUIT', pid)
-          @r.del("#{params[:camera]}:stream_pid}")
-          @r.srem('viewers',user['slack_name'])
+      user = get_user_info
+      #if user['admin'] == true
+        arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
+        arlo.auth
+        camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
+        case params[:command]
+        when 'start'
+          @r.sadd('viewers',user['slack_name'])
+          url = arlo.start_stream(camera)
+          # https://github.com/phoboslab/jsmpegx
+          camera_pids = {'stairwell':8083, 'door':8081}
+          pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_pids[params['door']]}/supersecret/'")
+          @r.set("#{params[:camera]}:stream_pid}", pid)
           status 200
-          return { success:true }
-        rescue Exception => e
-          status 400
-          return {success:false, msg: e}
+          return {success: true }
+        when 'stop'
+          pid = @r.get("#{params[:camera]}:stream_pid}")
+          begin
+            arlo.stop_stream(camera)
+            Process.kill('QUIT', pid)
+            @r.del("#{params[:camera]}:stream_pid}")
+            @r.srem('viewers',user['slack_name'])
+            status 200
+            return { success:true }
+          rescue Exception => e
+            status 400
+            return {success:false, msg: e}
+          end
         end
-      end
-    else
-      status 404
-      return { success: false, msg: 'Not Allowed.' }
+      # else
+      #   status 404
+      #   return { success: false, msg: 'Not Allowed.' }
+      # end
     end
-  end
 
   # How you door
   get '/door/:door_name' do
@@ -928,7 +941,7 @@ module BenevolentGaze
     m = JSON.parse(params[:msg])
     slack_name = slack_id_to_name(m['user'])
     if slack_name != false
-      # we used to send arrays.
+      # we used nanoto send arrays.
       msg = [{ id: SecureRandom.uuid.to_s, type: 'msg', msg: m['msg'], user: slack_name.delete('@') }]
       # https://github.com/sinatra/sinatra/blob/master/examples/chat.rb
       settings.connections.each { |out| out << "data: #{msg.to_json}\n\n" }
@@ -939,7 +952,7 @@ module BenevolentGaze
   end
 
   # post '/information' do
-  #   # grab current devices on network.
+  #   # grab current devices on network.s
   #   # Save them to the devices on network key after we make sure that we
   #   # grab the names that have been added already to the whole list and
   #   # then save them to the updated hash (set?)for redis.
@@ -967,4 +980,5 @@ module BenevolentGaze
   #   end
   #   status 204 # response without entity body
   # end
+  end
 end
