@@ -3,40 +3,97 @@
 <html>
 <head>
   <title>JSMpeg Stream Client</title>
-  <style type="text/css">
-    html, body {
-      background-color: #111;
-      text-align: center;
-    }
-  </style>
-  <script>
-    window.addEventListener("unload", stopStream, false);
-    function stopStream() {
-      navigator.sendBeacon("/streamstop", {});
-    }
-  </script>
+  
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript" src="/javascripts/jsmpeg.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-</head>
-<body>
-  <canvas id="stairwell"></canvas>
-  <canvas id="door"></canvas>
-<!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+  
+   <link href="/stylesheets/application.css" rel="stylesheet" type="text/css">
+    <link href="/stylesheets/animate.css" rel="stylesheet" type="text/css">
+    <script src="/javascripts/libs.js" type="text/javascript"></script>
   <script type="text/javascript">
+$(function() {
+  $(document).idle({
+    onIdle: function(){
+      // every minute
+      // go back to main page
+      window.location('/');
+    },
+    idle: 60000
+  })
+  $.ajax({url: '/can_door'}).done(function() {
+    console.log('can door')
+  })
+  .fail(function() {
+    console.log('cannot door');
+    window.location('/');
+  });
+  
+    $('.door-button').on('click', function(e) {
+      console.log('door button clicked');
+        var door_name = $(this).attr('id');
+        $.ajax({ url: '/door/'+door_name}).done(function(data){
+          $('#'+door_name).css('background-color', '#ececec');
+          $('#'+door_name).text('Opened!');
+          $('#'+door_name).animateCss('pulse');
+
+        }).fail(function(data) {
+          $('#'+door_name).animateCss('shake');
+          d = JSON.parse(data.responseText);
+          $('#'+door_name).tooltip({title: d['msg'],
+                                    trigger: 'manual',
+                                    placement: 'right'}).tooltip('show');
+
+          setTimeout(function() { $('#'+door_name).tooltip('hide'); }, 2000);
+        }).always(function(){
+          setTimeout(function() {
+            $('#'+door_name).text('Open '+door_name+' Door');
+            $('#'+door_name).css('background-color', '#b0e61d');
+          }, 1000);
+        })    
+      })
+
+    window.addEventListener("beforeunload", stopStream, false);
+    function stopStream() {
+      $.post('/streamstop');
+      navigator.sendBeacon("/streamstop", {});
+    }
     $.post('/video_stream/start/stairwell',{},function(){
       var canvas = document.getElementById('stairwell');
-      var url = 'ws://'+document.location.hostname+':8083/';
+      var url = 'ws://'+document.location.hostname+':8082/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
     $.post('/video_stream/start/door',{},function(){
       var canvas = document.getElementById('door');
-      var url = 'ws://'+document.location.hostname+':8081/';
+      var url = 'ws://'+document.location.hostname+':8084/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
-    
+});
   </script>
+</head>
+<body onbeforeunload="return stopStream()">
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon -->
+
+<div class="container-fluid">
+    <div class="row float-left">
+        <div class='col-md-1'>
+          <a class="btn btn-primary door-button" id='downstairs'>Open Downstairs Door</a>
+        </div>
+        <div class="col-md-10 offset-1">
+          <canvas id="door"></canvas>
+        </div>
+    </div>
+    <div class="row float-left">
+        <div class='col-md-1'>
+          <a class="btn btn-primary door-button" id='upstairs'>Open Upstairs Door</a>
+        </div>
+        <div class="col-md-10 offset-1">
+          <canvas id="stairwell"></canvas>
+        </div>
+    </div>
+</div>
 </body>
 </html>

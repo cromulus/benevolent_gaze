@@ -130,12 +130,12 @@ module BenevolentGaze
 
       def admin?
         user = get_user_info
-        user != false && user['kisi_token'].present? && user['admin'] == true
+        user != false && user[:kisi_token].present? && user[:admin] == true
       end
 
       def door_auth?
         user = get_user_info
-        user != false && user['kisi_token'].present?
+        user != false && user[:kisi_token].present?
       end
 
       def find_ip
@@ -405,21 +405,22 @@ module BenevolentGaze
 
     # https://github.com/djberg96/sys-proctable
     get '/streamstatus/:camera' do
-      @r.exists("#{params[:camera]}:stream_pid}")
+      @r.exists("#{params[:camera]}:stream_pid")
     end
 
     post '/streamstop' do
       user = get_user_info
-      if @r.smembers('viewers') == 0
+      if @r.scard('viewers') == 0
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
         arlo.cameras.each do |c|
           arlo.stop_stream(c) if c['deviceType'] == 'camera'
         end
-        pids = @r.get("*:stream_pid}")
-        pids.each do |pid|
-          Process.kill('QUIT', pid)
-          @r.del("*:stream_pid}")
+        
+        @r.keys("*:stream_pid").each do |key|
+          pid = @r.get(key)
+          Process.kill('QUIT', pid.to_i)
+          @r.del(key)
         end
       else
         @r.srem('viewers',user['slack_name'])
@@ -439,25 +440,31 @@ module BenevolentGaze
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
         camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
+        camera_pids = {'stairwell':8083, 'door':8081}
+
         case params[:command]
         when 'start'
           @r.sadd('viewers',user['slack_name'])
-          url = arlo.start_stream(camera)
-          # https://github.com/phoboslab/jsmpegx
-          camera_pids = {'stairwell':8083, 'door':8081}
-          pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_pids[params['door']]}/supersecret/'")
-          @r.set("#{params[:camera]}:stream_pid}", pid)
+
+          unless @r.exists("#{params[:camera]}:stream_pid")
+            url = arlo.start_stream(camera)
+            
+            # https://github.com/phoboslab/jsmpegx
+            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_pids[params[:camera].to_sym]}/supersecret/'")
+            @r.set("#{params[:camera]}:stream_pid", pid)
+          end
           status 200
           return {success: true }
         when 'stop'
-          pid = @r.get("#{params[:camera]}:stream_pid}")
+          pid = @r.get("#{params[:camera]}:stream_pid")
           begin
+            @r.srem('viewers',user['slack_name'])
             arlo.stop_stream(camera)
-            Process.kill('QUIT', pid)
-            @r.del("#{params[:camera]}:stream_pid}")
+            Process.kill('QUIT', pid.to_i)
+            @r.del("#{params[:camera]}:stream_pid")
             @r.srem('viewers',user['slack_name'])
             status 200
-            return { success:true }
+            return { success:true, pid: camera_pids[params['camera']] }
           rescue Exception => e
             status 400
             return {success:false, msg: e}
@@ -471,11 +478,11 @@ module BenevolentGaze
 
   # How you door
   get '/door/:door_name' do
-    door_name = params[:door_name]
-    door_id = DOORS[door_name]
+    door_name = params['door_name']
+    door_id = DOORS[door_name.to_sym]
     if !door_auth? || !admin? || door_id.nil?
       status 404
-      return { success: false, msg: 'You are not allowed to open this door.' }.to_json
+      return { success: false, msg: 'You are not allowed', data: get_user_info, door_id: door_id, admin: admin?, door_auth: door_auth?}.to_json
     elsif @r.exists("door_#{door_name}_throttle:#{find_ip}")
       status 420 # enhance your chill
       return { success: false, msg: 'enhance your chill.' }.to_json
@@ -486,7 +493,7 @@ module BenevolentGaze
       headers = {
         content_type: 'application/json',
         accept: 'application/json',
-        x_authentication_token: get_user_info['kisi_token']
+        x_authentication_token: get_user_info[:kisi_token]
       }
 
 

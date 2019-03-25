@@ -25,24 +25,24 @@ $(function() {
 
 
   $('.door-button').on('click', function(e) {
-    var door_name = $($this).attr('id');
+    var door_name = $(this).attr('id');
     $.ajax({ url: '/door/'+door_name}).done(function(data){
-      $('#'+door_name+'-door').css('background-color', '#ececec');
-      $('#'+door_name+'-door').text('Opened!');
-      $('#'+door_name+'-door').animateCss('pulse');
+      $('#'+door_name).css('background-color', '#ececec');
+      $('#'+door_name).text('Opened!');
+      $('#'+door_name).animateCss('pulse');
 
     }).fail(function(data) {
-      $('#'+door_name+'-door').animateCss('shake');
+      $('#'+door_name).animateCss('shake');
       d = JSON.parse(data.responseText);
-      $('#'+door_name+'-door').tooltip({title: d['msg'],
+      $('#'+door_name).tooltip({title: d['msg'],
                                 trigger: 'manual',
                                 placement: 'right'}).tooltip('show');
 
-      setTimeout(function() { $('#'+door_name+'-door').tooltip('hide'); }, 2000);
+      setTimeout(function() { $('#'+door_name).tooltip('hide'); }, 2000);
     }).always(function(){
       setTimeout(function() {
-        $('#'+door_name+'-door').text('Open '+door_name+' Door');
-        $('#'+door_name+'-door').css('background-color', '#b0e61d');
+        $('#'+door_name).text('Open '+door_name+' Door');
+        $('#'+door_name).css('background-color', '#b0e61d');
       }, 1000);
     })    
   })
@@ -55,7 +55,7 @@ $(function() {
         if (d['data']['real_name'] === 'Reception') {
           $('#register').hide(); // hide registration
         }
-        if (d['data']['admin'] != 'true') {
+        if (!me['admin']) {
           $('#video').hide(); // hide video options
           $('.door-button').hide(); // hide doors unless admin
         }
