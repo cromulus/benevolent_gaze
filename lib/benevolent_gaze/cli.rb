@@ -4,6 +4,7 @@ require 'csv'
 require 'benevolent_gaze/kiosk'
 require 'benevolent_gaze/tracker'
 require 'benevolent_gaze/slacker'
+require 'benevolent_gaze/arlo'
 
 include FileUtils
 
