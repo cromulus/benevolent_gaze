@@ -63,12 +63,12 @@ $(function() {
     }
     $.post('/video_stream/start/stairwell',{},function(){
       var canvas = document.getElementById('stairwell');
-      var url = 'wss://'+document.location.hostname+':8082/';
+      var url = 'wss://'+document.location.hostname+'/stairwell/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
     $.post('/video_stream/start/door',{},function(){
       var canvas = document.getElementById('door');
-      var url = 'wss://'+document.location.hostname+':8084/';
+      var url = 'wss://'+document.location.hostname+'/door/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
 });
