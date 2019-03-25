@@ -24,6 +24,7 @@ require 'securerandom'
 require 'set'
 require 'tempfile'
 require 'dotenv'
+require './arlo'
 
 
 Dotenv.load if ENV['SLACK_API_TOKEN'].nil?
