@@ -35,7 +35,7 @@ $(function() {
     $('.door-button').on('click', function(e) {
       console.log('door button clicked');
         var door_name = $(this).attr('id');
-        $.ajax({ url: '/door/'+door_name}).done(function(data){
+        $.ajax({ url: '/open-door/'+door_name}).done(function(data){
           $('#'+door_name).css('background-color', '#ececec');
           $('#'+door_name).text('Opened!');
           $('#'+door_name).animateCss('pulse');
@@ -63,12 +63,12 @@ $(function() {
     }
     $.post('/video_stream/start/stairwell',{},function(){
       var canvas = document.getElementById('stairwell');
-      var url = 'ws://'+document.location.hostname+':8082/';
+      var url = 'wss://'+document.location.hostname+':8082/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
     $.post('/video_stream/start/door',{},function(){
       var canvas = document.getElementById('door');
-      var url = 'ws://'+document.location.hostname+':8084/';
+      var url = 'wss://'+document.location.hostname+':8084/';
       var player = new JSMpeg.Player(url, {canvas: canvas});  
     });
 });

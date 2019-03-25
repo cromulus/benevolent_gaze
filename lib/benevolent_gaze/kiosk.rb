@@ -477,7 +477,7 @@ module BenevolentGaze
     end
 
   # How you door
-  get '/door/:door_name' do
+  get '/open-door/:door_name' do
     door_name = params['door_name']
     door_id = DOORS[door_name.to_sym]
     if !door_auth? || !admin? || door_id.nil?

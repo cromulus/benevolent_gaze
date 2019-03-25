@@ -26,7 +26,7 @@ $(function() {
 
   $('.door-button').on('click', function(e) {
     var door_name = $(this).attr('id');
-    $.ajax({ url: '/door/'+door_name}).done(function(data){
+    $.ajax({ url: '/open-door/'+door_name}).done(function(data){
       $('#'+door_name).css('background-color', '#ececec');
       $('#'+door_name).text('Opened!');
       $('#'+door_name).animateCss('pulse');
