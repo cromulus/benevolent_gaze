@@ -408,6 +408,27 @@ module BenevolentGaze
       @r.exists("#{params[:camera]}:stream_pid")
     end
 
+    get '/killstream' do
+      arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
+      arlo.auth
+      arlo.cameras.each do |c|
+        arlo.stop_stream(c) if c['deviceType'] == 'camera'
+      end
+      begin
+        @r.keys("*:stream_pid").each do |key|
+          pid = @r.get(key)
+          Process.kill('QUIT', pid.to_i)
+          @r.del(key)
+        end  
+        @r.del('viewers')
+        `killall ffmpeg`
+      rescue Exception => _e
+      
+      end
+      status 200
+      return { success:true, viewers: @r.smembers('viewers'), pids: @r.keys("*:stream_pid") }
+    end
+    
     post '/streamstop' do
       user = get_user_info
       logger.info("end stream for #{user[:slack_name]}")

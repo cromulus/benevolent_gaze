@@ -6,6 +6,8 @@
 
 var fs = require('fs'),
 	http = require('http'),
+	https = require('https'),
+	request = require('request'),
 	WebSocket = require('ws');
 
 if (process.argv.length < 3) {
@@ -37,6 +39,12 @@ socketServer.on('connection', function(socket, upgradeReq) {
 		console.log(
 			'Disconnected WebSocket ('+socketServer.connectionCount+' total)'
 		);
+		if (socketServer.connectionCount == 0 ) {
+			// kill ffmpeg
+			request("https://office.brl.nyc/killstream", function(error, response, body) {
+  			console.log(body);
+			});
+		}
 	});
 });
 socketServer.broadcast = function(data) {
