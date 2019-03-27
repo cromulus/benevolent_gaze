@@ -59,7 +59,12 @@ $(function() {
     $(window).on('beforeunload pagehide hidden', function(e){
       xmlhttp.open("POST","/streamstop",false);
       navigator.sendBeacon("/streamstop", {});
-    })
+    });
+
+    window.addEventListener("unload", function(){
+      xmlhttp.open("POST","/streamstop",false);
+      navigator.sendBeacon("/streamstop", {});
+    }, false);
 
     $.post('/video_stream/start/stairwell',{},function(){
       var canvas = document.getElementById('stairwell');
