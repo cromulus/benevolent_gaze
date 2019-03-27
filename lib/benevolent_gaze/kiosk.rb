@@ -446,7 +446,7 @@ module BenevolentGaze
 
         case params[:command]
         when 'start'
-          @r.sadd('viewers',user['slack_name'])
+          @r.sadd('viewers',user[:slack_name])
 
           unless @r.exists("#{params[:camera]}:stream_pid")
             url = arlo.start_stream(camera)
@@ -460,13 +460,13 @@ module BenevolentGaze
         when 'stop'
           pid = @r.get("#{params[:camera]}:stream_pid")
           begin
-            @r.srem('viewers',user['slack_name'])
+            @r.srem('viewers',user[:slack_name])
             arlo.stop_stream(camera)
             Process.kill('QUIT', pid.to_i)
             @r.del("#{params[:camera]}:stream_pid")
             @r.srem('viewers',user['slack_name'])
             status 200
-            return { success:true, pid: camera_pids[params['camera']] }
+            return { success:true, pid: camera_pids[params[:camera]] }
           rescue Exception => e
             status 400
             return {success:false, msg: e}
