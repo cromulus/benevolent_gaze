@@ -411,14 +411,15 @@ module BenevolentGaze
     post '/streamstop' do
       user = get_user_info
       logger.info("end stream for #{user[:slack_name]}")
-      if @r.scard('viewers') == 0
+
+      if @r.scard('viewers') == 1 && @r.smember('viewers', user[:slack_name])
         
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
         arlo.cameras.each do |c|
           arlo.stop_stream(c) if c['deviceType'] == 'camera'
         end
-        
+        @r.srem('viewers', user[:slack_name])
         begin
           
           @r.keys("*:stream_pid").each do |key|
