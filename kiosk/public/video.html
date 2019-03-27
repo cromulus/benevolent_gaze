@@ -58,7 +58,7 @@ $(function() {
 
     $(window).on('beforeunload pagehide hidden', function(e){
       xmlhttp.open("POST","/streamstop",false);
-
+      navigator.sendBeacon("/streamstop", {});
     })
 
     $.post('/video_stream/start/stairwell',{},function(){
@@ -74,7 +74,7 @@ $(function() {
 });
   </script>
 </head>
-<body onbeforeunload="return stopStream()">
+<body>
 <!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon -->
 
 <div class="container-fluid">
