@@ -410,6 +410,7 @@ module BenevolentGaze
 
     post '/streamstop' do
       user = get_user_info
+      logger("enginer for #{user[:slack_name]}")
       if @r.scard('viewers') == 0
         
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
@@ -417,13 +418,16 @@ module BenevolentGaze
         arlo.cameras.each do |c|
           arlo.stop_stream(c) if c['deviceType'] == 'camera'
         end
-        `killall ffmpeg`
-        @r.keys("*:stream_pid").each do |key|
-          pid = @r.get(key)
-          Process.kill('QUIT', pid.to_i)
-          @r.del(key)
+        
+        begin
+          `killall ffmpeg`
+          @r.keys("*:stream_pid").each do |key|
+            pid = @r.get(key)
+            Process.kill('QUIT', pid.to_i)
+            @r.del(key)
+          end  
+        rescue Exception => _e
         end
-
       else
         @r.srem('viewers',user['slack_name'])
       end
@@ -442,21 +446,25 @@ module BenevolentGaze
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
         arlo.auth
         camera = arlo.cameras.find{|c| c['deviceName'] == params['camera'] }
-        camera_pids = {'stairwell':8083, 'door':8081}
+        camera_ports = {'stairwell':8083, 'door':8081}
 
         case params[:command]
         when 'start'
           @r.sadd('viewers',user[:slack_name])
 
-          unless @r.exists("#{params[:camera]}:stream_pid")
+          if @r.exists("#{params[:camera]}:stream_pid")
+            pid = @r.get("#{params[:camera]}:stream_pid")
+            logger("already streaming for #{params[:camera]}")
+          else
             url = arlo.start_stream(camera)
-            
+            logger("starting streaming for #{params[:camera]}")
             # https://github.com/phoboslab/jsmpegx
-            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_pids[params[:camera].to_sym]}/supersecret/'")
+            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_ports[params[:camera].to_sym]}/supersecret/'")
             @r.set("#{params[:camera]}:stream_pid", pid)
+            logger("pid is: #{pid}")
           end
           status 200
-          return {success: true }
+          return {success: true, pid: pid}
         when 'stop'
           pid = @r.get("#{params[:camera]}:stream_pid")
           begin
@@ -466,7 +474,7 @@ module BenevolentGaze
             @r.del("#{params[:camera]}:stream_pid")
             @r.srem('viewers',user['slack_name'])
             status 200
-            return { success:true, pid: camera_pids[params[:camera]] }
+            return { success:true, pid: camera_pids[params[:cameraki]] }
           rescue Exception => e
             status 400
             return {success:false, msg: e}
