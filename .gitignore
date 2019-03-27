@@ -21,4 +21,5 @@ dump.rdb
 
 client_secret.json
 .credentials
-.env
+.en
+/kiosk/node_modules/
