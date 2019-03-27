@@ -410,7 +410,7 @@ module BenevolentGaze
 
     post '/streamstop' do
       user = get_user_info
-      logger("enginer for #{user[:slack_name]}")
+      logger.info("enginer for #{user[:slack_name]}")
       if @r.scard('viewers') == 0
         
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
@@ -454,14 +454,14 @@ module BenevolentGaze
 
           if @r.exists("#{params[:camera]}:stream_pid")
             pid = @r.get("#{params[:camera]}:stream_pid")
-            logger("already streaming for #{params[:camera]}")
+            logger.info("already streaming for #{params[:camera]}")
           else
             url = arlo.start_stream(camera)
-            logger("starting streaming for #{params[:camera]}")
+            logger.info("starting streaming for #{params[:camera]}")
             # https://github.com/phoboslab/jsmpegx
-            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -muxdelay 0.001 'http://127.0.0.1:#{camera_ports[params[:camera].to_sym]}/supersecret/'")
+            pid = Process.spawn("ffmpeg -re -i '#{url}' -f mpegts -codec:v mpeg1video -an -async 1 -vsync 1 -muxdelay 0.001 'http://127.0.0.1:#{camera_ports[params[:camera].to_sym]}/supersecret/'")
             @r.set("#{params[:camera]}:stream_pid", pid)
-            logger("pid is: #{pid}")
+            logger.info("pid is: #{pid}")
           end
           status 200
           return {success: true, pid: pid}
