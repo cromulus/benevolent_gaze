@@ -410,7 +410,7 @@ module BenevolentGaze
 
     post '/streamstop' do
       user = get_user_info
-      logger.info("enginer for #{user[:slack_name]}")
+      logger.info("end stream for #{user[:slack_name]}")
       if @r.scard('viewers') == 0
         
         arlo = Arlo.new(ENV['ARLO_EMAIL'], ENV['ARLO_PASSWORD'])
@@ -420,19 +420,20 @@ module BenevolentGaze
         end
         
         begin
-          `killall ffmpeg`
+          
           @r.keys("*:stream_pid").each do |key|
             pid = @r.get(key)
             Process.kill('QUIT', pid.to_i)
             @r.del(key)
           end  
+          `killall ffmpeg`
         rescue Exception => _e
         end
       else
         @r.srem('viewers',user['slack_name'])
       end
       status 200
-      return { success:true }
+      return { success:true, viewers: @r.smembers('viewers'), pids: @r.keys("*:stream_pid") }
     end
 
     post '/video_stream/:command/:camera' do
