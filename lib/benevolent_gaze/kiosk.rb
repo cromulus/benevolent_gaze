@@ -58,7 +58,7 @@ module BenevolentGaze
         })
 
       end
-      DOORS = {downstairs: 2998, upstairs: 8844, elevator: 7714 }
+      DOORS = {downstairs: 10400, upstairs: 10402, elevator: 10401 }
       KISI_TOKEN = ENV['KISI_TOKEN']
       IGNORE_HOSTS = if ENV['IGNORE_HOSTS'].nil?
         false
